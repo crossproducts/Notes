@@ -25,7 +25,7 @@
     File Storage - EFS
     Block Storage - EBS
     Object Storage - S3
-    AuthN vs AuthZ - 
+    AuthN vs AuthZ - Authentication (who) vs Authorization (what they can do)
     S3: 
         S3 Storage Classes
             Standard
