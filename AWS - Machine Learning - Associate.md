@@ -9,6 +9,23 @@
 <details><summary>Section 2: Data Ingestion and Storage</summary>   
 
 ```   
+    Data Warehouse  - Structured Data
+        RDS
+        Aurora
+        Redshift
+        DynamoDB
+    Data Lake       - Unstructured Data
+        S3
+        EFS
+        FSx
+        Glacier
+        Backup
+    Data Lakehouse  - Semi-Structured Data
+        S3
+    File Storage - EFS
+    Block Storage - EBS
+    Object Storage - S3
+    AuthN vs AuthZ - 
     S3: 
         S3 Storage Classes
             Standard
@@ -45,10 +62,11 @@
         Attach usb stick
         Can be left unattached
         1 instance to many ebs volumes (may be possoble many instances to 1 or more ebs volume)
-        EBS per Availability Zone (snapshot to migrate)
+        EBS isolated to 1 Availability Zone (snapshot to migrate)
     EFS
         Network attached Storage
         Attach to multiple EC2 instances
+        Multiple AZ
         3x cost EBS Volume
         only compatible with linux based AMI (not windows)
         Lifecycle Policy
@@ -64,14 +82,67 @@
             FSx for OpenZFS
     Kinesis Data Streams
         Collect and store streaming data in real time
+        Replay Capability
         Retain data up to 365 days
-        !!! Data cannot be deleted from Kinesis (until it expires)
-
-    Kinesis Data Firehose
-
+        ❗ Data cannot be deleted from Kinesis (until it expires)
+        Data up to 1MB
+        Data order gauranteed for data with the same "Partial ID"
+        At Rest KMS Encryption
+        In Flight KMS Encryption
+        Kinesis Producer Library (KPL) to write an optimized producer application
+        Kinesis Client Library (KCL) to write an optimized consumer application
+        Capacity Modes
+            Provisioned Mode
+            On-Demand Mode
+    Amazon Data Firehose (Kinesis Data Firehose)
+        Load streaming data into S3 / Redshift / OpenSearch / 3rd Party / custom HTTP
+        Fully Managed Sevice
+        ❗Near Real Time
+        Supports: CSV, JSON, Parquet, Avro, Raw Text, Binary Data
+        Converion To: Parquet / ORC, compressions with gzip / snappy
+        Custom Conversion using Lambda
     Amazon Managed Service for Apache Flink
-
-    Amazon MSK
+        Serverless
+        Common Use Cases:
+            Streming ETL
+            Coninous metric generation
+            Responsive Analytics
+        Flink Source:
+            Amazon Kinesis Data Streams
+            Amazon Managed Streaming for Apache Kafka
+        Flink Sinks:
+            S3
+            Amazon Kinesis Data Streams
+            Amazon Kinesis Data Firehose
+    Amazon Managed Service for Kafka (MSK)
+        Kafka is alternative to Kinesis
+            Can send larger messages than Kinesis (10MB) 
+            More Configurable
+        MSK fully managed service 
+        Producers --> MSK --> Consumers
+        Producers:
+            Kinesis
+            IOT
+            RDS
+        Consumers:
+            EMR
+            S3
+            Sagemaker
+            Kinesis
+            RDS
+        MSK Security
+            Encryption
+                Optional in-flight TLS between brokers
+                Optional in-flight TLS between brokers and clients
+                At rest for EBS volumes using KMS
+            Network Security
+                Authorize specific Security Groups for Apache Kafka clients
+            Authentication & Authorization
+                Define who can read and write to which topics
+                Mutual TLS (AuthN) + Kafka ACLs (AuthZ)
+                SASL/SCRAM (AuthN) + Kafka ACLs (AuthZ)
+                IAM Access Control (AuthN + AuthZ)
+            MSK Connect
 
 ```    
 </details><br/>
@@ -152,7 +223,7 @@
 
 <h3>Key</h3>
 <ul>
-    <li>❗Important</li>
-    <li>‼️Really Important</li>
-    <li>⚠️ Incomplete</li>
+    <li>❗ : Important</li>
+    <li>‼️ : Really Important</li>
+    <li>⚠️ : Incomplete</li>
 </ul>
