@@ -56,7 +56,26 @@ CSS
     Combining Selectors
     Chaining
     Positioning
-    Static
-    Relative
-    Absolute
-    Fixed
+        Static: Default positioning 
+        Relative: Position relative to default (supposed to be) position 
+        Absolute: 
+            Position relative to nearest positioned ancestor
+            or Top Left corner of page
+        Fixed: Position relative to top left corner of browser window
+    Display Property
+        Block: Takes the full width of page
+        Inline: Elements will be on the same line, if there is space
+        Inline-Block: 
+        None: Hide element (button, etc.)
+    Float
+        Floating element with text wrapped around element
+    Clear
+        Remove need to wrap around
+    Responsive Mediw
+        Media Queries
+            @media
+        CSS Grid
+            2D
+        CSS Flexbox
+            1D
+        External Frameworks (Bootstrap)
