@@ -1,4 +1,4 @@
-<h1>Udemy: AWS Certified Machine Learning Engineer Associate: Hands On!</h1>   
+# Udemy: AWS Certified Machine Learning Engineer Associate: Hands On!
 
 <details><summary>Section 1: Introduction</summary> 
 
