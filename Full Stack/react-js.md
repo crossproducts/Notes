@@ -21,7 +21,8 @@
     Visual layer of the UI
     Header, Navigation Bar, Sidebar, Footer, .etc
     Components Function name must be capitalized with snakecase
-    components can only return one parent / root element 
+    Components can only return one parent / root element 
+        Fragment: <> ... </>
 
 ### JSX (JavaScript XML)
 
