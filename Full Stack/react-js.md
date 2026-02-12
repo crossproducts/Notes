@@ -7,6 +7,9 @@
     HTML       → Initial notes written on the board
     JavaScript → The marker (writes / erases directly)
     React      → The editor who updates it efficiently
+
+### JSX 
+    JavaScript + HTML
     
 ### DOM (Document Object Model)
     Browser's live in memory representation
@@ -84,8 +87,19 @@
     npm start // Starts up development server
     npm run build // Creates an optimized build of your app
 
+## Shorthand
+    Map         → Create a new array by doing something with each item in an array
+    Filter      → Create a new array by keeping the items that returns true
+    Reduce      → Accumulate a value by doing something to each item in an array
+    Find        → Find the first item that matches from an array
+    FindIndex   → Find the index of the first item that matches
+    Arrow Functions / Fat Arrow 
+    
 ## Questions
     What is the difference between hooks and event listeners
+    Javascript statement vs expression
+    Anonymous functions
+    var vs let vs const
     When to use double curly braces
 
 ## References
