@@ -86,6 +86,7 @@
 
 ## Questions
     What is the difference between hooks and event listeners
+    When to use double curly braces
 
 ## References
 [Youtube: Fireship - React in 100 Seconds](https://www.youtube.com/watch?v=Tn6-PIqc4UM) 
