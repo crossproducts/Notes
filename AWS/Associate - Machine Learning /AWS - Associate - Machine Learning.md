@@ -127,7 +127,7 @@
         Consumers:
             EMR
             S3
-            Sagemaker
+            SageMaker
             Kinesis
             RDS
         MSK Security
@@ -150,6 +150,48 @@
 <details><summary>Section 3: Data Transformation, Integrity, and Feature Engineering</summary>
 
 ```
+    AWS EMR (Elastic Map Reduce)
+    SageMaker   
+        SageMaker AI 
+        SageMaker Ground Truth
+            Humans Label large datasets
+        Amazon Mechanical Turk
+        SageMaker Data Wrangler
+        SageMaker Model Monitor
+        SageMaker Clarify
+            Detect Bias
+        SageMaker Feature Store
+        SageMaker Canvas
+        SageMaker Neo
+            deploy models on "Edge devices"
+    AWS Glue
+        AWS Glue
+            Schedule and manage ETL Jobs
+        AWS Glue Studio
+            Full ETL pipeline creation and orchestration
+        AWS Glue Data Quality
+        AWS Glue DataBrew
+            UI, Pre-processing large data sets, Output S3
+            Over 250 ready-made transformations
+            Purpose: Data cleaning & preparation, exploratory transformation
+            Skewed Data, use Median replacement for missing data
+            SMOTE (Synthetic Minority Over-sampling Technique) - generate synthetic data without simply duplicating existing data
+    Amazon Athena
+        Interactive Query service for S3
+        Serverless
+        CSV, TSV, JSON (human readable)
+        ORC, Parquet (columnar, splittable)
+        Avro (splittable)
+        Snappy, Zlib, LZO, Gzip (compression)
+        S3 --> Glue --> Amazon Athena --> Amazon Quicksight
+        Athena Workgroups - (IAM) limit access / usage / encryption / cost
+        Save Money / Better Performance: 
+            ORC or Parquet
+            Use partitions
+            small number of large files > than large number of small files
+        ACID Transaction
+            Concurrent users safe
+            No need to lock and unlock file
 ```
 </details><br/>
 
@@ -159,7 +201,7 @@
 ```
 </details><br/>
 
-<details><summary>Section 5: Sagemaker Built-In Algorithms</summary>
+<details><summary>Section 5: SageMaker Built-In Algorithms</summary>
 
 ```
 ```
@@ -227,3 +269,7 @@
     <li>‼️ : Really Important</li>
     <li>⚠️ : Incomplete</li>
 </ul>
+
+
+
+AWS Batch
