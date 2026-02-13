@@ -81,6 +81,10 @@
 ### Conditional Rendering
     Rendering an element if a condition is met
     Example: Display user's name if logged in, else display request to login
+    Ternary Operator: 
+        CONDITION ? TRUE : FALSE
+        CONDITION ? TRUE : null
+    (EXPRESSION && EXPRESSION)
 
 ### Common Commands
     npx create-react-app <appname> // Sets up your development environment
