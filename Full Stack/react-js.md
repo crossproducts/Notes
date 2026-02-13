@@ -62,7 +62,15 @@
     Tech: Context API, Redux
     So we dont have to manage prop drilling
 
-### Virtual DOM
+### Destructuring Objects & Arrays
+    Array:
+    Object:
+
+    const { name, sound } = cat;                    //
+    const { name: catName, sound: catSound } = cat  // Rename key  
+    const { name = "fluffy", sound = "purr" } = cat // default value
+
+### Virtual DOM 
     Verify Changes to the "real" DOM and only update required components
 
 ### Key Prop
