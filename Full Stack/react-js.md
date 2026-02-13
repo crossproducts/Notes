@@ -41,6 +41,8 @@
     Javascript Object
     Represents information / "state" of a component
     Update State
+    Declarative vs Imperative Programming 
+    Hooks
 
 ### Component Lifecycle
     Initialization → Mounting → Updating → Unmounting
@@ -56,6 +58,7 @@
     Common Hooks:
         useState()  // Set & Update State
         useEffect() // Perform side effects in lifecycle
+    const [state, setStateFunction ] = useState(initialStateValue);
 
 ### State Management
     Tech: Context API, Redux
