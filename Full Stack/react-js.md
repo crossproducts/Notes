@@ -27,7 +27,13 @@
     Components can only return one parent / root element 
         Fragment: <> ... </>
 
-### JSX (JavaScript XML)
+### Component Lifecycle
+    Initialization → Mounting → Updating → Unmounting
+    Component: Mounting → Updating → Unmounting
+    Class Components:
+        componentDidMount(){}
+        componentDidUpdate(){}
+        componentWillUnmount(){}
 
 ### URL Router
     Keep UI in sync with a router
@@ -43,14 +49,6 @@
     Update State
     Declarative vs Imperative Programming 
     Hooks
-
-### Component Lifecycle
-    Initialization → Mounting → Updating → Unmounting
-    Component: Mounting → Updating → Unmounting
-    Class Components:
-        componentDidMount(){}
-        componentDidUpdate(){}
-        componentWillUnmount(){}
 
 ### Hooks
     Add State to Functional Components
