@@ -109,6 +109,7 @@
     Arrow Functions / Fat Arrow 
     Spread Operator → ...variable → Expand array
     Rest Parameters → ...variable → Bundle items into an array
+    Descructure → 
     
 ## Questions
     What is the difference between hooks and event listeners
