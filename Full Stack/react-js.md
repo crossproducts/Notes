@@ -20,6 +20,11 @@
 ### Single Page Applications: 
     One Template but updating components of the DOM
 
+### Imports
+    import React from "react";
+        or
+    import React, { useState } from "react"; 
+
 ### Componets
     Visual layer of the UI
     Header, Navigation Bar, Sidebar, Footer, .etc
@@ -100,15 +105,24 @@
     npm start // Starts up development server
     npm run build // Creates an optimized build of your app
 
+### Spread Operator
+    ...objectName
+    Spread / Expand items of object 
+
 ## Shorthand
     Map         → Create a new array by doing something with each item in an array
     Filter      → Create a new array by keeping the items that returns true
     Reduce      → Accumulate a value by doing something to each item in an array
     Find        → Find the first item that matches from an array
     FindIndex   → Find the index of the first item that matches
-    Arrow Functions / Fat Arrow 
+    
+    Arrow Functions / Fat Arrow →
+
+    Anonymous Functions →
+    
     Spread Operator → ...variable → Expand array
     Rest Parameters → ...variable → Bundle items into an array
+    
     Descructure → 
     
 ## Questions
@@ -116,7 +130,14 @@
     Javascript statement vs expression
     Anonymous functions
     var vs let vs const
-    When to use double curly braces
+    single braces vs double curly braces
+    Hooks vs Classes 
+    React controlled vs uncontrolled name
+    == vs ===
+    Set object key by variable → [key]: value // Use square braces
+
+## Review 
+    312. Changing Complex State
 
 ## References
 [Youtube: Fireship - React in 100 Seconds](https://www.youtube.com/watch?v=Tn6-PIqc4UM) 
