@@ -107,6 +107,8 @@
     Find        → Find the first item that matches from an array
     FindIndex   → Find the index of the first item that matches
     Arrow Functions / Fat Arrow 
+    Spread Operator → ...variable → Expand array
+    Rest Parameters → ...variable → Bundle items into an array
     
 ## Questions
     What is the difference between hooks and event listeners
