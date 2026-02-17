@@ -210,6 +210,22 @@
 <details><summary>Section 6: Model Training, Tuning, and Evaluation</summary>
 
 ```
+Deep Learning
+    CNN (Convolutional Neural Network)
+        find ... in ...
+    RNN (Recursive Neural Network)
+    Tuning Neural Networks
+    Regularization
+        Def: Prevent Overfitting
+        Dropout: Drop Node to prevent overfitting
+        Early Stopping: Set epoch but stop early to prevent overfitting
+        L1: summation of weights, feature selection, remove some features (set to 0), faster training
+        L2: summation of square of weights, keep all features (if all important)
+    Vanishing Gradient:
+
+Vocabulary:
+    Epoch: iterations
+
 ```
 </details><br/>
 
