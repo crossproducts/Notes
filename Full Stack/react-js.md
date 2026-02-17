@@ -3,22 +3,65 @@
 ## Notes
 
 ### Mental Model
-    DOM        → Whiteboard
-    HTML       → Initial notes written on the board
-    JavaScript → The marker (writes / erases directly)
-    React      → The editor who updates it efficiently
+    DOM 
+        → The browser’s in-memory tree of UI elements.
+    HTML 
+        → The starting structure.
+    JavaScript 
+        → Directly manipulates the DOM (imperative).
+    React 
+        → Recalculates what the UI should look like based on state,
+        → Then updates efficiently (declarative).
 
-### JSX 
-    JavaScript + HTML
-    
+### Additional Info
+    JSX - JavaScript + HTML
+    Single Page Applications - One Template but updating components of the DOM
+    In Javascript, functions do NOT need to be capitalized
+    In React, Components MUST BE CAPITALIZED 
+
 ### DOM (Document Object Model)
     Browser's live in memory representation
     Mental Model: 
         The DOM is the browser’s tree of UI objects.
         React is a UI calculator that keeps that tree in sync with state.
+```javascript
+<html>
+  <body>
+    <div>
+      <h1>Hello</h1>
+    </div>
+  </body>
+</html>
+```
+```mermaid
+graph TD
+    HTML["<html>"]
+    BODY["<body>"]
+    DIV["<div>"]
+    H1["<h1>"]
+    TEXT["\"Hello\""]
 
-### Single Page Applications: 
-    One Template but updating components of the DOM
+    HTML --> BODY
+    BODY --> DIV
+    DIV --> H1
+    H1 --> TEXT
+```
+
+```mermaid
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+```
+
+### Virtual DOM (Document Object Model)
+    A lightweight copy of the real DOM.
+    React:
+        Calculates changes in Virtual DOM.
+        Compares old vs new (diffing).
+        Updates only what changed (reconciliation).
+    This makes React fast.
 
 ### Imports
     import React from "react";
@@ -67,17 +110,6 @@
     Tech: Context API, Redux
     So we dont have to manage prop drilling
 
-### Destructuring Objects & Arrays
-    Array:
-    Object:
-
-    const { name, sound } = cat;                    //
-    const { name: catName, sound: catSound } = cat  // Rename key  
-    const { name = "fluffy", sound = "purr" } = cat // default value
-
-### Virtual DOM 
-    Verify Changes to the "real" DOM and only update required components
-
 ### Key Prop
     List needs to have "key" prop
 
@@ -105,10 +137,6 @@
     npm start // Starts up development server
     npm run build // Creates an optimized build of your app
 
-### Spread Operator
-    ...objectName
-    Spread / Expand items of object 
-
 ## Shorthand
     Map         → Create a new array by doing something with each item in an array
     Filter      → Create a new array by keeping the items that returns true
@@ -116,15 +144,26 @@
     Find        → Find the first item that matches from an array
     FindIndex   → Find the index of the first item that matches
     
-    Arrow Functions / Fat Arrow →
-
-    Anonymous Functions →
+    Arrow Functions / Fat Arrow → const
+    Anonymous Functions → () => {}
     
     Spread Operator → ...variable → Expand array
     Rest Parameters → ...variable → Bundle items into an array
     
     Descructure → 
-    
+
+#### Destructuring Objects & Arrays
+    Array:
+    Object:
+
+    const { name, sound } = cat;                    //
+    const { name: catName, sound: catSound } = cat  // Rename key  
+    const { name = "fluffy", sound = "purr" } = cat // default value 
+
+#### Spread Operator
+    ...objectName
+    Spread / Expand items of object 
+
 ## Questions
     What is the difference between hooks and event listeners
     Javascript statement vs expression
