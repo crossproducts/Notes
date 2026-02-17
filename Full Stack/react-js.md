@@ -24,6 +24,7 @@
     Mental Model: 
         The DOM is the browser’s tree of UI objects.
         React is a UI calculator that keeps that tree in sync with state.
+
 ```javascript
 <html>
   <body>
@@ -33,26 +34,19 @@
   </body>
 </html>
 ```
+
 ```mermaid
 graph TD
     HTML["<html>"]
     BODY["<body>"]
     DIV["<div>"]
     H1["<h1>"]
-    TEXT["\"Hello\""]
+    TEXT["Hello"]
 
     HTML --> BODY
     BODY --> DIV
     DIV --> H1
     H1 --> TEXT
-```
-
-```mermaid
-graph TD;
-    A-->B;
-    A-->C;
-    B-->D;
-    C-->D;
 ```
 
 ### Virtual DOM (Document Object Model)
