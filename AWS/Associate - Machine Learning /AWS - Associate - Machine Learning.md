@@ -222,8 +222,18 @@ Deep Learning
         L1: summation of weights, feature selection, remove some features (set to 0), faster training
         L2: summation of square of weights, keep all features (if all important)
     Vanishing Gradient:
+        Def: The slope of the learning curve going to 0
+        Solutions:
+            Multi Level Heiracy
+            Long Short Term Memory
+            Resuidual Networks
+            ReLU (Activation Function)
+    Confusion Matrix
 
 Vocabulary:
+    Node: 
+    Activation Function: 
+    Perceptron: 
     Epoch: iterations
 
 ```
