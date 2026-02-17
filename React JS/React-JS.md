@@ -17,13 +17,31 @@
     JSX - JavaScript + HTML
     Single Page Applications - One Template but updating components of the DOM
     In Javascript, functions do NOT need to be capitalized
-    In React, Components MUST BE CAPITALIZED 
+    In React, Components MUST BE CAPITALIZED
+    Import
+        import React from "react";
+        import React, { useState } from "react"; 
+    Fragments, <> ... </> , group multiple elements without adding an extra DOM node
+<details><summary>Fragments Example</summary>
+
+```javascript
+function Example() {
+    return (
+        <>
+        <h1>Hello</h1>
+        <p>World</p>
+        </>
+    );
+}
+```
+</details>
 
 ### DOM (Document Object Model)
     Browser's live in memory representation
     Mental Model: 
         The DOM is the browser’s tree of UI objects.
         React is a UI calculator that keeps that tree in sync with state.
+<details><summary>DOM Example</summary>
 
 ```javascript
 <html>
@@ -48,6 +66,7 @@ graph TD
     DIV --> H1
     H1 --> TEXT
 ```
+</details>
 
 ### Virtual DOM (Document Object Model)
     A lightweight copy of the real DOM.
@@ -56,11 +75,6 @@ graph TD
         Compares old vs new (diffing).
         Updates only what changed (reconciliation).
     This makes React fast.
-
-### Imports
-    import React from "react";
-        or
-    import React, { useState } from "react"; 
 
 ### Componets
     Visual layer of the UI
@@ -81,9 +95,12 @@ graph TD
     Keep UI in sync with a router
 
 ### Props
-    Pass components down from another
-    Parent Child relationship
+    Parent Components to Child Components
+        Data
+        Functions
+        Components (aka functions)
     Prop Drilling: Props can be passed down unlimited number of times
+    List needs to have "key" prop
 
 ### State
     Javascript Object
@@ -93,19 +110,27 @@ graph TD
     Hooks
 
 ### Hooks
+    Paradigm Shift:
+        Stop thinking: “How do I update state?”
+        Start thinking: “Where should the source of truth live?”
     Add State to Functional Components
     Hooks are functions that allow us to hook into and manage state
-    Common Hooks:
-        useState()  // Set & Update State
-        useEffect() // Perform side effects in lifecycle
+    [Common Hooks](./map-of-hooks.png):
+        Derived from props/state? → don’t store it
+        useState    → Local simple UI state
+        useEffect   → Side effects / external sync 
+        useReducer  → Complex local state transitions 
+        useRef      → Need persist value without re-render 
+        useMemo     → Expensive derived computation (sparingly)
+        useCallback → Need stable callback identity (when it matters)
+        Context     → Shared across many components  (often + reducer) 
+        Query / SWR → API/server data
+
     const [state, setStateFunction ] = useState(initialStateValue);
 
 ### State Management
     Tech: Context API, Redux
     So we dont have to manage prop drilling
-
-### Key Prop
-    List needs to have "key" prop
 
 ### Event Listeners
     Handling events
@@ -126,12 +151,7 @@ graph TD
         CONDITION ? TRUE : null
     (EXPRESSION && EXPRESSION)
 
-### Common Commands
-    npx create-react-app <appname> // Sets up your development environment
-    npm start // Starts up development server
-    npm run build // Creates an optimized build of your app
-
-## Shorthand
+### Shorthand
     Map         → Create a new array by doing something with each item in an array
     Filter      → Create a new array by keeping the items that returns true
     Reduce      → Accumulate a value by doing something to each item in an array
@@ -140,23 +160,22 @@ graph TD
     
     Arrow Functions / Fat Arrow → const
     Anonymous Functions → () => {}
-    
+
     Spread Operator → ...variable → Expand array
     Rest Parameters → ...variable → Bundle items into an array
     
-    Descructure → 
-
-#### Destructuring Objects & Arrays
-    Array:
-    Object:
-
+    Destructuring
+        Extracting values from arrays or objects into variables
+```javascript
     const { name, sound } = cat;                    //
     const { name: catName, sound: catSound } = cat  // Rename key  
-    const { name = "fluffy", sound = "purr" } = cat // default value 
+    const { name = "fluffy", sound = "purr" } = cat // default value
+```    
 
-#### Spread Operator
-    ...objectName
-    Spread / Expand items of object 
+### Common Commands
+    npx create-react-app <appname> // Sets up your development environment
+    npm start // Starts up development server
+    npm run build // Creates an optimized build of your app
 
 ## Questions
     What is the difference between hooks and event listeners
@@ -180,6 +199,8 @@ graph TD
 [Youtube: Dennis Ivy - React JS Explained in 10 Minutes](https://www.youtube.com/watch?v=s2skans2dP4)
 
 [Youtube: Code Bootcamp - Every React Component Explained in 12 Minutes](https://www.youtube.com/watch?v=wIyHSOugGGw)
+
+[Youtube: Code Bootcamp - All React Hooks Explained in 12 Minutes](https://www.youtube.com/watch?v=LOH1l-MP_9k)
 
 [Github: alan2207 / bulletprood-react / docs / project-structure.md](https://github.com/alan2207/bulletproof-react/blob/master/docs/project-structure.md)
 
