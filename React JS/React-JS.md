@@ -115,7 +115,7 @@ graph TD
         Start thinking: “Where should the source of truth live?”
     Add State to Functional Components
     Hooks are functions that allow us to hook into and manage state
-    [Common Hooks](./map-of-hooks.png):
+    Common Hooks (./map-of-hooks.png):
         Derived from props/state? → don’t store it
         useState    → Local simple UI state
         useEffect   → Side effects / external sync 
