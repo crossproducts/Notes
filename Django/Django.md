@@ -1,5 +1,50 @@
 # Django
 
+<details><summary style="font-size: 1.5em;">Django Project Structure</summary>
+
+```
+myproject/
+│
+├── manage.py
+│
+├── myproject/                # Project configuration package
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   ├── asgi.py
+│   └── wsgi.py
+│
+├── myapp/                    # Django app
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── models.py
+│   ├── views.py
+│   ├── urls.py
+│   ├── forms.py
+│   ├── tests.py
+│   ├── serializers.py        # (If using DRF)
+│   ├── migrations/
+│   │   └── __init__.py
+│   │
+│   ├── templates/
+│   │   └── myapp/
+│   │       └── example.html
+│   │
+│   └── static/
+│       └── myapp/
+│           ├── css/
+│           ├── js/
+│           └── images/
+│
+├── media/                    # User uploaded files
+│
+├── static/                   # (Optional global static folder)
+│
+└── db.sqlite3                # Default database
+```
+</details>
+
 ## Project Structure & Configuration
 Project   
 App   
@@ -60,7 +105,9 @@ Testing (TestCase)
 ## CLI Commands
 ```bash
 python3 -m venv .venv
-django-admin startproject PROJECT_NAME PROJECT_LOCATION
+django-admin startproject <PROJECT_NAME> <PROJECT_LOCATION>
+django-admin startapp <APP_NAME>
+python manage.py runserver
 ```
 
 ## References
