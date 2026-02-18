@@ -1,77 +1,72 @@
 # Django
 
-<details><summary>Section 1: Course Introduction</summary>
+## Project Structure & Configuration
+Project   
+App   
+manage.py   
+Settings   
+WSGI / ASGI   
 
-[Git: bradtraversy / django_deploy.md](https://gist.github.com/bradtraversy/cfa565b879ff1458dba08f423cb01d71)
+## Routing & Request Handling
+URL Dispatcher (URLs / Routing)   
+Middleware   
+Sessions   
+   
+## Views Layer   
+Views   
+Function-Based Views (FBVs)   
+Class-Based Views (CBVs)   
+API Views (DRF)   
+ViewSets (DRF)   
+Routers (DRF)   
+   
+## Templates & Frontend Integration   
+Templates   
+Template Tags & Filters   
+Context Processors   
+Static Files   
+Media Files   
+   
+## Database Layer   
+Models   
+ORM (Object Relational Mapper)   
+Migrations   
+QuerySets   
+Managers   
+   
+## Forms & User Input   
+Forms   
+ModelForms   
+   
+## Authentication & Authorization   
+Authentication   
+Authorization (Permissions & Groups)   
+   
+## Admin & Management   
+Admin Site   
+Management Commands   
+Fixtures   
+   
+## API & Serialization (Django REST Framework)   
+REST Framework (DRF)   
+Serializers   
+   
+## Real-Time & Async   
+Channels (WebSockets)   
+   
+## Testing   
+Testing (TestCase)   
 
-[Git: bradtraversy / Django Cheatsheet](https://gist.github.com/bradtraversy/0df61e9b306db3d61eb24793b6b7132d)
-</details>
-
----
-
-<details><summary>Section 2: Getting Setup</summary>
-
-
-</details>
-
----
-
-<details><summary>Section 3: Python Language Fundamentals (Optional)</summary>
-
-
-</details>
-
----
-
-<details><summary>Section 4: Project Specs & Getting Started</summary>
-
-
-</details>
-
----
-
-<details><summary>Section 5: Apps, URLs & Templates</summary>
-
-
-</details>
-
----
-
-<details><summary>Section 6: Models, Migrations & Admin</summary>
-
-
-</details>
-
----
-
-<details><summary>Section 7: View Methods, Display & Search</summary>
-
-
-</details>
-
----
-
-<details><summary>Section 8: Accounts & Authentication</summary>
-
-
-</details>
-
----
-
-<details><summary>Section 9: Contact Inquiries</summary>
-
-
-</details>
-
----
-
-<details><summary>Section 10: Django Development</summary>
-
-
-</details>
-
----
-
+## CLI Commands
+```bash
+python3 -m venv .venv
+django-admin startproject PROJECT_NAME PROJECT_LOCATION
+```
 
 ## References
-[Udemy: Python Django Dev to Development](https://bah.udemy.com/course/python-django-dev-to-deployment/learn/lecture/12055754#overview)
+[Youtube (1hr): NeuralNine - Django Full Crash Course - The Professional Python Web Framework](https://www.youtube.com/watch?v=u1GnZfDw5LU)
+
+[Youtube (3hr): Tech With Tim - Django For Beginners - Full Tutorial](https://www.youtube.com/watch?v=sm1mokevMWk)
+
+[Youtube (7hr): Traversy Media - Python Django 7 Hour Course](https://www.youtube.com/watch?v=PtQiiknWUcI)
+
