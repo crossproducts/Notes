@@ -198,6 +198,10 @@
 <details><summary>Section 4: AWS Managed AI Services</summary>
 
 ```
+Bedrock
+    Temperature
+    Top-P
+    Top-K
 ```
 </details><br/>
 
@@ -229,13 +233,23 @@ Deep Learning
             Resuidual Networks
             ReLU (Activation Function)
     Confusion Matrix
+        Def: A table used to evaluate classification models
+        
+        |                     | Predicted Positive | Predicted Negative |
+        |---------------------|-------------------|-------------------|
+        | **Actual Positive** | True Positive (TP) | False Negative (FN) |
+        | **Actual Negative** | False Positive (FP) | True Negative (TN) |
+
+        Accuracy = (TP + TN) / Total
+        Precision = TP / (TP + FP)
+        Recall (Sensitivity) = TP / (TP + FN)
+        F1 Score = Harmonic mean of Precision & Recall
 
 Vocabulary:
     Node: 
     Activation Function: 
     Perceptron: 
     Epoch: iterations
-
 ```
 </details><br/>
 

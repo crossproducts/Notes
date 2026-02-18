@@ -133,15 +133,25 @@ graph TD
     So we dont have to manage prop drilling
 
 ### Event Listeners
-    Handling events
-    <li onClick={openNote}>
+    Event handlers respond to user actions
+```javascript 
+function Counter() {
+  function handleClick() {
+    console.log("Clicked");
+  }
+
+  return <button onClick={handleClick}>Click</button>;
+}
+```
 
 ### Handling Forms
     Examples: <input>, <textarea>, <select>
-    <form onSubmit={handleSubmit}>
-        <input type="text" onChange={updateNoteValue} value={note} />
-        <input type="submit" />
-    </form>
+```javascript
+<form onSubmit={handleSubmit}>
+    <input type="text" onChange={updateNoteValue} value={note} />
+    <input type="submit" />
+</form>
+```
 
 ### Conditional Rendering
     Rendering an element if a condition is met
