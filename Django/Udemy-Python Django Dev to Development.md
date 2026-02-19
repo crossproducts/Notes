@@ -2,9 +2,8 @@
 
 <details><summary>Section 1: Course Introduction</summary>
 
-[Git: bradtraversy / django_deploy.md](https://gist.github.com/bradtraversy/cfa565b879ff1458dba08f423cb01d71)
-
-[Git: bradtraversy / Django Cheatsheet](https://gist.github.com/bradtraversy/0df61e9b306db3d61eb24793b6b7132d)
+[Git: bradtraversy / django_deploy.md](https://gist.github.com/bradtraversy/cfa565b879ff1458dba08f423cb01d71)   
+[Git: bradtraversy / Django Cheatsheet](https://gist.github.com/bradtraversy/0df61e9b306db3d61eb24793b6b7132d)   
 </details>
 
 ---

@@ -105,9 +105,19 @@ Testing (TestCase)
 ## CLI Commands
 ```bash
 python3 -m venv .venv
+
 django-admin startproject <PROJECT_NAME> <PROJECT_LOCATION>
+
 django-admin startapp <APP_NAME>
+
 python manage.py runserver
+
+manage.py makemigrations
+manage.py migrate
+
+manage.py createsuperuser
+
+gunicorn core.wsgi:application
 ```
 
 ## References
@@ -116,4 +126,3 @@ python manage.py runserver
 [Youtube (3hr): Tech With Tim - Django For Beginners - Full Tutorial](https://www.youtube.com/watch?v=sm1mokevMWk)
 
 [Youtube (7hr): Traversy Media - Python Django 7 Hour Course](https://www.youtube.com/watch?v=PtQiiknWUcI)
-
