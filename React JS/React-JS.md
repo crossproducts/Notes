@@ -208,6 +208,8 @@ function Counter() {
 
 [Youtube: Dennis Ivy - React JS Explained in 10 Minutes](https://www.youtube.com/watch?v=s2skans2dP4)
 
+[Youtube: SuperSimpleDev - React Tutorial Full Course - Beginner to Pro (React 19, 2025)](https://www.youtube.com/watch?v=TtPXvEcE11E)
+
 [Youtube: Code Bootcamp - Every React Component Explained in 12 Minutes](https://www.youtube.com/watch?v=wIyHSOugGGw)
 
 [Youtube: Code Bootcamp - All React Hooks Explained in 12 Minutes](https://www.youtube.com/watch?v=LOH1l-MP_9k)

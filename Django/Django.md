@@ -2,6 +2,8 @@
 
 <details><summary style="font-size: 1.5em;">Django Project Structure</summary>
 
+Project --> Apps --> Templates 
+
 ```
 myproject/
 │
