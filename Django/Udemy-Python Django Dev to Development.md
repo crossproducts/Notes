@@ -72,4 +72,4 @@
 ---
 
 ## References
-[Udemy (7hr): Python Django Dev to Development](https://bah.udemy.com/course/python-django-dev-to-deployment/learn/lecture/12055754#overview)
+[Udemy (7hr): Python Django Dev to Development](https://udemy.com/course/python-django-dev-to-deployment/learn/lecture/12055754#overview)
