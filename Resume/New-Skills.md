@@ -1,3 +1,4 @@
+'''
 React: Frontend
 Django: Backend that can Render frontend
 
@@ -28,4 +29,4 @@ MLflow:
 
 
 
-
+'''
