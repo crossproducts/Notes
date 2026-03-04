@@ -16,3 +16,16 @@ Embeddings in AI: Numerical representations of data—such as text, images, or a
 
 KNN	    Classical ML	    An algorithm (often for classification/regression)
 Top-K	Vector DB / RAG	    Just retrieving the K most similar items
+
+MLflow: 
+    Project: Package ML code in a reproducible format
+    Tracking: Log and query experiments 
+    Models: Saves models
+    Model Registry: Saves model information
+    Model Serving: Inferencing models
+    Recipes (formerly Pipelines): 
+    Integration: connection with other popular industry services
+
+
+
+
