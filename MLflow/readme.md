@@ -25,3 +25,4 @@ Alternatives
 
 ## References
 [Youtube: codebasics - MLFlow Tutorial | ML Ops Tutorial](https://www.youtube.com/watch?v=6ngxBkx05Fs&t=1577s)
+[DataCamp: Introduction to MLflow](https://app.datacamp.com/learn/courses/introduction-to-mlflow)
