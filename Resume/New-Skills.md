@@ -35,11 +35,16 @@ MLflow:
     Recipes (formerly Pipelines): 
     Integration: connection with other popular industry services
 
-Apache Spark - PySpark
+Apache Spark
+    PySpark
 
-Hashicorp Packer - Automate build of AMI (Amazon Machine Image)
+Hashicorp Packer
+    Automate build of AMI (Amazon Machine Image)
 
-
+Apache Airflow
+    Orchestrates/Automates and schedules data workflows
+    Coordinating ETL/ELT pipelines, Glue jobs, EMR clusters, and other services 
+    Built-in monitoring, retries, and dependency management.
 
 
 
