@@ -28,5 +28,14 @@ MLflow:
     Integration: connection with other popular industry services
 
 Apache Spark - PySpark
+
+Hashicorp Packer - Automate build of AMI (Amazon Machine Image)
+
+
+
+
+
+
+
 ```
 
