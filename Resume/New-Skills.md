@@ -18,6 +18,14 @@ Embeddings in AI: Numerical representations of data—such as text, images, or a
 KNN	    Classical ML	    An algorithm (often for classification/regression)
 Top-K	Vector DB / RAG	    Just retrieving the K most similar items
 
+Transformer Architecture:
+    Replaced RNNs (sequential processing) with self-attention (parallel processing)
+    A transformer uses self-attention to let every token assess its relevance to every other token in parallel, 
+    Using positional encoding to preserve word order. 
+    BERT uses the encoder side (bidirectional).
+    GPT uses the decoder side (left-to-right).
+    ChatGPT layers additional training on top of GPT to make it a useful assistant.
+
 MLflow: 
     Project: Package ML code in a reproducible format
     Tracking: Log and query experiments 
