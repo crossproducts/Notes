@@ -1,6 +1,6 @@
 # Notes
 
 ## Key
-! = Not Started
+! = Upcoming
 . = In Progress
 ✔ = Done (for now...)
