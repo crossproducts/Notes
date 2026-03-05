@@ -35,6 +35,9 @@ MLflow (Data Science):
     Model Serving: Inferencing models
     Recipes (formerly Pipelines): 
     Integration: connection with other popular industry services
+    AWS:
+        RDS: store tracking data / experiment metrics
+        S3: store artifacts
 
 Apache Spark (Data Engineering)
     PySpark
