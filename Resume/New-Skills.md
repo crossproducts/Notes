@@ -38,6 +38,7 @@ MLflow (Data Science):
     AWS:
         RDS: store tracking data / experiment metrics
         S3: store artifacts
+        Secrets Manager (Additional): DB Password
 
 Apache Spark (Data Engineering)
     PySpark
