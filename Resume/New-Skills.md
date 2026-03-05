@@ -2,8 +2,9 @@
 React: Frontend
 Django: Backend that can Render frontend
 
-Pinecone: Vector Database
-Chroma DB: Vector Database (Non-Production)
+Pinecone (DB): Vector Database
+Chroma (DB): Vector Database (Non-Production)
+
 Embeddings in AI: Numerical representations of data—such as text, images, or audio—converted into vectors (lists of numbers
 	Ways to Calculate distance
         Cosine
@@ -26,7 +27,7 @@ Transformer Architecture:
     GPT uses the decoder side (left-to-right).
     ChatGPT layers additional training on top of GPT to make it a useful assistant.
 
-MLflow: 
+MLflow (Data Science): 
     Project: Package ML code in a reproducible format
     Tracking: Log and query experiments 
     Models: Saves models
@@ -35,13 +36,13 @@ MLflow:
     Recipes (formerly Pipelines): 
     Integration: connection with other popular industry services
 
-Apache Spark
+Apache Spark (Data Engineering)
     PySpark
 
-Hashicorp Packer
+Hashicorp Packer (Infastructure / Orchestration)
     Automate build of AMI (Amazon Machine Image)
 
-Apache Airflow
+Apache Airflow (Infastructure / Orchestration)
     Orchestrates/Automates and schedules data workflows
     Coordinating ETL/ELT pipelines, Glue jobs, EMR clusters, and other services 
     Built-in monitoring, retries, and dependency management.
