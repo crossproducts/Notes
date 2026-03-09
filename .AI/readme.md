@@ -19,7 +19,7 @@ Embeddings in AI: Numerical representations of data—such as text, images, or a
 	Ways to Calculate distance
         Cosine
         Dot Product
-        Euclidean
+        Euclidean Distance
     Instead of 3 dimensions (x, y, z), embeddings usually have:
         128 dimensions
         384 dimensions
@@ -33,8 +33,8 @@ Transformer Architecture:
     Replaced RNNs (sequential processing) with self-attention (parallel processing)
     A transformer uses self-attention to let every token assess its relevance to every other token in parallel, 
     Using positional encoding to preserve word order. 
-    BERT uses the encoder side (bidirectional).
-    GPT uses the decoder side (left-to-right).
+    BERT uses the encoder side only (bidirectional).
+    GPT uses the decoder side only (left-to-right).
     ChatGPT layers additional training on top of GPT to make it a useful assistant
 ```
 ## References
