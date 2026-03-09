@@ -1,6 +1,6 @@
 # Elasticsearch
 
-##Features
+## Features
 Full text search
 Vector Database (vector search)
 
