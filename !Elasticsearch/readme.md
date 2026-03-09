@@ -1,8 +1,8 @@
 # Elasticsearch
 
 ## Features
-Full text search
-Vector Database (vector search)
+Full text search   
+Vector Database (vector search)   
 
 ## Notes
 
