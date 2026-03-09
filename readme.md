@@ -1,6 +1,6 @@
 # Notes
 
 ## Key
-! = Upcoming
-. = In Progress
-✔ = Done (for now...)
+! = Upcoming Notes  
+. = In Progress Notes  
+✔ = Done (for now...)   
