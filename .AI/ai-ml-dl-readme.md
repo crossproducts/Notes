@@ -1,15 +1,3 @@
-# AI
-```
-```
-## References
-
----
-# ML
-```
-```
-## References
-
----
 # Deep Learning
 ```
 Pinecone (DB): Vector Database
@@ -37,4 +25,5 @@ Transformer Architecture:
     GPT uses the decoder side only (left-to-right).
     ChatGPT layers additional training on top of GPT to make it a useful assistant
 ```
+
 ## References
