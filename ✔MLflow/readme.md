@@ -13,16 +13,17 @@
         S3: store artifacts
         Secrets Manager (Additional): DB Password
 
-Terminology:
-    Alias
-        @Champion: Best Model
-        @Challenger: Model attempting to be the next new @Champion
+Terminology:   
+    Alias   
+        @Champion: Best Model   
+        @Challenger: Model attempting to be the next new @Champion   
 
-Alternatives
-    Docker container
-    AWS Sagemaker Experiments
-    Dagshub
+Alternatives   
+    Docker container   
+    AWS Sagemaker Experiments   
+    Dagshub   
 
 ## References
 [Youtube: codebasics - MLFlow Tutorial | ML Ops Tutorial](https://www.youtube.com/watch?v=6ngxBkx05Fs&t=1577s)
+
 [DataCamp: Introduction to MLflow](https://app.datacamp.com/learn/courses/introduction-to-mlflow)
