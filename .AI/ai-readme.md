@@ -1,9 +1,49 @@
 # AI
 
+> A complete reference for Artificial Intelligence concepts, algorithms, evaluation metrics, and tooling.
+> Cross-links to other notes in this repo are provided where relevant.
+
+## Directory Index
+
+| File | Description |
+|---|---|
+| [ai-readme.md](ai-readme.md) | AI taxonomy tree with evaluation metrics (this file) |
+| [ai-ml-readme.md](ai-ml-readme.md) | ML algorithms cheatsheet — use cases, pros/cons, hyperparameters |
+| [ai-ml-dl-readme.md](ai-ml-dl-readme.md) | Deep Learning — architectures, embeddings, Transformers, LLMs |
+| [ai-llm-readme.md](ai-llm-readme.md) | LLM reference — model families, fine-tuning, quantisation, benchmarks |
+| [ai-prompt-engineering.md](ai-prompt-engineering.md) | Prompt engineering patterns and techniques |
+| [ai-rag.md](ai-rag.md) | Retrieval-Augmented Generation pipeline and evaluation |
+| [ai-agent-readme.md](ai-agent-readme.md) | AI agents — loops, memory, tools, multi-agent frameworks |
+| [ai-mlops.md](ai-mlops.md) | MLOps — experiment tracking, CI/CD, deployment, monitoring |
+| [ai-nlp-readme.md](ai-nlp-readme.md) | NLP — tokenisation, tasks, models, benchmarks |
+| [ai-computer-vision.md](ai-computer-vision.md) | Computer Vision — detection, segmentation, generation |
+| [ai-time-series.md](ai-time-series.md) | Time series — forecasting, decomposition, models |
+| [ai-ethics-and-safety.md](ai-ethics-and-safety.md) | AI ethics — fairness, explainability, responsible AI |
+| [ai-data-readme.md](ai-data-readme.md) | Data fundamentals — collection, labelling, versioning, splits |
+
+## Related Repo Notes
+
+| Topic | Link |
+|---|---|
+| LangChain | [!LangChain](../!LangChain/) |
+| LangGraph | [!LangGraph](../!LangGraph/) |
+| LangSmith | [!LangSmith](../!LangSmith/) |
+| HuggingFace | [!HuggingFace](../!HuggingFace/) |
+| Pinecone (Vector DB) | [!Pinecone](../!Pinecone/) |
+| Chroma (Vector DB) | [!Chroma](../!Chroma/) |
+| NannyML (Model Monitoring) | [!NannyML](../!NannyML/) |
+| MLflow (Experiment Tracking) | [✔MLflow](../✔MLflow/) |
+| Knowledge Graphs | [!Knowledge-Graphs](../!Knowledge-Graphs/) |
+| MCP | [!MCP](../!MCP/) |
+
+---
+
+## AI Taxonomy Tree
+
 ```
 Artificial Intelligence (AI)
 │
-├── Machine Learning (ML)
+├── Machine Learning (ML)                         → see ai-ml-readme.md
 │   │
 │   ├── Supervised Learning
 │   │   │
@@ -98,7 +138,7 @@ Artificial Intelligence (AI)
 │   │   └── Proximal Policy Optimization (PPO)
 │   │         Metrics: Average return, surrogate policy loss, KL divergence (old/new policy), entropy bonus, clipping ratio
 │   │
-│   └── Deep Learning
+│   └── Deep Learning                             → see ai-ml-dl-readme.md
 │       │
 │       └── Neural Networks
 │           ├── Feedforward Neural Networks (FNN)
@@ -111,7 +151,7 @@ Artificial Intelligence (AI)
 │           │     Metrics: Perplexity, BLEU/ROUGE, MAE/RMSE, Cross-Entropy Loss, gradient norm check
 │           ├── Gated Recurrent Units (GRU)
 │           │     Metrics: Perplexity, BLEU/ROUGE, MAE/RMSE, Cross-Entropy Loss (vs LSTM: speed/accuracy trade-off)
-│           ├── Transformers
+│           ├── Transformers                      → see ai-llm-readme.md, ai-ml-dl-readme.md
 │           │     Metrics: Perplexity, BLEU/ROUGE/BERTScore (NLP), Top-1/5 Accuracy (vision), attention entropy
 │           ├── Autoencoders
 │           │     Metrics: Reconstruction Loss (MSE/BCE), FID score (generative), downstream task accuracy on latent space
@@ -121,6 +161,90 @@ Artificial Intelligence (AI)
 │                 Metrics: Node classification: Accuracy, F1 | Link prediction: ROC-AUC, MRR
 │                          Graph classification: Accuracy, F1 | Regression on graphs: MAE
 ```
+
+---
+
+## Hyperparameter Tuning
+
+| Method | Description | Best For |
+|---|---|---|
+| Grid Search | Exhaustive search over a defined parameter grid | Small search spaces |
+| Random Search | Random sampling over parameter distributions | Medium search spaces |
+| Bayesian Optimisation | Probabilistic model guides search (Optuna, Hyperopt) | Expensive models |
+| Hyperband | Early stopping of poor trials (ASHA scheduler) | Neural networks |
+| Population-Based Training | Evolves hyperparameters during training | RL / large models |
+
+## Cross-Validation Strategies
+
+| Strategy | When to Use |
+|---|---|
+| K-Fold | Default for most tabular tasks |
+| Stratified K-Fold | Classification with class imbalance |
+| Leave-One-Out (LOO) | Very small datasets |
+| Group K-Fold | Grouped/subject data (prevent data leakage) |
+| Time-Series Split | Sequential data — never shuffle |
+
+## Bias–Variance Tradeoff
+
+```
+Error
+  │
+  │  Total Error = Bias² + Variance + Irreducible Noise
+  │
+  │   High Bias          Optimal          High Variance
+  │   (Underfitting)     Region           (Overfitting)
+  │       ↓                ↓                  ↓
+  │   ──────────────────────────────────────────────
+  │   Linear Reg      Random Forest      Deep NN (no reg)
+  │   Naive Bayes      XGBoost           Decision Tree (deep)
+  │   Small NN         SVMs
+```
+
+- Reduce bias: more complex model, more features, less regularisation
+- Reduce variance: regularisation, dropout, early stopping, more data, ensemble methods
+
+## Feature Engineering
+
+**Encoding**
+- One-Hot Encoding — nominal categories with no order
+- Ordinal Encoding — categories with natural order
+- Target Encoding — high-cardinality categoricals
+- Embeddings — very high-cardinality (learned representations)
+
+**Scaling**
+- StandardScaler — zero mean, unit variance (SVM, PCA, kNN)
+- MinMaxScaler — scales to [0,1] (neural networks)
+- RobustScaler — uses median/IQR, robust to outliers
+
+**Feature Selection**
+- Filter: mutual information, chi², correlation
+- Wrapper: Recursive Feature Elimination (RFE)
+- Embedded: Lasso (L1), tree feature importance, SHAP values → see [ai-ethics-and-safety.md](ai-ethics-and-safety.md)
+
+## Handling Class Imbalance
+
+| Technique | Description |
+|---|---|
+| Class Weights | Penalise misclassification of minority class more |
+| Oversampling (SMOTE) | Synthesise new minority-class samples |
+| Undersampling | Remove majority-class samples |
+| Threshold Tuning | Adjust decision threshold on predicted probabilities |
+| Use better metrics | Prefer F1, PR-AUC, MCC over accuracy |
+
+## Model Selection Quick Guide
+
+| Scenario | Start With |
+|---|---|
+| Tabular, <10k rows | Gradient Boosting (XGBoost/LightGBM), Random Forest |
+| Tabular, interpretability required | Logistic/Linear Regression, Decision Tree |
+| Text / NLP | Transformers (BERT, RoBERTa) → see [ai-nlp-readme.md](ai-nlp-readme.md) |
+| Images | CNN / Vision Transformer → see [ai-computer-vision.md](ai-computer-vision.md) |
+| Time series | LSTM / Temporal CNN / Prophet → see [ai-time-series.md](ai-time-series.md) |
+| Sequences / language generation | GPT-style Transformers → see [ai-llm-readme.md](ai-llm-readme.md) |
+| No labels available | Clustering, Autoencoders, Self-supervised learning |
+| Sequential decision-making | Reinforcement Learning |
+
+---
 
 ## Metric Legend
 
@@ -147,3 +271,13 @@ Artificial Intelligence (AI)
 | KL Divergence | Kullback-Leibler Divergence |
 
 ## References
+
+- [ai-ml-readme.md](ai-ml-readme.md) — ML algorithm cheatsheet
+- [ai-ml-dl-readme.md](ai-ml-dl-readme.md) — Deep learning architectures
+- [ai-llm-readme.md](ai-llm-readme.md) — LLM reference
+- [ai-prompt-engineering.md](ai-prompt-engineering.md) — Prompt engineering
+- [ai-rag.md](ai-rag.md) — RAG pipeline
+- [ai-agent-readme.md](ai-agent-readme.md) — AI agents
+- [ai-mlops.md](ai-mlops.md) — MLOps
+- [Scikit-learn Docs](https://scikit-learn.org/stable/)
+- [Papers With Code](https://paperswithcode.com/)
