@@ -1,39 +1,39 @@
 # Nginx
 
 > **Nginx** (pronounced "engine-x") is a high-performance, open-source web server, reverse proxy, load balancer, HTTP cache, and mail proxy server. Originally created by Igor Sysoev in 2004, it is widely used for serving static content, proxying requests, and handling large numbers of concurrent connections efficiently.
->
-> ---
->
-> ## Features
->
-> - **High Performance & Concurrency** — Uses an event-driven, asynchronous, non-blocking architecture to handle thousands of simultaneous connections with low memory usage.
-> - - **Reverse Proxy** — Forwards client requests to backend servers (Node.js, Python, PHP, etc.) and returns responses to clients.
->   - - **Load Balancing** — Distributes incoming traffic across multiple backend servers using round-robin, least connections, IP hash, or weighted strategies.
->     - - **Static File Serving** — Extremely fast at serving static files (HTML, CSS, JS, images, videos) directly from disk.
->       - - **SSL/TLS Termination** — Handles HTTPS encryption/decryption, offloading that work from backend servers.
->         - - **HTTP/2 & HTTP/3 Support** — Supports modern HTTP protocols for improved performance.
->           - - **URL Rewriting & Redirects** — Powerful `rewrite` and `return` directives for URL manipulation.
->             - - **Gzip/Brotli Compression** — Compresses responses to reduce bandwidth and improve page load times.
->               - - **Caching** — Built-in proxy caching to reduce load on upstream servers.
->                 - - **Rate Limiting** — Controls request rates to protect against abuse and DDoS.
->                   - - **Access Control** — IP allowlisting/blocklisting, HTTP Basic Auth, and JWT authentication (via OpenID Connect module).
->                     - - **WebSocket Proxying** — Supports proxying WebSocket connections.
->                       - - **Virtual Hosting** — Hosts multiple domains/sites on a single server using `server` blocks.
->                         - - **Health Checks** — Active and passive health checks for upstream servers (NGINX Plus).
->                           - - **Mail Proxy** — Supports IMAP, POP3, and SMTP proxying.
->                             - - **Modular Architecture** — Extend functionality with modules (Lua, GeoIP, ModSecurity WAF, etc.).
->                               - - **Cross-Platform** — Runs on Linux, macOS, Windows, and BSD.
->                                
->                                 - ---
->
-> ## Notes
->
-> ### Installation
->
-> <details>
-  <summary>Install on Ubuntu/Debian</summary>summary>
-  
-  ```bash
+
+---
+
+## Features
+
+- **High Performance & Concurrency** — Event-driven, asynchronous, non-blocking architecture handles thousands of simultaneous connections with low memory usage.
+- **Reverse Proxy** — Forwards client requests to backend servers (Node.js, Python, PHP, etc.) and returns responses to clients.
+- **Load Balancing** — Distributes incoming traffic across multiple backend servers using round-robin, least connections, IP hash, or weighted strategies.
+- **Static File Serving** — Extremely fast at serving static files (HTML, CSS, JS, images, videos) directly from disk.
+- **SSL/TLS Termination** — Handles HTTPS encryption/decryption, offloading that work from backend servers.
+- **HTTP/2 & HTTP/3 Support** — Supports modern HTTP protocols for improved performance.
+- **URL Rewriting & Redirects** — Powerful `rewrite` and `return` directives for URL manipulation.
+- **Gzip/Brotli Compression** — Compresses responses to reduce bandwidth and improve page load times.
+- **Caching** — Built-in proxy caching to reduce load on upstream servers.
+- **Rate Limiting** — Controls request rates to protect against abuse and DDoS.
+- **Access Control** — IP allowlisting/blocklisting, HTTP Basic Auth, and JWT authentication (via OpenID Connect module).
+- **WebSocket Proxying** — Supports proxying WebSocket connections.
+- **Virtual Hosting** — Hosts multiple domains/sites on a single server using `server` blocks.
+- **Health Checks** — Active and passive health checks for upstream servers (NGINX Plus).
+- **Mail Proxy** — Supports IMAP, POP3, and SMTP proxying.
+- **Modular Architecture** — Extend functionality with modules (Lua, GeoIP, ModSecurity WAF, etc.).
+- **Cross-Platform** — Runs on Linux, macOS, Windows, and BSD.
+
+---
+
+## Notes
+
+### Installation
+
+<details>
+<summary>Install on Ubuntu/Debian</summary>
+
+```bash
 sudo apt update
 sudo apt install nginx -y
 sudo systemctl start nginx
@@ -43,9 +43,9 @@ sudo systemctl enable nginx
 </details>
 
 <details>
-  <summary>Install on CentOS/RHEL/Amazon Linux</summary>summary>
+<summary>Install on CentOS/RHEL/Amazon Linux</summary>
 
-  ```bash
+```bash
 sudo yum install epel-release -y
 sudo yum install nginx -y
 sudo systemctl start nginx
@@ -55,9 +55,9 @@ sudo systemctl enable nginx
 </details>
 
 <details>
-  <summary>Install via Docker</summary>summary>
+<summary>Install via Docker</summary>
 
-  ```bash
+```bash
 # Run nginx container serving files from current directory
 docker run -d -p 80:80 --name mynginx nginx
 
@@ -88,18 +88,18 @@ The main config file is at `/etc/nginx/nginx.conf`. Site configs live in `/etc/n
 ```
 
 <details>
-<summary>nginx.conf skeleton / structure overview</summary>summary>
+<summary>nginx.conf skeleton / structure overview</summary>
 
-  ```nginx
-  # Global context
+```nginx
+# Global context
 user  nginx;
-worker_processes  auto;          # Usually set to number of CPU cores
+worker_processes  auto;
 error_log  /var/log/nginx/error.log warn;
 pid        /var/run/nginx.pid;
 
 events {
-    worker_connections  1024;    # Max simultaneous connections per worker
-    use epoll;                   # Efficient I/O method (Linux)
+    worker_connections  1024;
+    use epoll;
     multi_accept on;
 }
 
@@ -110,8 +110,7 @@ http {
     sendfile        on;
     keepalive_timeout  65;
 
-    # Include virtual host configs
-        include /etc/nginx/conf.d/*.conf;
+    include /etc/nginx/conf.d/*.conf;
 }
 ```
 
@@ -122,7 +121,7 @@ http {
 ### Serving Static Files
 
 <details>
-<summary>Basic static file server</summary>summary>
+<summary>Basic static file server</summary>
 
 ```nginx
 server {
@@ -136,9 +135,8 @@ server {
         try_files $uri $uri/ =404;
     }
 
-    # Cache static assets
     location ~* \.(jpg|jpeg|png|gif|ico|css|js|woff2)$ {
-            expires 30d;
+        expires 30d;
         add_header Cache-Control "public, no-transform";
     }
 }
@@ -151,22 +149,22 @@ server {
 ### Reverse Proxy
 
 <details>
-<summary>Reverse proxy to a Node.js / Python app</summary>summary>
+<summary>Reverse proxy to a Node.js / Python app</summary>
 
-  ```nginx
+```nginx
 server {
     listen 80;
     server_name api.example.com;
 
     location / {
-        proxy_pass http://127.0.0.1:3000;   # Backend app address
+        proxy_pass http://127.0.0.1:3000;
 
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
-                proxy_set_header Connection 'upgrade';
+        proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
     }
@@ -176,7 +174,7 @@ server {
 </details>
 
 <details>
-<summary>Reverse proxy with upstream block (named backend)</summary>summary>
+<summary>Reverse proxy with upstream block (named backend)</summary>
 
 ```nginx
 upstream backend {
@@ -203,10 +201,10 @@ server {
 ### Load Balancing
 
 <details>
-  <summary>Round-robin (default)</summary>summary>
+<summary>Round-robin (default)</summary>
 
-  ```nginx
-  upstream myapp {
+```nginx
+upstream myapp {
     server 10.0.0.1:8080;
     server 10.0.0.2:8080;
     server 10.0.0.3:8080;
@@ -216,23 +214,23 @@ server {
 </details>
 
 <details>
-  <summary>Least connections</summary>summary>
+<summary>Least connections</summary>
 
-  ```nginx
+```nginx
 upstream myapp {
     least_conn;
     server 10.0.0.1:8080;
     server 10.0.0.2:8080;
     server 10.0.0.3:8080;
-    }
+}
 ```
 
 </details>
 
 <details>
-  <summary>IP Hash (sticky sessions)</summary>summary>
+<summary>IP Hash (sticky sessions)</summary>
 
-  ```nginx
+```nginx
 upstream myapp {
     ip_hash;
     server 10.0.0.1:8080;
@@ -243,13 +241,13 @@ upstream myapp {
 </details>
 
 <details>
-  <summary>Weighted load balancing</summary>summary>
+<summary>Weighted load balancing</summary>
 
-  ```nginx
+```nginx
 upstream myapp {
-    server 10.0.0.1:8080 weight=3;   # Gets 3x more traffic
+    server 10.0.0.1:8080 weight=3;
     server 10.0.0.2:8080 weight=1;
-        server 10.0.0.3:8080 backup;     # Only used if others are down
+    server 10.0.0.3:8080 backup;
 }
 ```
 
@@ -260,26 +258,21 @@ upstream myapp {
 ### SSL / HTTPS
 
 <details>
-  <summary>HTTPS with Let's Encrypt (Certbot)</summary>summary>
+<summary>HTTPS with Let's Encrypt (Certbot)</summary>
 
-  ```bash
-# Install certbot
+```bash
 sudo apt install certbot python3-certbot-nginx -y
-
-# Obtain and auto-configure cert
 sudo certbot --nginx -d example.com -d www.example.com
-
-# Renew certs (add to cron or systemd timer)
 sudo certbot renew --dry-run
 ```
 
 </details>
 
 <details>
-  <summary>Manual HTTPS server block</summary>summary>
+<summary>Manual HTTPS server block</summary>
 
-  ```nginx
-  server {
+```nginx
+server {
     listen 443 ssl http2;
     server_name example.com www.example.com;
 
@@ -298,7 +291,7 @@ sudo certbot renew --dry-run
         proxy_pass http://127.0.0.1:3000;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 
@@ -317,22 +310,20 @@ server {
 ### URL Rewrites & Redirects
 
 <details>
-  <summary>301 / 302 redirects</summary>summary>
+<summary>301 / 302 redirects</summary>
 
-  ```nginx
-# Permanent redirect (301)
+```nginx
+# Permanent redirect
 server {
     listen 80;
     server_name old.example.com;
     return 301 https://new.example.com$request_uri;
 }
 
-# Redirect a specific path
 location /old-page {
     return 301 /new-page;
-    }
+}
 
-# Temporary redirect (302)
 location /sale {
     return 302 /promotions;
 }
@@ -341,16 +332,11 @@ location /sale {
 </details>
 
 <details>
-<summary>Rewrite rules</summary>summary>
+<summary>Rewrite rules</summary>
 
-  ```nginx
-# Remove trailing slash
+```nginx
 rewrite ^/(.*)/$ /$1 permanent;
-
-# Rewrite /api/v1/... to /api/...
 rewrite ^/api/v1/(.*)$ /api/$1 last;
-
-# Redirect .php extension to clean URL
 rewrite ^/(.*)\.php$ /$1 permanent;
 ```
 
@@ -377,11 +363,11 @@ http {
         text/css
         text/javascript
         application/javascript
-                application/json
+        application/json
         application/xml
         image/svg+xml
         font/woff
-                font/woff2;
+        font/woff2;
 }
 ```
 
@@ -392,15 +378,14 @@ http {
 ### Caching
 
 <details>
-  <summary>Proxy cache setup</summary>summary>
+<summary>Proxy cache setup</summary>
 
-  ```nginx
+```nginx
 http {
-    # Define a cache zone (100MB on disk, 10MB for keys)
     proxy_cache_path /var/cache/nginx levels=1:2
                      keys_zone=my_cache:10m
                      max_size=100m
-                                          inactive=60m
+                     inactive=60m
                      use_temp_path=off;
 
     server {
@@ -412,7 +397,7 @@ http {
             proxy_cache_valid 200 1d;
             proxy_cache_valid 404 1m;
             proxy_cache_use_stale error timeout updating;
-                        add_header X-Cache-Status $upstream_cache_status;
+            add_header X-Cache-Status $upstream_cache_status;
 
             proxy_pass http://backend;
         }
@@ -429,9 +414,8 @@ http {
 <details>
 <summary>Limit requests per second</summary>
 
-  ```nginx
+```nginx
 http {
-    # Define limit zone: 10MB storage, 10 req/sec per IP
     limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
 
     server {
@@ -455,9 +439,9 @@ http {
 ### WebSocket Proxying
 
 <details>
-  <summary>Proxy WebSocket connections</summary>summary>
+<summary>Proxy WebSocket connections</summary>
 
-  ```nginx
+```nginx
 map $http_upgrade $connection_upgrade {
     default upgrade;
     ''      close;
@@ -485,13 +469,10 @@ server {
 ### Basic Authentication
 
 <details>
-  <summary>Protect a location with HTTP Basic Auth</summary>summary>
+<summary>Protect a location with HTTP Basic Auth</summary>
 
-  ```bash
-# Install htpasswd utility
+```bash
 sudo apt install apache2-utils -y
-
-# Create password file
 sudo htpasswd -c /etc/nginx/.htpasswd admin
 ```
 
@@ -516,13 +497,13 @@ server {
 ### Access Control (IP Allowlist / Blocklist)
 
 <details>
-<summary>Allow/deny by IP address</summary>summary>
+<summary>Allow/deny by IP address</summary>
 
-  ```nginx
+```nginx
 location /admin {
-    allow 192.168.1.0/24;   # Allow local network
-    allow 10.0.0.5;          # Allow specific IP
-    deny all;                # Block everyone else
+    allow 192.168.1.0/24;
+    allow 10.0.0.5;
+    deny all;
 }
 ```
 
@@ -533,9 +514,9 @@ location /admin {
 ### Security Headers
 
 <details>
-  <summary>Add common security headers</summary>summary>
+<summary>Add common security headers</summary>
 
-  ```nginx
+```nginx
 server {
     listen 443 ssl http2;
     server_name example.com;
@@ -548,7 +529,6 @@ server {
     add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline';" always;
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
 
-    # Hide nginx version
     server_tokens off;
 }
 ```
@@ -560,11 +540,11 @@ server {
 ### Custom Error Pages
 
 <details>
-  <summary>Custom 404 and 50x error pages</summary>summary>
+<summary>Custom 404 and 50x error pages</summary>
 
-  ```nginx
-  server {
-      listen 80;
+```nginx
+server {
+    listen 80;
     server_name example.com;
     root /var/www/html;
 
@@ -575,8 +555,8 @@ server {
 
     error_page 500 502 503 504 /50x.html;
     location = /50x.html {
-            internal;
-                }
+        internal;
+    }
 }
 ```
 
@@ -587,12 +567,12 @@ server {
 ### Logging
 
 <details>
-  <summary>Custom log format and access logs</summary>summary>
+<summary>Custom log format and access logs</summary>
 
-  ```nginx
+```nginx
 http {
     log_format main '$remote_addr - $remote_user [$time_local] '
-                        '"$request" $status $body_bytes_sent '
+                    '"$request" $status $body_bytes_sent '
                     '"$http_referer" "$http_user_agent" '
                     'rt=$request_time uct=$upstream_connect_time '
                     'uht=$upstream_header_time urt=$upstream_response_time';
@@ -601,7 +581,6 @@ http {
     error_log  /var/log/nginx/error.log warn;
 
     server {
-        # Disable access log for static assets (performance)
         location ~* \.(css|js|jpg|png|gif|ico|woff2)$ {
             access_log off;
         }
@@ -618,36 +597,16 @@ http {
 <details>
 <summary>Nginx CLI reference</summary>
 
-  ```bash
-# Test configuration syntax
+```bash
 sudo nginx -t
-
-# Reload config without downtime
 sudo nginx -s reload
-
-# Stop nginx gracefully
 sudo nginx -s quit
-
-# Stop nginx immediately
 sudo nginx -s stop
-
-# Start nginx
 sudo systemctl start nginx
-
-# Check nginx status
 sudo systemctl status nginx
-
-# View error log live
 sudo tail -f /var/log/nginx/error.log
-
-# View access log live
 sudo tail -f /var/log/nginx/access.log
-
-# Print nginx version and compile options
 nginx -V
-
-# Show which config file is being used
-nginx -t 2>&1 | head -1
 ```
 
 </details>
@@ -656,29 +615,24 @@ nginx -t 2>&1 | head -1
 
 ### Tips & Best Practices
 
-- **Always run `sudo nginx -t`** before reloading to catch config errors.
-- - Use **`include` directives** to split configs into logical files per site or feature.
-  - - Set `worker_processes auto;` to automatically use all available CPU cores.
-    - - Use **`try_files $uri $uri/ =404;`** for single-page apps (SPA) to handle client-side routing.
-    - Set **`keepalive_timeout 65;`** and **`keepalive_requests 100;`** to reduce TCP handshake overhead.
-    - - Enable **`sendfile on;`** and **`tcp_nopush on;`** for efficient static file serving.
-      - - Use **upstream `keepalive`** connections to reuse backend connections:
-        -   ```nginx
-              upstream backend {
-                  server 127.0.0.1:3000;      keepalive 32;  }  ```
-                  - Store certs in `/etc/letsencrypt/` and automate renewal via a systemd timer or cron.
-            - Use `$binary_remote_addr` instead of `$remote_addr` in rate-limit zones to save memory.
+- Always run `sudo nginx -t` before reloading to catch config errors.
+- Use `include` directives to split configs into logical files per site or feature.
+- Set `worker_processes auto;` to automatically use all available CPU cores.
+- Use `try_files $uri $uri/ =404;` for single-page apps (SPA) to handle client-side routing.
+- Set `keepalive_timeout 65;` and `keepalive_requests 100;` to reduce TCP handshake overhead.
+- Enable `sendfile on;` and `tcp_nopush on;` for efficient static file serving.
+- Use upstream `keepalive` connections to reuse backend connections.
+- Store certs in `/etc/letsencrypt/` and automate renewal via a systemd timer or cron.
+- Use `$binary_remote_addr` instead of `$remote_addr` in rate-limit zones to save memory.
 
-            ---
+---
 
-            ## References
+## References
 
-            - [Nginx Official Documentation](https://nginx.org/en/docs/)
-            - [Nginx Beginner's Guide](https://nginx.org/en/docs/beginners_guide.html)
-            - [Nginx Admin Guide](https://docs.nginx.com/nginx/admin-guide/)
-            - [Nginx Config Generator (digitalocean)](https://www.digitalocean.com/community/tools/nginx)
-            - [Mozilla SSL Configuration Generator](https://ssl-config.mozilla.org/)
-            - [Nginx Cookbook (O'Reilly free edition)](https://www.nginx.com/resources/library/complete-nginx-cookbook/)
-            - [Awesome Nginx](https://github.com/agile6v/awesome-nginx)
-</summary>
-</details>
+- [Nginx Official Documentation](https://nginx.org/en/docs/)
+- [Nginx Beginner's Guide](https://nginx.org/en/docs/beginners_guide.html)
+- [Nginx Admin Guide](https://docs.nginx.com/nginx/admin-guide/)
+- [Nginx Config Generator (DigitalOcean)](https://www.digitalocean.com/community/tools/nginx)
+- [Mozilla SSL Configuration Generator](https://ssl-config.mozilla.org/)
+- [Nginx Cookbook (O'Reilly free edition)](https://www.nginx.com/resources/library/complete-nginx-cookbook/)
+- [Awesome Nginx](https://github.com/agile6v/awesome-nginx)
