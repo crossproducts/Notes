@@ -13,4 +13,5 @@ Hashicorp Packer (Infastructure / Orchestration)
 
 Apache Airflow (Infastructure / Orchestration)
 
+FinOps: Manage, optimize, forcast and maximize value from AWS investments
 ```
