@@ -54,12 +54,13 @@
 - **Indicator variable**: Add a binary flag indicating a value was missing.
 - **SageMaker Data Wrangler**: Can automate many imputation strategies.
 
-### Handling Imbalanced Data
+### Balanced vs. Imbalanced Datasets
 
-- **Oversampling (SMOTE)**: Synthesize minority class samples.
-- **Undersampling**: Reduce majority class.
-- **Class weights**: Penalize misclassification of minority class during training.
-- **Stratified split**: Ensure train/test/validation sets preserve class ratios.
+- **Balanced dataset**: Class distribution is roughly equal (e.g., 50% positive / 50% negative). Standard metrics like Accuracy are reliable.
+- **Imbalanced dataset**: One class (majority) significantly outnumbers another (minority). Common in fraud detection, disease diagnosis, anomaly detection. Accuracy becomes misleading — a model predicting only the majority class can score 99% accuracy while being useless.
+
+**Rule of thumb**: Consider a dataset imbalanced when the minority class is < 20% of total samples. Severely imbalanced when < 5%.
+
 
 ### Data Splitting
 
@@ -145,6 +146,28 @@ How is data arriving?
 | LDA (Latent Dirichlet Allocation) | NLP | Topic modeling |
 | Seq2Seq | NLP | Machine translation, summarization |
 | TabTransformer | Tabular | Attention-based tabular model |
+
+### Boosting Algorithms — AdaBoost vs. Gradient Boosting vs. XGBoost
+
+| Algorithm | How It Works | Strengths | Weaknesses |
+|---|---|---|---|
+| **AdaBoost** | Trains weak learners sequentially; re-weights misclassified samples so each next learner focuses on previous errors | Simple, interpretable, low variance | Sensitive to noisy data and outliers; slower on large datasets |
+| **Gradient Boosting** | Builds trees sequentially to minimize a differentiable loss function via gradient descent; each tree fits the residual errors | Flexible loss functions, high accuracy | Prone to overfitting without careful tuning; slower training |
+| **XGBoost** | Optimized Gradient Boosting with regularization (L1/L2), parallel tree construction, and built-in handling of missing values | Fastest and most regularized; handles missing data natively; dominates tabular competitions | More hyperparameters to tune; still sequential (though parallelized within each tree) |
+
+#### Decision Tree — Which Boosting Algorithm?
+
+```
+What are your priorities?
+├── Simplicity / interpretability, smaller dataset
+│   └── Relatively clean data, no heavy outliers → AdaBoost
+├── High accuracy on medium-sized tabular data, custom loss function
+│   └── Willing to tune carefully and training speed is not critical → Gradient Boosting
+└── Best performance on tabular data, large dataset, or production ML
+    ├── Need regularization to prevent overfitting → XGBoost
+    ├── Have missing values in data → XGBoost (handles natively)
+    └── Need fast, scalable training with high accuracy → XGBoost
+```
 
 ### Regularization
 
