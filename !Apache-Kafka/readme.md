@@ -6,6 +6,10 @@
 - **Partitions**:
   - 1 partition → 1 consumer max
   - 10 partitions → 10 consumers max
+- **Partition Key**: 
+  - Kafka uses the key to decide which partition to send to
+  - When a producer sends data, it may include a key
+  - If producer does not sent a key, round robin
 - **Offset**: 
   - Message position in a partition
   - Offsets are sequential numbers
@@ -13,9 +17,7 @@
   - Kafka does not reuse offsets
 - **Message Ordering**: 
   - Kafka guarantees ordering only within a partition.
-- **Partition Key**: 
-  - Kafka uses the key to decide which partition to send to
-  - When a producer sends data, it may include a key
+
 - Exactly Once Processing
   - Apache Spark
   - Apacke Flink
