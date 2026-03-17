@@ -1,3 +1,7 @@
+---
+status: In Progress
+---
+
 # Elasticsearch
 
 ## Features
