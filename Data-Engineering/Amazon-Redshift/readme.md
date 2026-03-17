@@ -1,5 +1,5 @@
 # Amazon Redshift
 
 > [!WARNING]   
-> **Status**: In Progress
+> **Status**: Pending
 ---

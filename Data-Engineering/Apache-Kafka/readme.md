@@ -1,8 +1,8 @@
----
-status: In Progress
----
-
 # Kafka
+
+> [!WARNING]   
+> **Status**: In Progress
+---
 
 ## Notes
 - **Topic**:

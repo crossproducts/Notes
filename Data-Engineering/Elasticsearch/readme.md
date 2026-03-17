@@ -1,8 +1,8 @@
----
-status: In Progress
----
-
 # Elasticsearch
+
+> [!WARNING]   
+> **Status**: Pending
+---
 
 ## Features
 Full text search   
