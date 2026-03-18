@@ -1,5 +1,9 @@
 # Nginx
 
+> [!NOTE]   
+> **Status**: Done
+---
+
 > **Nginx** (pronounced "engine-x") is a high-performance, open-source web server, reverse proxy, load balancer, HTTP cache, and mail proxy server. Originally created by Igor Sysoev in 2004, it is widely used for serving static content, proxying requests, and handling large numbers of concurrent connections efficiently.
 
 ---

@@ -1,5 +1,9 @@
 # Prometheus
 
+> [!NOTE]   
+> **Status**: Done
+---
+
 Prometheus is an open-source systems monitoring and alerting toolkit originally built at SoundCloud. It is now a standalone project maintained by the Cloud Native Computing Foundation (CNCF).
 
 ## Key Features

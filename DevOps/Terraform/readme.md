@@ -1,0 +1,5 @@
+# Terraform
+
+> [!NOTE]   
+> **Status**: Pending
+---

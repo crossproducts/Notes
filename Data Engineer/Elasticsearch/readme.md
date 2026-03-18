@@ -1,6 +1,6 @@
 # Elasticsearch
 
-> [!WARNING]   
+> [!NOTE]   
 > **Status**: Pending
 ---
 

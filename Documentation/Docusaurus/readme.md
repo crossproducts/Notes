@@ -1,5 +1,9 @@
 # Docusaurus
 
+> [!NOTE]   
+> **Status**: Done
+---
+
 Docusaurus is an open-source static site generator built by Meta, designed for building documentation websites quickly and easily.
 
 ## Key Features

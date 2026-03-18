@@ -1,5 +1,9 @@
 # SSH
 
+> [!NOTE]   
+> **Status**: Done
+---
+
 # Clone Git Project w/ SSH
 [Guide](https://docs.github.com/authentication/connecting-to-github-with-ssh/managing-deploy-keys#deploy-keys)
 

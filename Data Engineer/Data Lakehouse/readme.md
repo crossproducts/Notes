@@ -1,5 +1,9 @@
 # Lakehouse
 
+> [!NOTE]   
+> **Status**: Done
+---
+
 ## Lakehouse Architecture
 | | Query Engine |  | Data Catalog |  | Open Table Formats |  | Data Lake |
 | :--: | :--: | -- | :--: | -- | :--: | -- | :--: |
