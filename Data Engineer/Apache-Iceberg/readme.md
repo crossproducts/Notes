@@ -1,6 +1,6 @@
 # Apache Iceberg
 
-> [!WARNING]   
+> [!NOTE]   
 > **Status**: Pending
 ---
 

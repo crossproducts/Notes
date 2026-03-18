@@ -1,5 +1,5 @@
 # ClickHouse
 
-> [!WARNING]   
+> [!NOTE]   
 > **Status**: Pending
 ---

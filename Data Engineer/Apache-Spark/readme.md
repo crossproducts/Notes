@@ -1,6 +1,6 @@
 # Apache Spark
 
-> [!WARNING]   
+> [!NOTE]   
 > **Status**: Pending
 ---
 
