@@ -28,3 +28,4 @@
 
 ## References
 - [Youtube: Clickhouse - Data lakehouses (in under 3 minutes)](https://www.youtube.com/watch?v=mueG6z1mo8Y)
+- [Medium - Data Engineering System Design: Clickstream Data Into a Modern Lakehouse](https://medium.com/@s.sarathvarma/data-engineering-system-design-clickstream-pipeline-into-a-modern-lakehouse-b977696030f7)
