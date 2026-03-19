@@ -13,6 +13,12 @@ A platform to **programmatically author, schedule, and monitor** data workflows 
 
 ---
 
+## Architecture
+
+![Apache Airflow Architecture](./Apache-Airflow-Architecture.webp)
+
+---
+
 <h2>Core Concepts</h2>
 
 <table border="1" cellpadding="8" cellspacing="0">
@@ -188,24 +194,40 @@ A platform to **programmatically author, schedule, and monitor** data workflows 
 
 ---
 
-## Additional features
-- Xcom (Within Dag, tasks communicate, transfer data)
-- Branch Python Operator (which tasks to run and which to skip)
-- Connections
-- Hooks
-- Custom operators w/ Inheritance
-- Trigger Dag run Operator (Dag → Dag)
-- Error Handling
-- Failure Alerts (Email, Slack, Alertmanager? Grafana? etc.)
-- CICD Pipeline (Github / GitLab → MWAA)
-  - AWS MWAA (Managed Worflow Apache Airflow)
+<details>
+<summary><h2 style="display: inline;">Additional Features</h2></summary>
+
+**Data flow**
+- XCom — pass small data between tasks within a DAG
+- Variables — global key-value store for config values shared across DAGs
+
+**Control flow**
+- BranchPythonOperator — conditionally skip tasks based on logic
+- TriggerDagRunOperator — trigger another DAG from within a DAG
+- Sensors — wait for an external condition before proceeding (e.g. file, S3 key, time)
+- Dataset-triggered DAGs — trigger a DAG when another DAG updates a dataset
+
+**Integration**
+- Connections — store external system credentials (DB, API, cloud, etc.)
+- Hooks — reusable interfaces to external systems built on top of Connections
+- Custom operators — extend BaseOperator via inheritance for reusable logic
+
+**Monitoring & Reliability**
+- Error handling — retries, retry delay, and `on_failure_callback` per task
+- SLAs — alert when a task or DAG misses its expected completion time
+- Pools — limit concurrency for tasks that share a resource
+- Failure alerts — notify via Email, Slack, PagerDuty, etc.
+
+**Deployment**
+- CI/CD pipeline — sync DAGs from GitHub / GitLab to Airflow (e.g. MWAA, Composer)
+- AWS MWAA — Managed Workflow for Apache Airflow (fully managed AWS service)
+
+</details>
 
 ---
 
-## Local Setup (Docker Compose)
-
 <details>
-<summary>Show local setup steps</summary>
+<summary><h2 style="display: inline;">Local Setup (Docker Compose)</h2></summary>
 
 ```bash
 # 1. Fetch official docker-compose
@@ -225,32 +247,68 @@ docker compose up -d
 ```
 
 **UI:** http://localhost:8080 · Default creds: `airflow / airflow`
+
 </details>
 
 ---
 
-## DAG Anatomy
-
 <details>
-<summary>Show example DAG</summary>
+<summary><h2 style="display: inline;">DAG Examples</h2></summary>
 
+### Example 1:
 ```python
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
 from datetime import datetime
 
+def my_function():
+    print("Hello from task A")
+
 with DAG(
     dag_id="my_dag",
-        start_date=datetime(2024, 1, 1),
-            schedule="@daily",
-                catchup=False,
-                ) as dag:
+    start_date=datetime(2024, 1, 1),
+    schedule="@daily",
+    catchup=False
+) as dag:
 
-                    task_a = PythonOperator(task_id="task_a", python_callable=my_fn)
-                        task_b = BashOperator(task_id="task_b", bash_command="echo done")
+    task_a = PythonOperator(
+        task_id="task_a",
+        python_callable=my_function
+    )
 
-                            task_a >> task_b  # task_a runs first
+    task_b = BashOperator(
+        task_id="task_b",
+        bash_command="echo done"
+    )
+
+    task_a >> task_b  # dependency inside DAG
+```
+
+--- 
+
+### Example 2 (Taskflow w/ Decorators):
+```
+from airflow import DAG
+from airflow.decorators import task
+from datetime import datetime
+
+with DAG(
+    dag_id="my_dag",
+    start_date=datetime(2024, 1, 1),
+    schedule="@daily",
+    catchup=False
+) as dag:
+
+    @task
+    def task_a():
+        return "Hello"
+
+    @task
+    def task_b(msg):
+        print(f"{msg} from task B")
+
+    task_b(task_a())
 ```
 
 </details>
