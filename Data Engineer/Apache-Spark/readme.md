@@ -9,15 +9,8 @@
 
 ## Demo
 
-<iframe 
-    width="315" 
-    height="560" 
-    src="https://www.youtube.com/shorts/9TibcMalgh0" 
-    title="YouTube Short" 
-    frameborder="0" 
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-    allowfullscreen>
-</iframe>
+[![Youtube Shorts: The five levels of Apache Spark - Data Engineering](https://www.youtube.com/shorts/9TibcMalgh0/0.jpg)](https://www.youtube.com/shorts/9TibcMalgh0)
+
 
 ## References
 - [Youtube Shorts: The five levels of Apache Spark - Data Engineering](https://www.youtube.com/shorts/9TibcMalgh0)
