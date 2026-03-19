@@ -188,6 +188,12 @@ A platform to **programmatically author, schedule, and monitor** data workflows 
 
 ---
 
+## Additional features
+- xcoms
+- connections
+
+---
+
 ## Local Setup (Docker Compose)
 
 <details>
