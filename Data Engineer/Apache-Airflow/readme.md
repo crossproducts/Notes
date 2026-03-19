@@ -189,8 +189,16 @@ A platform to **programmatically author, schedule, and monitor** data workflows 
 ---
 
 ## Additional features
-- xcoms
-- connections
+- Xcom (Within Dag, tasks communicate, transfer data)
+- Branch Python Operator (which tasks to run and which to skip)
+- Connections
+- Hooks
+- Custom operators w/ Inheritance
+- Trigger Dag run Operator (Dag → Dag)
+- Error Handling
+- Failure Alerts (Email, Slack, Alertmanager? Grafana? etc.)
+- CICD Pipeline (Github / GitLab → MWAA)
+  - AWS MWAA (Managed Worflow Apache Airflow)
 
 ---
 
@@ -251,6 +259,5 @@ with DAG(
 
 ## References
 
-- [Official Docs](https://airflow.apache.org/docs/)
-- [Docker Compose Setup](https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#fetching-docker-compose-yaml)
+- [Youtube: TechTalkSourav - Apache Airflow Tutorial for Data Engineers](https://www.youtube.com/watch?v=y5rYZLBZ_Fw) 
 - [Airflow Best Practices](https://airflow.apache.org/docs/apache-airflow/stable/best-practices.html)
