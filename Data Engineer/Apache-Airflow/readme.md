@@ -198,7 +198,7 @@ A platform to **programmatically author, schedule, and monitor** data workflows 
 <summary><h2 style="display: inline;">Additional Features</h2></summary>
 
 **Data flow**
-- XCom — pass small data between tasks within a DAG ( < 48KB recommended)
+- XCom — pass small data between tasks within a DAG (< 48KB recommended)
 - Variables — global key-value store for config values shared across DAGs
 
 **Control flow**
