@@ -1,7 +1,7 @@
 # Apache Airflow
 
 > [!NOTE]   
-> **Status**: In Progress
+> **Status**: Done
 
 ---
 
