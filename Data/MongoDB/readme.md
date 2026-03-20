@@ -5,8 +5,19 @@
 ---
 
 ## Architecture
+- Database --> Collection(s) --> Document(s) --> Key:Value pairs
+- MongoDB Compass: UI
+- Mongosh: MongoDB Shell
+    - mongosh commands 
+- MongoDB for VS Code
+- $set $unset $exists $ne $lt $lte $in $nin
+- index 
+- collection
 
 ## Core Concepts
+
+## Project
+- MongoDB docker container 
 
 ## References
 - [Youtube: Fireship - MongoDB in 100 Seconds](https://www.youtube.com/watch?v=-bt_y4Loofg)
