@@ -27,56 +27,88 @@ graph LR
 
 ## Core Concepts
 
-| Concept | Description |
-|---|---|
-| Collection | Group of documents (like a table) |
-| Document | JSON-like record (BSON format) |
-| Index | Improves query performance |
+<table>
+<thead>
+<tr><th>Concept</th><th>Description</th><th>Details</th></tr>
+</thead>
+<tbody>
 
-<details>
-<summary>Commands</summary>
+<tr>
+<td><strong>Collection</strong></td>
+<td>Group of documents (like a table)</td>
+<td></td>
+</tr>
 
-**Insert**
+<tr>
+<td><strong>Document</strong></td>
+<td>JSON-like record (BSON format)</td>
+<td></td>
+</tr>
+
+<tr>
+<td><strong>Index</strong></td>
+<td>Improves query performance</td>
+<td></td>
+</tr>
+
+<tr>
+<td><strong>Commands</strong></td>
+<td>CRUD + utility operations</td>
+<td>
+<details><summary>Show</summary>
+
+<b>Insert</b>
+
 ```js
-db.collection.insertOne({ key: "value" })
-db.collection.insertMany([{ key: "value" }, { key: "value2" }])
+db.col.insertOne({ key: "value" })
+db.col.insertMany([{ key: "value" }, { key: "value2" }])
 ```
 
-**Find**
+<b>Find</b>
+
 ```js
-db.collection.find({ key: "value" })       // all matches
-db.collection.findOne({ key: "value" })    // first match
+db.col.find({ key: "value" })       // all matches
+db.col.findOne({ key: "value" })    // first match
 ```
 
-**Update**
+<b>Update</b>
+
 ```js
-db.collection.updateOne({ key: "value" }, { $set: { key: "new" } })
-db.collection.updateMany({ key: "value" }, { $set: { key: "new" } })
+db.col.updateOne({ key: "value" }, { $set: { key: "new" } })
+db.col.updateMany({ key: "value" }, { $set: { key: "new" } })
 ```
 
-**Delete**
+<b>Delete</b>
+
 ```js
-db.collection.deleteOne({ key: "value" })
-db.collection.deleteMany({ key: "value" })
+db.col.deleteOne({ key: "value" })
+db.col.deleteMany({ key: "value" })
 ```
 
-**Sort & Limit**
+<b>Sort, Limit & Skip</b>
+
 ```js
-db.collection.find().sort({ field: 1 })    // 1 = asc, -1 = desc
-db.collection.find().limit(10)
-db.collection.find().skip(5).limit(10)     // pagination
+db.col.find().sort({ field: 1 })    // 1 = asc, -1 = desc
+db.col.find().limit(10)
+db.col.find().skip(5).limit(10)     // pagination
 ```
 
-**Count & Distinct**
+<b>Count & Distinct</b>
+
 ```js
-db.collection.countDocuments({ key: "value" })
-db.collection.distinct("field")
+db.col.countDocuments({ key: "value" })
+db.col.distinct("field")
 ```
 
 </details>
+</td>
+</tr>
 
-<details>
-<summary>Query Operators</summary>
+<tr>
+<td><strong>Query Operators</strong></td>
+<td>Modify / check field values</td>
+<td>
+<details><summary>Show</summary>
 
 | Operator | Description |
 |---|---|
@@ -88,9 +120,14 @@ db.collection.distinct("field")
 | `$in` / `$nin` | Match / not match values in array |
 
 </details>
+</td>
+</tr>
 
-<details>
-<summary>Comparison Operators</summary>
+<tr>
+<td><strong>Comparison Operators</strong></td>
+<td>Compare field values</td>
+<td>
+<details><summary>Show</summary>
 
 | Operator | Description | Example |
 |---|---|---|
@@ -104,6 +141,11 @@ db.collection.distinct("field")
 | `$nin` | Matches none in array | `{ status: { $nin: ["A","B"] } }` |
 
 </details>
+</td>
+</tr>
+
+</tbody>
+</table>
 
 ---
 
@@ -135,25 +177,6 @@ graph TD
 - Use `explain("executionStats")` to verify index usage
 
 </details>
-
----
-
-## Decision Tree
-
-```mermaid
-flowchart TD
-    A[Need to store data?] --> B{Structured?}
-    B -- Yes --> C{Relationships important?}
-    B -- No --> D[Use MongoDB - flexible schema]
-    C -- Yes --> E[Consider SQL / Relational DB]
-    C -- No --> F[Use MongoDB - embed documents]
-```
-
----
-
-## Project
-
-- MongoDB running in a Docker container
 
 ---
 
