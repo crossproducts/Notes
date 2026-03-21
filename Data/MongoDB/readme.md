@@ -14,15 +14,6 @@ graph LR
     C --> D[Key:Value Pairs]
 ```
 
-<details>
-<summary>Tools & Interfaces</summary>
-
-- **MongoDB Compass** — GUI for browsing and managing data
-- **Mongosh** — MongoDB Shell (interactive CLI)
-- **MongoDB for VS Code** — Extension for querying from the editor
-
-</details>
-
 ---
 
 ## Core Concepts
@@ -147,9 +138,20 @@ db.col.distinct("field")
 </tbody>
 </table>
 
+
+<details>
+<summary>Tools & Interfaces</summary>
+
+- **MongoDB Compass** — GUI for browsing and managing data
+- **Mongosh** — MongoDB Shell (interactive CLI)
+- **MongoDB for VS Code** — Extension for querying from the editor
+
+</details>
+
 ---
 
-## Indexes
+<details>
+<summary>Indexes</summary>
 
 ```mermaid
 graph TD
@@ -159,6 +161,10 @@ graph TD
     C --> E[Return Documents]
     D --> E
 ```
+
+</details>
+
+---
 
 <details>
 <summary>Index Types & Commands</summary>
