@@ -6,7 +6,7 @@
 
 ---
 
-## Architecture
+## Hierarchical Data Model
 
 ```mermaid
 graph LR
