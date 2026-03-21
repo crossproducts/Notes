@@ -8,61 +8,77 @@
 
 ## File Structure
 
+<table>
+<tr>
+<th>Terraform (standalone)</th>
+<th>Terragrunt (multi-env)</th>
+</tr>
+<tr>
+<td>
+
 <details>
 <summary>Terraform (standalone)</summary>
 
 ```
 infra/
-├── main.tf          # Root resources
-├── variables.tf     # Input variables
-├── outputs.tf       # Output values
-├── providers.tf     # Provider config (AWS)
-├── terraform.tfvars # Variable values
+├── main.tf              # Root resources
+├── variables.tf         # Input variables
+├── outputs.tf           # Output values
+├── providers.tf         # Provider config (AWS)
+├── terraform.tfvars     # Variable values
 └── modules/
     ├── vpc/
-    │   ├── main.tf
-    │   ├── variables.tf
-    │   └── outputs.tf
-    ├── ec2/
-    │   ├── main.tf
-    │   ├── variables.tf
-    │   └── outputs.tf
-    └── rds/
-        ├── main.tf
-        ├── variables.tf
-        └── outputs.tf
-```
+        │   ├── main.tf
+            │   ├── variables.tf
+                │   └── outputs.tf
+                    ├── ec2/
+                        │   ├── main.tf
+                            │   ├── variables.tf
+                                │   └── outputs.tf
+                                    └── rds/
+                                            ├── main.tf
+                                                    ├── variables.tf
+                                                            └── outputs.tf
+                                                            ```
+                                                            
+                                                            </details>
+                                                            
+                                                            </td>
+                                                            <td>
+                                                            
+                                                            <details>
+                                                            <summary>Terragrunt (multi-env)</summary>
+                                                            
+                                                            ```
+                                                            infra/
+                                                            ├── terragrunt.hcl       # Root config (remote state, provider)
+                                                            ├── modules/             # Reusable Terraform modules
+                                                            │   ├── vpc/
+                                                            │   ├── ec2/
+                                                            │   └── rds/
+                                                            └── live/
+                                                                ├── dev/
+                                                                    │   ├── vpc/
+                                                                        │   │   └── terragrunt.hcl
+                                                                            │   ├── ec2/
+                                                                                │   │   └── terragrunt.hcl
+                                                                                    │   └── rds/
+                                                                                        │       └── terragrunt.hcl
+                                                                                            └── prod/
+                                                                                                    ├── vpc/
+                                                                                                            │   └── terragrunt.hcl
+                                                                                                                    ├── ec2/
+                                                                                                                            │   └── terragrunt.hcl
+                                                                                                                                    └── rds/
+                                                                                                                                                └── terragrunt.hcl
+                                                                                                                                                ```
+                                                                                                                                                
+                                                                                                                                                </details>
+                                                                                                                                                
+                                                                                                                                                </td>
+                                                                                                                                                </tr>
+                                                                                                                                                </table>>
 
-</details>
-
-<details>
-<summary>Terragrunt (multi-env)</summary>
-
-```
-infra/
-├── terragrunt.hcl          # Root config (remote state, provider)
-├── modules/                # Reusable Terraform modules
-│   ├── vpc/
-│   ├── ec2/
-│   └── rds/
-└── live/
-    ├── dev/
-    │   ├── vpc/
-    │   │   └── terragrunt.hcl
-    │   ├── ec2/
-    │   │   └── terragrunt.hcl
-    │   └── rds/
-    │       └── terragrunt.hcl
-    └── prod/
-        ├── vpc/
-        │   └── terragrunt.hcl
-        ├── ec2/
-        │   └── terragrunt.hcl
-        └── rds/
-            └── terragrunt.hcl
-```
-
-</details>
 
 ---
 
