@@ -1,3 +1,4 @@
+
 # MongoDB
 
 > [!NOTE]
@@ -14,6 +15,27 @@ graph LR
     C --> D[Key:Value Pairs]
 ```
 
+<details>
+<summary>Descriptions</summary>
+
+| Component | Description |
+|---|---|
+| **Database** | Top-level container; holds all collections for an application |
+| **Collection** | Group of documents, equivalent to a table in SQL |
+| **Document** | A single JSON-like record (BSON); equivalent to a row in SQL |
+| **Key:Value Pairs** | The fields within a document; schema is flexible per document |
+
+</details>
+
+<details>
+<summary>Tools & Interfaces</summary>
+
+- **MongoDB Compass** — GUI for browsing and managing data
+- **Mongosh** — MongoDB Shell (interactive CLI)
+- **MongoDB for VS Code** — Extension for querying from the editor
+
+</details>
+
 ---
 
 ## Core Concepts
@@ -23,24 +45,6 @@ graph LR
 <tr><th>Concept</th><th>Description</th><th>Details</th></tr>
 </thead>
 <tbody>
-
-<tr>
-<td><strong>Collection</strong></td>
-<td>Group of documents (like a table)</td>
-<td></td>
-</tr>
-
-<tr>
-<td><strong>Document</strong></td>
-<td>JSON-like record (BSON format)</td>
-<td></td>
-</tr>
-
-<tr>
-<td><strong>Index</strong></td>
-<td>Improves query performance</td>
-<td></td>
-</tr>
 
 <tr>
 <td><strong>Commands</strong></td>
@@ -135,23 +139,13 @@ db.col.distinct("field")
 </td>
 </tr>
 
-</tbody>
-</table>
-
-
-<details>
-<summary>Tools & Interfaces</summary>
-
-- **MongoDB Compass** — GUI for browsing and managing data
-- **Mongosh** — MongoDB Shell (interactive CLI)
-- **MongoDB for VS Code** — Extension for querying from the editor
-
-</details>
-
----
+<tr>
+<td><strong>Index</strong></td>
+<td>Improves query performance</td>
+<td>
 
 <details>
-<summary>Indexes</summary>
+<summary>Decision Tree</summary>
 
 ```mermaid
 graph TD
@@ -163,8 +157,6 @@ graph TD
 ```
 
 </details>
-
----
 
 <details>
 <summary>Index Types & Commands</summary>
@@ -184,10 +176,15 @@ graph TD
 
 </details>
 
+</td>
+</tr>
+
+</tbody>
+</table>
+
 ---
 
 ## References
 
-- [Fireship - MongoDB in 100 Seconds](https://www.youtube.com/watch?v=-bt_y4Loofg)
-- [MongoDB Explained in 10 Minutes](https://www.youtube.com/watch?v=GV9VBwH_h1U)
-- [Bro Code - Learn MongoDB in 1 hour](https://www.youtube.com/watch?v=c2M-rlkkT5o)
+- [Youtube: Fireship - MongoDB in 100 Seconds](https://www.youtube.com/watch?v=-bt_y4Loofg)
+- [Youtube: Bro Code - Learn MongoDB in 1 hour](https://www.youtube.com/watch?v=c2M-rlkkT5o)
