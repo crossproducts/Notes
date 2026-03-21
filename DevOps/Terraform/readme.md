@@ -1,5 +1,5 @@
 # Terraform
 
 > [!NOTE]   
-> **Status**: Pending
+> **Status**: In Progress
 ---
