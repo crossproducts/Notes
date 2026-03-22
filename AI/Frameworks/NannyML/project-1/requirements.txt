@@ -1,0 +1,24 @@
+# NannyML Example Notebook — Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core NannyML
+nannyml>=0.9.0
+
+# Data & ML
+numpy>=1.23.0
+pandas>=1.5.0
+scikit-learn>=1.1.0
+
+# Visualization
+matplotlib>=3.6.0
+plotly>=5.10.0
+
+# Jupyter
+notebook>=6.5.0
+jupyterlab>=3.5.0
+ipywidgets>=8.0.0
+
+# Optional: NannyML extras
+# nannyml[slack]   # Slack alerting integration
+# nannyml[gcs]     # Google Cloud Storage results store
+# nannyml[s3]      # AWS S3 results store
