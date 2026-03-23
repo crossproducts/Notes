@@ -1,0 +1,5 @@
+# Vite
+
+> [!NOTE]   
+> **Status**: Pending
+---

@@ -1,7 +1,7 @@
 # Terraform
 
 > [!NOTE]   
-> **Status**: In Progress
+> **Status**: Done
 ---
 
 > Terraform: Infrastructure as Code (IaC) tool - build, change, and manage infrastructure using code.
