@@ -5,3 +5,9 @@
 ```
 https://colab.research.google.com/github/crossproducts/notes/
 ```
+
+## Open AI
+- Billing and Credit Balance
+```
+https://platform.openai.com/settings/organization/billing/overview
+```
