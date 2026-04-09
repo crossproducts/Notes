@@ -35,6 +35,7 @@
 | MLflow (Experiment Tracking) | [✔MLflow](../✔MLflow/) |
 | Knowledge Graphs | [!Knowledge-Graphs](../!Knowledge-Graphs/) |
 | MCP | [!MCP](../!MCP/) |
+| Ollama (Local AI Models) | [!Ollama](../Infrastructure/Ollama/) |
 
 ---
 
