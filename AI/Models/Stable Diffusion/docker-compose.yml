@@ -1,0 +1,17 @@
+services:
+  sd:
+    image: ghcr.io/abdeladim-s/automatic1111:latest
+    container_name: sd-webui
+    ports:
+      - "7860:7860"
+    volumes:
+      - ./data:/data
+      - ./models:/models
+      - ./outputs:/outputs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
