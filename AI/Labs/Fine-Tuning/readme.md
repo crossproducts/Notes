@@ -1,10 +1,40 @@
 # Fine Tuning
 
 ## Fine-Tuning Tech Stack
-- **TorchTune**:    Rapid scaling and efficient experimentation for large language model fine-tuning
-- **SFTTrainer**:   Simplifies supervised fine-tuning across multiple transformer models
-- **Unsloth**:      Optimized for fine-tuning on limited hardware with reduced memory and compute requirements
-- **Axolotl**:      flexible configuration for fine-tuning workflows with minimal setup overhead
+| Tool | Specialty | 
+| -- | -- |
+| **AWS Bedrock** | AWS Managed Fine-Tuning Foundational Models |
+| **TorchTune** | Rapid scaling and efficient experimentation for large language model fine-tuning |
+| **SFTTrainer** | Simplifies supervised fine-tuning across multiple transformer models |
+| **Unsloth** | Optimized for fine-tuning on limited hardware with reduced memory and compute requirements |
+| **Axolotl** | Flexible configuration for fine-tuning workflows with minimal setup overhead |
+| **DeepSpeed + FSDP** | Distributed Training at scale |
+
+
+## Fine-Tuning Techniques
+| Technique | Type | Description |
+| -- | -- | -- |
+| **Full Fine-Tuning** | Training | Updates all model weights — highest quality, requires many GPUs |
+| **SFT** (Supervised Fine-Tuning) | Training | Train on labeled input/output pairs — most common starting point |
+| **LoRA** (Low-Rank Adaptation) | Parameter | Freezes base weights, trains small adapter matrices (~1% of params) |
+| **QLoRA** (Quantized LoRA) | Memory | Compresses base model to 4-bit, trains LoRA adapters in full precision |
+| **RLHF** (Reinforcement Learning from Human Feedback) | Alignment | Uses human preference data + reward model to align outputs |
+| **DPO** (Direct Preference Optimization) | Alignment | Simpler RLHF alternative — trains directly on preference pairs, no reward model needed |
+| **PPO** (Proximal Policy Optimization) | Alignment | Reinforcement learning optimizer used inside RLHF pipelines |
+
+
+## Tool × Technique Compatibility
+| Tool | Full FT | SFT | LoRA | QLoRA | DPO | RLHF/PPO |
+| -- | -- | -- | -- | -- | -- | -- |
+| **Unsloth** | - | yes | yes | yes | yes | - |
+| **Axolotl** | yes | yes | yes | yes | yes | limited |
+| **TRL (SFTTrainer)** | yes | yes | yes | yes | yes | yes |
+| **TorchTune** | yes | yes | yes | - | yes | - |
+| **LLaMA-Factory** | yes | yes | yes | yes | yes | yes |
+| **OpenAI API** | - | yes | - | - | - | - |
+| **Vertex AI / Bedrock** | - | yes | - | - | - | limited |
+| **DeepSpeed + FSDP** | yes | yes | yes | yes | yes | yes |
+
 
 ## Fine Tuning Guides
 - [DataCamp: Fine Tuning with llama 3](https://app.datacamp.com/learn/courses/fine-tuning-with-llama-3)
