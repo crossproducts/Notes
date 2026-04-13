@@ -5,10 +5,15 @@
 
 ---
 
+- > Orchetration Layer
+- > Control execution flow (state machine, workflows)
+
 ## Notes
-- Orchetration Layer
-- Nodes, Edges, State, Loops
-- Agents that reason
+- Nodes = steps (LLM, tool, function)
+- Edges = transitions
+- State = shared data
+- Supports loops, retries, branching
+
 
 ## References
 - [Youtube | Byte Monk: Stop Confusing LangChain, LangGraph, and LangSmith](https://www.youtube.com/watch?v=e-GR3PlEOVU)

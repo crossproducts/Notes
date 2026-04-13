@@ -5,10 +5,15 @@
 
 ---
 
+- > Foundational Layer (LLM Applicatons)
+- > Build components (tools, prompts, agents)
+
 ## Notes
-- Foundational Layer
-- Prompts, Chains, Tools, Retrievers
-- The building blocks
+- Prompt templates
+- Chains (step-by-step LLM workflows)
+- Tools (APIs, DBs, functions)
+- Memory
+- Agents (LLM decides what tool to use)
 
 ## References
 - [Youtube | Byte Monk: Stop Confusing LangChain, LangGraph, and LangSmith](https://www.youtube.com/watch?v=e-GR3PlEOVU)
