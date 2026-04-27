@@ -13,6 +13,7 @@ Vector Database (vector search)
 - **Redis**, **Kafka** or **RabbitMQ**
 - **Logstash**: Data Aggregaton & Processing
 - **Elasticsearch**: Indexing & Storage
+- **X-Pack**: Additional Features to Elasticsearch
 - **Kibana**: Analysis & Visualization
 
 ## Notes
