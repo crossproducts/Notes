@@ -14,7 +14,9 @@
 
 ## Data
 - Data Lakehouse w/ Medallion Pattern
-- Bloom Filter
+- Bloom Filter: Membership 
+- Count-Min Sketch: Frequency 
+- HyperLogLog: Cardinality
 
 ## DevOps
 - GitOps
