@@ -14,6 +14,7 @@
 
 ## Data
 - Data Lakehouse w/ Medallion Pattern
+- Bloom Filter
 
 ## DevOps
 - GitOps
