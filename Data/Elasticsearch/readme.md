@@ -67,7 +67,6 @@ Vector Database (vector search)
 |  | `/_cat/indices` | List indices (human-readable) |
 |  | `/{index}/_mapping` | Get index schema |
 |  | `/_cluster/health` | Cluster status |
-
 | POST | `/{index}/_doc` | Create document (auto ID) |
 |  | `/{index}/_search` | Execute search (with body) |
 |  | `/_bulk` | Bulk operations (index/update/delete) |
@@ -75,19 +74,15 @@ Vector Database (vector search)
 |  | `/{index}/_delete_by_query` | Delete matching docs |
 |  | `/{index}/_update_by_query` | Update via query |
 |  | `/_reindex` | Copy data between indices |
-
 | PUT | `/{index}` | Create index |
 |  | `/{index}/_doc/{id}` | Create/replace document with ID |
 |  | `/{index}/_mapping` | Update mappings |
 |  | `/_snapshot/{repo}` | Create snapshot repository |
-
 | PATCH | `(usually replaced with POST _update)` | Partial update (rare in Elasticsearch) |
-
 | DELETE | `/{index}` | Delete index |
 |  | `/{index}/_doc/{id}` | Delete document by ID |
 |  | `/{index}/_query` | Deprecated (use `_delete_by_query`) |
 |  | `/_snapshot/{repo}/{snapshot}` | Delete snapshot |
-
 
 ## Elasticsearch → Opensearch
 ### Migration Scenarios
