@@ -31,6 +31,8 @@ Vector Database (vector search)
 - Node Roles
 - Routing
 - Optimistic Concurrency 
+    - if_primary_term
+    - if_seq_no
 
 ## HTTP Verbs (methods) + Path = API Endpoint
 | Verb   | Path | Definition / Purpose |
