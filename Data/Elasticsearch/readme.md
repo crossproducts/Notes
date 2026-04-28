@@ -20,9 +20,13 @@ Vector Database (vector search)
 - Sharding: 
     - Index has 1 shard by default 
     - Shards are pieces of an index
+    - Split
+    - Shrink
+    - Cannot change shards, create new index, with new numbe of shards
 - Replication:
     - Replicate shards on different nodes 
     - Increase throughput of index
+    - Replica Group
 - Snapshots
 
 ## References
