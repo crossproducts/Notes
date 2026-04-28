@@ -30,6 +30,7 @@ Vector Database (vector search)
 - Snapshots
 - Node Roles
 - Routing
+- Optimistic Concurrency 
 
 ## HTTP Verbs (methods) + Path = API Endpoint
 | Verb   | Path | Definition / Purpose |
