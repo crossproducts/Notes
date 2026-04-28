@@ -17,6 +17,10 @@ Vector Database (vector search)
 - **Kibana**: Analysis & Visualization
 
 ## Notes
+- Sharding: 
+    - 1 shard by default 
+    - Shards are pieces of an index
+- Replication:
 
 ## References
 - [Youtube | ByteMonk: Elasticsearch in 10 minutes](https://www.youtube.com/watch?v=6k6-OeWZTYY)
