@@ -4,10 +4,6 @@
 > **Status**: Pending
 ---
 
-## Features
-Full text search   
-Vector Database (vector search)   
-
 ## Architecture
 - **Beats**: Data Collection
 - **Redis**, **Kafka** or **RabbitMQ**
@@ -15,6 +11,10 @@ Vector Database (vector search)
 - **Elasticsearch**: Indexing & Storage
 - **X-Pack**: Additional Features to Elasticsearch
 - **Kibana**: Analysis & Visualization
+
+## Features
+Full text search   
+Vector Database (vector search)   
 
 ## Notes
 - Sharding: 
@@ -28,6 +28,8 @@ Vector Database (vector search)
     - Increase throughput of index
     - Replica Group
 - Snapshots
+- Node Roles
+- Routing
 
 ## Elasticsearch → Opensearch
 ### Migration Scenarios
