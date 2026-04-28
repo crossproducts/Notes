@@ -29,6 +29,17 @@ Vector Database (vector search)
     - Replica Group
 - Snapshots
 
+## Elasticsearch → Opensearch
+### Migration Scenarios
+- If you're on Elasticsearch ≤ 7.10 → migration is easy
+- If you're on Elasticsearch ≥ 7.11 → migration is harder
+### Migration Methods
+- Snapshot & Restore (BEST option)
+- Remote Reindex (MOST flexible)
+    - OpenSearch pulls data from Elasticsearch
+- Dual Write (zero downtime)
+    - App writes to **BOTH** clusters
+
 ## References
 - [Youtube | ByteMonk: Elasticsearch in 10 minutes](https://www.youtube.com/watch?v=6k6-OeWZTYY)
 - [Youtube | freeCodeCamp.org : Elasticsearch course for Begnners](https://www.youtube.com/watch?v=a4HBKEda_F8)
