@@ -32,34 +32,6 @@ Vector Database (vector search)
 - Routing
 
 ## HTTP Verbs (methods) + Path = API Endpoint
-- GET     = read data
-    * /{index}/_doc/{id} → get document by ID
-    * /{index}/_search → search/query documents
-    * /_cat/indices → list indices (human-readable)
-    * /{index}/_mapping → get index schema
-    * /_cluster/health → cluster status
-- POST    = run action / create
-    * /{index}/_doc → create document (auto ID)
-    * /{index}/_search → execute search (with body)
-    * /_bulk → bulk operations (index/update/delete)
-    * /{index}/_update/{id} → partial update
-    * /{index}/_delete_by_query → delete matching docs
-    * /{index}/_update_by_query → update via query
-    * /_reindex → copy data between indices
-- PUT     = replace
-    * /{index} → create index
-    * /{index}/_doc/{id} → create/replace document with ID
-    * /{index}/_mapping → update mappings
-    * /_snapshot/{repo} → create snapshot repository
-- PATCH   = partial update
-    * (usually replaced with POST _update)
-- DELETE  = remove
-    * /{index} → delete index
-    * /{index}/_doc/{id} → delete document by ID
-    * /{index}/_query → (deprecated, use _delete_by_query)
-    * /_snapshot/{repo}/{snapshot} → delete snapshot
-
-## HTTP Verbs (methods) + Path = API Endpoint
 | Verb   | Path | Definition / Purpose |
 |--------|------|---------------------|
 | GET | `/{index}/_doc/{id}` | Get document by ID |
