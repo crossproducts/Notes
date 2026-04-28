@@ -18,9 +18,12 @@ Vector Database (vector search)
 
 ## Notes
 - Sharding: 
-    - 1 shard by default 
+    - Index has 1 shard by default 
     - Shards are pieces of an index
 - Replication:
+    - Replicate shards on different nodes 
+    - Increase throughput of index
+- Snapshots
 
 ## References
 - [Youtube | ByteMonk: Elasticsearch in 10 minutes](https://www.youtube.com/watch?v=6k6-OeWZTYY)
