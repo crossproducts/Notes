@@ -1,5 +1,0 @@
-# Gitea
-
-> [!NOTE]   
-> **Status**: Pending
----

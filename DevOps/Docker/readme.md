@@ -1,5 +1,0 @@
-# Docker
-
-> [!NOTE]   
-> **Status**: Pending
----
