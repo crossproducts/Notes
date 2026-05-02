@@ -4,7 +4,7 @@
 > **Status**: Pending
 ---
 
-## Architecture
+## ELK Tech Stack
 - **Beats**: Data Collection
 - **Redis**, **Kafka** or **RabbitMQ**
 - **Logstash**: Data Aggregaton & Processing
@@ -12,11 +12,20 @@
 - **X-Pack**: Additional Features to Elasticsearch
 - **Kibana**: Analysis & Visualization
 
-## Features
-Full text search   
-Vector Database (vector search)   
+## Architecture
+```
+Cluster
+  └── Nodes
+        └── Indices
+              └── Shards
+                    └── Documents
+```
 
-## Notes
+## Features
+- Full text search   
+- Vector Database (vector search)   
+
+## Managing Documents
 - Sharding: 
     - Index has 1 shard by default 
     - Shards are pieces of an index
@@ -34,7 +43,55 @@ Vector Database (vector search)
     - if_primary_term
     - if_seq_no
 
-## HTTP Verbs (methods) + Path = API Endpoint
+
+## Mapping and Analysis
+| Concept | Analogy |
+| -- | -- |
+| Mapping | Database schema (table + column types)|
+| Analysis | Full-text processing (how search actually works)|
+
+### Mappintg
+```json
+PUT /logs
+{
+  "mappings": {
+    "properties": {
+      "timestamp": { "type": "date" },
+      "status":    { "type": "keyword" },
+      "message":   { "type": "text" },
+      "service":   { "type": "keyword" }
+    }
+  }
+}
+```
+
+### Analysis
+```
+Raw Text
+   ↓
+Tokenizer
+   ↓
+Token Filters
+   ↓
+Final Tokens
+```
+- Custom filters for Analysis
+
+- Coersion
+
+## Searching for Data
+
+## Joining Queries
+
+## Controlling Query Results
+
+## Aggregatoions
+
+## Impriving Search Results
+
+## HTTP Verbs (methods) + Path + JSON Body = API Endpoint
+> Path + Verb = what operation   
+
 | Verb   | Path | Definition / Purpose |
 |--------|------|---------------------|
 | GET | `/{index}/_doc/{id}` | Get document by ID |
@@ -59,6 +116,22 @@ Vector Database (vector search)
 |  | `/{index}/_query` | Deprecated (use `_delete_by_query`) |
 |  | `/_snapshot/{repo}/{snapshot}` | Delete snapshot |
 
+---
+
+> JSON body   = how to perform it   
+```
+GET    → no body (usually)
+POST   → query or action config
+PUT    → full resource definition
+DELETE → usually no body
+```
+## Example: Elasticsearch Log
+- Cluster = Entire logging system
+- Node = Elasticsearch instance
+- Index = Group of logs (usually by time)
+- Shard = Chunk of an index
+- Document = One log line (JSON)
+
 ## Elasticsearch → Opensearch
 ### Migration Scenarios
 - If you're on Elasticsearch ≤ 7.10 → migration is easy
@@ -74,3 +147,4 @@ Vector Database (vector search)
 - [Youtube | ByteMonk: Elasticsearch in 10 minutes](https://www.youtube.com/watch?v=6k6-OeWZTYY)
 - [Youtube | freeCodeCamp.org : Elasticsearch course for Begnners](https://www.youtube.com/watch?v=a4HBKEda_F8)
     - [Github | ElasticSearch Course / notebooks](https://github.com/ImadSaddik/ElasticSearch_Python_Course/tree/main/notebooks)
+- [Udemy | Learn Elasticsearch from scratch ](https://udemy.com/course/elasticsearch-complete-guide/learn)
