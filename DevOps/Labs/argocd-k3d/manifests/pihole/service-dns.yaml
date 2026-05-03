@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-dns
+spec:
+  # LoadBalancer so `minikube tunnel` exposes it at 127.0.0.1:53 on the host.
+  # If port 53 conflicts on Windows (DNS Client / WSL / VPN), stop the conflicting
+  # service or switch this to NodePort with a non-privileged port for testing.
+  type: LoadBalancer
+  selector:
+    app: pihole
+  ports:
+    - name: dns-udp
+      port: 53
+      targetPort: 53
+      protocol: UDP
+    - name: dns-tcp
+      port: 53
+      targetPort: 53
+      protocol: TCP

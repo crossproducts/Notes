@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pihole
+  labels:
+    app: pihole
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # PVC is RWO; rolling update would deadlock on the volume
+  selector:
+    matchLabels:
+      app: pihole
+  template:
+    metadata:
+      labels:
+        app: pihole
+    spec:
+      containers:
+        - name: pihole
+          image: pihole/pihole:2024.07.0
+          ports:
+            - name: dns-udp
+              containerPort: 53
+              protocol: UDP
+            - name: dns-tcp
+              containerPort: 53
+              protocol: TCP
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            - name: TZ
+              value: "UTC"
+            # Placeholder admin password. For non-lab use, source from a Secret:
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: pihole-admin
+            #       key: password
+            - name: WEBPASSWORD
+              value: "changeme"
+            - name: DNS1
+              value: "1.1.1.1"
+            - name: DNS2
+              value: "9.9.9.9"
+            - name: VIRTUAL_HOST
+              value: "pihole.local"
+          volumeMounts:
+            - name: data
+              mountPath: /etc/pihole
+              subPath: pihole
+            - name: data
+              mountPath: /etc/dnsmasq.d
+              subPath: dnsmasq.d
+          readinessProbe:
+            httpGet:
+              path: /admin/
+              port: 80
+            initialDelaySeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /admin/
+              port: 80
+            initialDelaySeconds: 60
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: pihole-data
