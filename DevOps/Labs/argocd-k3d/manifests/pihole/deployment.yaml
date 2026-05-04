@@ -44,7 +44,7 @@ spec:
             - name: DNS2
               value: "9.9.9.9"
             - name: VIRTUAL_HOST
-              value: "pihole.local"
+              value: "pihole.nip.io"
           volumeMounts:
             - name: data
               mountPath: /etc/pihole
