@@ -139,13 +139,24 @@ Browse:
 - <http://ollama.localhost> — Ollama HTTP API (e.g. `curl http://ollama.localhost/api/tags`)
 - <http://pihole.localhost/admin/> — Pi-hole admin (password `changeme`; bare `/` 404s)
 
-After Ollama is up, pull a model before chatting in OpenWebUI:
+Models are preloaded declaratively. The Ollama Deployment has a `postStart` lifecycle hook that pulls every model listed in the `OLLAMA_PRELOAD_MODELS` env var (space-separated) after the container is ready. Defaults to `llama3.2:3b` (~2 GB, runs reasonably on CPU). To add models, edit [manifests/ollama/deployment.yaml](manifests/ollama/deployment.yaml) and commit:
 
-```powershell
-kubectl exec -n ollama deploy/ollama -- ollama pull llama3.2:3b
+```yaml
+env:
+  - name: OLLAMA_PRELOAD_MODELS
+    value: "llama3.2:3b qwen2.5:3b phi3:mini"
 ```
 
-A 3B-parameter model is ~2 GB and runs reasonably on CPU. Larger models will work but be slow without a GPU.
+ArgoCD reconciles, the Deployment rolls (Recreate strategy because the PVC is RWO), and the new pod's postStart hook pulls anything not already on the `ollama-models` PVC. `ollama pull` is idempotent, so cached models are a fast no-op.
+
+Watch progress:
+
+```powershell
+kubectl logs -n ollama deploy/ollama -f
+kubectl exec -n ollama deploy/ollama -- ollama list
+```
+
+Larger models work but will be slow without a GPU. The first pull of a 3B model takes ~1–2 minutes depending on bandwidth.
 
 ### Pi-hole
 

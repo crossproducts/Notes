@@ -22,9 +22,27 @@ spec:
           ports:
             - name: http
               containerPort: 11434
+          env:
+            # Space-separated list of models to preload via the postStart hook.
+            # Idempotent — already-cached models are a no-op against the PVC.
+            - name: OLLAMA_PRELOAD_MODELS
+              value: "llama3.2:3b"
+            - name: OLLAMA_PRELOAD_MODELS
+              value: "llama3.2:3b qwen2.5:3b"
           volumeMounts:
             - name: models
               mountPath: /root/.ollama
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    until ollama list >/dev/null 2>&1; do sleep 2; done
+                    for m in $OLLAMA_PRELOAD_MODELS; do
+                      ollama pull "$m" || true
+                    done
           readinessProbe:
             httpGet:
               path: /
