@@ -9,7 +9,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: openwebui.local
+    - host: openwebui.localtest.me
       http:
         paths:
           - path: /

@@ -7,7 +7,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`argocd.local`) || Host(`127.0.0.1`) || Host(`localhost`)
+    - match: Host(`argocd.localtest.me`) || Host(`127.0.0.1`) || Host(`localhost`)
       kind: Rule
       services:
         - name: argocd-server

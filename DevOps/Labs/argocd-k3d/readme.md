@@ -7,7 +7,7 @@ argocd/
   bootstrap/
     kustomization.yaml   # references upstream install.yaml + namespace + ingress + root-app
     namespace.yaml       # creates the argocd namespace
-    argocd-ingress.yaml  # Ingress for the ArgoCD UI (argocd.local)
+    argocd-ingress.yaml  # Ingress for the ArgoCD UI (argocd.localtest.me)
     root-app.yaml        # root Application -> apps/
   apps/
     nginx.yaml           # child Application -> manifests/nginx
@@ -16,11 +16,11 @@ argocd/
     openwebui.yaml       # child Application -> manifests/openwebui (sync-wave 1)
     pihole.yaml          # child Application -> manifests/pihole
   manifests/
-    nginx/               # Deployment + Service + Ingress (nginx.local)
-    podinfo/             # Deployment + Service + Ingress (podinfo.local)
-    ollama/              # Deployment + Service + PVC + Ingress (ollama.local)
-    openwebui/           # Deployment + Service + PVC + Ingress (openwebui.local)
-    pihole/              # Deployment + Service (web) + Service (DNS LB) + PVC + Ingress (pihole.local)
+    nginx/               # Deployment + Service + Ingress (nginx.localtest.me)
+    podinfo/             # Deployment + Service + Ingress (podinfo.localtest.me)
+    ollama/              # Deployment + Service + PVC + Ingress (ollama.localtest.me)
+    openwebui/           # Deployment + Service + PVC + Ingress (openwebui.localtest.me)
+    pihole/              # Deployment + Service (web) + Service (DNS LB) + PVC + Ingress (pihole.localtest.me)
 ```
 
 Source repo: <https://github.com/crossproducts/Notes>, branch `main`.
@@ -40,7 +40,7 @@ kubectl wait -n ingress-nginx --for=condition=ready pod -l app.kubernetes.io/com
 
 # Patch ingress-nginx-controller to LoadBalancer so `minikube tunnel` exposes it
 # at 127.0.0.1. The minikube ingress addon ships it as NodePort, which the
-# tunnel does NOT bind — without this patch, https://argocd.local won't resolve.
+# tunnel does NOT bind — without this patch, https://argocd.localtest.me won't resolve.
 kubectl patch svc -n ingress-nginx ingress-nginx-controller --type=merge -p '{\"spec\":{\"type\":\"LoadBalancer\"}}'
 ```
 
@@ -76,9 +76,7 @@ podinfo        Synced        Healthy
 
 ## 2. Wire up host-based access
 
-Minikube on the docker driver runs the cluster inside a container, so the ingress LB IP isn't directly routable from Windows. Two pieces fix that:
-
-**a)** Run `minikube tunnel` in a separate terminal **as Administrator** and leave it running:
+Minikube on the docker driver runs the cluster inside a container, so the ingress LB IP isn't directly routable from Windows. Run `minikube tunnel` in a separate terminal **as Administrator** and leave it running:
 
 ```powershell
 minikube tunnel
@@ -86,25 +84,21 @@ minikube tunnel
 
 This binds the cluster's LoadBalancer / ingress IPs to `127.0.0.1` on the host.
 
-**b)** Add hostnames to `C:\Windows\System32\drivers\etc\hosts` (also requires Administrator):
-
-```
-127.0.0.1  argocd.local nginx.local podinfo.local ollama.local openwebui.local pihole.local
-```
+Hostnames need no host-side config. The ingresses use `*.localtest.me`, a public wildcard DNS that always resolves to `127.0.0.1` — no hosts file edits, no local DNS server. (k3d users skip `minikube tunnel` entirely; the `-p "80:80@loadbalancer" -p "443:443@loadbalancer"` flags on `k3d cluster create` map ports directly.)
 
 Verify:
 
 ```powershell
 kubectl get ingress -A
-curl http://nginx.local
-curl http://podinfo.local
+curl http://nginx.localtest.me
+curl http://podinfo.localtest.me
 ```
 
 ---
 
 ## 3. Access the ArgoCD UI
 
-Browse to <https://argocd.local> (accept the self-signed cert). Username `admin`. Initial password:
+Browse to <https://argocd.localtest.me> (accept the self-signed cert). Username `admin`. Initial password:
 
 ```powershell
 $initialPw = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(
@@ -122,7 +116,7 @@ After bootstrap, change the admin password to `admin` so you don't have to look 
 $initialPw = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(
   (kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}')))
 
-argocd login argocd.local --username admin --password $initialPw --insecure
+argocd login argocd.localtest.me --username admin --password $initialPw --insecure
 argocd account update-password --current-password $initialPw --new-password admin
 ```
 
