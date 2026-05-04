@@ -158,23 +158,6 @@ kubectl exec -n ollama deploy/ollama -- ollama list
 
 Larger models work but will be slow without a GPU. The first pull of a 3B model takes ~1–2 minutes depending on bandwidth.
 
-### LM Studio (host) as an extra backend
-
-OpenWebUI is wired to a second backend at `http://host.k3d.internal:1234/v1` via the `OPENAI_API_BASE_URLS` env in [manifests/openwebui/deployment.yaml](manifests/openwebui/deployment.yaml). LM Studio is a desktop app, not a container, so it stays on the host — `host.k3d.internal` is a DNS alias k3d adds via CoreDNS that points pods at the host gateway, which is what makes this work without exposing anything externally.
-
-To enable:
-
-1. Install LM Studio from <https://lmstudio.ai>, download a model from the **Discover** tab.
-2. Open the **Local Server** tab → load a model → start the server (default port `1234`).
-3. Toggle **Serve on Local Network** on. Without this LM Studio binds to `127.0.0.1` and Docker can't reach it.
-4. Verify from inside the cluster:
-
-   ```powershell
-   kubectl exec -n openwebui deploy/openwebui -- curl -s http://host.k3d.internal:1234/v1/models
-   ```
-
-LM Studio's models then appear in OpenWebUI's model picker alongside the Ollama ones. If you don't run LM Studio, OpenWebUI logs a connection error on startup but the Ollama backend keeps working — no need to remove the env var.
-
 ### Pi-hole
 
 - Web UI: <http://pihole.localhost/admin/> — placeholder password is `changeme` (set via `WEBPASSWORD` env in [manifests/pihole/deployment.yaml](manifests/pihole/deployment.yaml); for non-lab use, source from a Secret). Note the trailing `/admin/` — Pi-hole returns 404 on bare `/`.
