@@ -7,7 +7,7 @@ argocd/
   bootstrap/
     kustomization.yaml   # references upstream install.yaml + namespace + ingress + root-app
     namespace.yaml       # creates the argocd namespace
-    argocd-ingress.yaml  # Ingress for the ArgoCD UI (argocd.localtest.me)
+    argocd-ingress.yaml  # Ingress for the ArgoCD UI (argocd.local)
     root-app.yaml        # root Application -> apps/
   apps/
     nginx.yaml           # child Application -> manifests/nginx
@@ -16,11 +16,11 @@ argocd/
     openwebui.yaml       # child Application -> manifests/openwebui (sync-wave 1)
     pihole.yaml          # child Application -> manifests/pihole
   manifests/
-    nginx/               # Deployment + Service + Ingress (nginx.localtest.me)
-    podinfo/             # Deployment + Service + Ingress (podinfo.localtest.me)
-    ollama/              # Deployment + Service + PVC + Ingress (ollama.localtest.me)
-    openwebui/           # Deployment + Service + PVC + Ingress (openwebui.localtest.me)
-    pihole/              # Deployment + Service (web) + Service (DNS LB) + PVC + Ingress (pihole.localtest.me)
+    nginx/               # Deployment + Service + Ingress (nginx.local)
+    podinfo/             # Deployment + Service + Ingress (podinfo.local)
+    ollama/              # Deployment + Service + PVC + Ingress (ollama.local)
+    openwebui/           # Deployment + Service + PVC + Ingress (openwebui.local)
+    pihole/              # Deployment + Service (web) + Service (DNS LB) + PVC + Ingress (pihole.local) — also serves as the local DNS resolver for *.local
 ```
 
 Source repo: <https://github.com/crossproducts/Notes>, branch `main`.
@@ -40,7 +40,7 @@ kubectl wait -n ingress-nginx --for=condition=ready pod -l app.kubernetes.io/com
 
 # Patch ingress-nginx-controller to LoadBalancer so `minikube tunnel` exposes it
 # at 127.0.0.1. The minikube ingress addon ships it as NodePort, which the
-# tunnel does NOT bind — without this patch, https://argocd.localtest.me won't resolve.
+# tunnel does NOT bind — without this patch, https://argocd.local won't resolve.
 kubectl patch svc -n ingress-nginx ingress-nginx-controller --type=merge -p '{\"spec\":{\"type\":\"LoadBalancer\"}}'
 ```
 
@@ -82,23 +82,38 @@ Minikube on the docker driver runs the cluster inside a container, so the ingres
 minikube tunnel
 ```
 
-This binds the cluster's LoadBalancer / ingress IPs to `127.0.0.1` on the host.
+This binds the cluster's LoadBalancer / ingress IPs (including Pi-hole's DNS LB) to `127.0.0.1` on the host. (k3d users skip this — `-p "80:80@loadbalancer" -p "443:443@loadbalancer" -p "53:53@loadbalancer/udp"` on `k3d cluster create` maps ports directly.)
 
-Hostnames need no host-side config. The ingresses use `*.localtest.me`, a public wildcard DNS that always resolves to `127.0.0.1` — no hosts file edits, no local DNS server. (k3d users skip `minikube tunnel` entirely; the `-p "80:80@loadbalancer" -p "443:443@loadbalancer"` flags on `k3d cluster create` map ports directly.)
+Then point Windows DNS at Pi-hole, which resolves `*.local → 127.0.0.1` via [manifests/pihole/dnsmasq-custom.yaml](manifests/pihole/dnsmasq-custom.yaml). One-time, persistent across reboots:
+
+```powershell
+# Pick the active adapter — list with: Get-NetAdapter
+Set-DnsClientServerAddress -InterfaceAlias 'Wi-Fi'    -ServerAddresses 127.0.0.1
+Set-DnsClientServerAddress -InterfaceAlias 'Ethernet' -ServerAddresses 127.0.0.1
+ipconfig /flushdns
+```
+
+To revert: `Set-DnsClientServerAddress -InterfaceAlias 'Wi-Fi' -ResetServerAddresses`.
+
+> Why this and not a public wildcard like `*.localtest.me`? Many home routers (and corporate DNS) enable **DNS rebind protection**, which strips external DNS answers that resolve to private/loopback IPs. Pi-hole answering locally bypasses that filter entirely.
 
 Verify:
 
 ```powershell
+kubectl get svc -n pihole pihole-dns           # EXTERNAL-IP should be 127.0.0.1
 kubectl get ingress -A
-curl http://nginx.localtest.me
-curl http://podinfo.localtest.me
+Resolve-DnsName podinfo.local                  # should return 127.0.0.1
+curl http://nginx.local
+curl http://podinfo.local
 ```
+
+If `pihole-dns` stays `<pending>`, `minikube tunnel` isn't running. If port 53 fails to bind, something on Windows owns it (DNS Client service, WSL, VPN client) — stop the conflicting service.
 
 ---
 
 ## 3. Access the ArgoCD UI
 
-Browse to <https://argocd.localtest.me> (accept the self-signed cert). Username `admin`. Initial password:
+Browse to <https://argocd.local> (accept the self-signed cert). Username `admin`. Initial password:
 
 ```powershell
 $initialPw = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(
@@ -116,7 +131,7 @@ After bootstrap, change the admin password to `admin` so you don't have to look 
 $initialPw = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(
   (kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}')))
 
-argocd login argocd.localtest.me --username admin --password $initialPw --insecure
+argocd login argocd.local --username admin --password $initialPw --insecure
 argocd account update-password --current-password $initialPw --new-password admin
 ```
 
@@ -163,16 +178,15 @@ A 3B-parameter model is ~2 GB and runs reasonably on CPU. Larger models will wor
 ### Pi-hole
 
 - Web UI: <http://pihole.local/admin> — placeholder password is `changeme` (set via `WEBPASSWORD` env in [manifests/pihole/deployment.yaml](manifests/pihole/deployment.yaml); for non-lab use, source from a Secret).
-- DNS: exposed as a `LoadBalancer` Service so `minikube tunnel` binds it to `127.0.0.1:53` on the host. Verify:
+- DNS: exposed as a `LoadBalancer` Service on `127.0.0.1:53`. Section 2 already pointed Windows DNS at it; that's what makes `*.local` resolve. The wildcard rule lives in [manifests/pihole/dnsmasq-custom.yaml](manifests/pihole/dnsmasq-custom.yaml) (`address=/local/127.0.0.1`) — any new `*.local` ingress works automatically with no extra config.
+- Pi-hole also blocks ad/tracking domains as a side effect. Verify both jobs:
 
   ```powershell
-  kubectl get svc -n pihole pihole-dns      # should show EXTERNAL-IP 127.0.0.1
-  Resolve-DnsName -Server 127.0.0.1 doubleclick.net   # should return 0.0.0.0 (blocked)
+  Resolve-DnsName -Server 127.0.0.1 podinfo.local       # 127.0.0.1 (lab routing)
+  Resolve-DnsName -Server 127.0.0.1 doubleclick.net     # 0.0.0.0   (blocked)
   ```
 
-  If `EXTERNAL-IP` stays `<pending>`, `minikube tunnel` isn't running. If port 53 fails to bind, something else on Windows owns it (DNS Client service, WSL, VPN client) — stop the conflicting service or skip DNS exposure (the web UI works either way).
-
-  To use Pi-hole as your actual DNS: set `127.0.0.1` as the DNS server on a network adapter or in your VPN config. Don't do this if you depend on a corporate VPN's DNS.
+  Don't point a corporate / VPN-managed adapter at Pi-hole — it'll break split-DNS for work resources.
 
 ---
 

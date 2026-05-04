@@ -44,7 +44,7 @@ spec:
             - name: DNS2
               value: "9.9.9.9"
             - name: VIRTUAL_HOST
-              value: "pihole.localtest.me"
+              value: "pihole.local"
           volumeMounts:
             - name: data
               mountPath: /etc/pihole
@@ -52,6 +52,9 @@ spec:
             - name: data
               mountPath: /etc/dnsmasq.d
               subPath: dnsmasq.d
+            - name: dnsmasq-custom
+              mountPath: /etc/dnsmasq.d/02-custom.conf
+              subPath: 02-custom.conf
           readinessProbe:
             httpGet:
               path: /admin/
@@ -73,3 +76,6 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: pihole-data
+        - name: dnsmasq-custom
+          configMap:
+            name: pihole-dnsmasq-custom

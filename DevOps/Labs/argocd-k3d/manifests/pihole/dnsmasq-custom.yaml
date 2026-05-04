@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pihole-dnsmasq-custom
+data:
+  # Wildcard: any *.local hostname resolves to 127.0.0.1, where the ingress
+  # controller listens. New apps work automatically — no per-host wiring.
+  02-custom.conf: |
+    address=/local/127.0.0.1

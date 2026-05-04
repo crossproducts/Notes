@@ -10,7 +10,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: ollama.localtest.me
+    - host: ollama.local
       http:
         paths:
           - path: /
