@@ -9,7 +9,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: openwebui.nip.io
+    - host: openwebui.localhost
       http:
         paths:
           - path: /
