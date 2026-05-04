@@ -27,6 +27,17 @@ spec:
               value: http://ollama.ollama.svc.cluster.local:11434
             - name: WEBUI_AUTH
               value: "true"   # first signup becomes admin; set "false" to disable auth entirely
+            # LM Studio runs on the host (desktop app), not in the cluster.
+            # `host.k3d.internal` is a DNS alias k3d injects via CoreDNS that
+            # points at the host gateway, so pods can reach host services.
+            # Requires: LM Studio's "Local Server" tab is running on :1234 with
+            # "Serve on Local Network" enabled, otherwise it binds to 127.0.0.1
+            # only and Docker can't reach it. The key is unused but the variable
+            # must be set or open-webui drops the backend at startup.
+            - name: OPENAI_API_BASE_URLS
+              value: "http://host.k3d.internal:1234/v1"
+            - name: OPENAI_API_KEYS
+              value: "lm-studio"
           volumeMounts:
             - name: data
               mountPath: /app/backend/data
