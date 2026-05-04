@@ -93,7 +93,7 @@ $initialPw = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(
 $initialPw
 ```
 
-argocd-server serves its own self-signed cert. To make traefik speak HTTPS to it (instead of trying HTTP and failing), [bootstrap/argocd-ingress.yaml](bootstrap/argocd-ingress.yaml) sets `traefik.ingress.kubernetes.io/service.serversscheme: https` and references a `ServersTransport` in [bootstrap/serverstransport.yaml](bootstrap/serverstransport.yaml) that disables cert verification. The browser sees the same self-signed cert end-to-end. For real deployments, terminate TLS at the ingress with a real cert and run argocd-server in `--insecure` mode.
+[bootstrap/kustomization.yaml](bootstrap/kustomization.yaml) patches `argocd-cmd-params-cm` to set `server.insecure: "true"`, so argocd-server serves plain HTTP on :8080 and traefik terminates TLS at the edge with its built-in self-signed cert. Without this, the browser gets `ERR_TOO_MANY_REDIRECTS`: traefik forwards HTTP, argocd 308-redirects to HTTPS, traefik terminates TLS and forwards HTTP again, loop. The alternative — keep argocd in secure mode and have traefik speak HTTPS upstream — works too, but requires a Traefik `ServersTransport` with `insecureSkipVerify` to accept argocd's self-signed cert and two annotations on the Ingress (`service.serversscheme` + `service.serverstransport`). The patch is simpler. The cert warning you see in the browser is traefik's, not argocd's.
 
 ### Set password to `admin` (lab convenience)
 

@@ -15,7 +15,5 @@ kubectl apply -k bootstrap/ --server-side --force-conflicts
 kubectl -n argocd get secret argocd-initial-admin-secret `
   -o jsonpath="{.data.password}" | % { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
 
-https://127.0.0.1
-    or
-https://localhost
+http://argocd.localhost
 ```
