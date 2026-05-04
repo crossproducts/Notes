@@ -2,12 +2,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: openwebui
-  annotations:
-    # Streamed chat responses; bump timeouts so long replies don't get cut.
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
   rules:
     - host: openwebui.localhost
       http:

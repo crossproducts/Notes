@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: pihole
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
   rules:
     - host: pihole.localhost
       http:
