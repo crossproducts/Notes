@@ -3,9 +3,10 @@ kind: Service
 metadata:
   name: pihole-dns
 spec:
-  # LoadBalancer so `minikube tunnel` exposes it at 127.0.0.1:53 on the host.
-  # If port 53 conflicts on Windows (DNS Client / WSL / VPN), stop the conflicting
-  # service or switch this to NodePort with a non-privileged port for testing.
+  # LoadBalancer so k3d's serverlb exposes port 53 to the host (requires
+  # `-p "53:53@loadbalancer/udp"` on `k3d cluster create`). If port 53 conflicts
+  # on Windows (DNS Client / WSL / VPN), stop the conflicting service or switch
+  # this to NodePort with a non-privileged port for testing.
   type: LoadBalancer
   selector:
     app: pihole

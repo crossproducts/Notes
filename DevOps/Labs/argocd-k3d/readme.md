@@ -1,6 +1,6 @@
 # ArgoCD App-of-Apps
 
-GitOps lab on top of minikube. A single `kubectl apply -k bootstrap/` installs ArgoCD, applies the root `Application`, and applies an Ingress for the ArgoCD UI; from that point on, ArgoCD owns everything — root reconciles `apps/`, each child reconciles its folder under `manifests/` (Deployment + Service + Ingress per app).
+GitOps lab on top of [k3d](../k3d/readme-setup.md). A single `kubectl apply -k bootstrap/` installs ArgoCD, applies the root `Application`, and applies an Ingress for the ArgoCD UI; from that point on, ArgoCD owns everything — root reconciles `apps/`, each child reconciles its folder under `manifests/` (Deployment + Service + Ingress per app). Ingress is handled by **traefik**, which k3s/k3d ships by default.
 
 ```
 argocd/
@@ -29,20 +29,14 @@ Source repo: <https://github.com/crossproducts/Notes>, branch `main`.
 
 ## Prerequisites
 
-A running cluster — see [minikube setup](../minikube/readme-setup.md).
+A running k3d cluster with ports 80/443 mapped from the host into the loadbalancer. Full setup at [../k3d/readme-setup.md](../k3d/readme-setup.md); minimal version:
 
 ```powershell
+k3d cluster create dev --api-port 6550 -p "80:80@loadbalancer" -p "443:443@loadbalancer"
 kubectl config current-context
-
-# Enable the nginx ingress addon (one-time per cluster)
-minikube addons enable ingress
-kubectl wait -n ingress-nginx --for=condition=ready pod -l app.kubernetes.io/component=controller --timeout=180s
-
-# Patch ingress-nginx-controller to LoadBalancer so `minikube tunnel` exposes it
-# at 127.0.0.1. The minikube ingress addon ships it as NodePort, which the
-# tunnel does NOT bind — without this patch, https://argocd.localhost won't resolve.
-kubectl patch svc -n ingress-nginx ingress-nginx-controller --type=merge -p '{\"spec\":{\"type\":\"LoadBalancer\"}}'
 ```
+
+The `-p "80:80@loadbalancer"` and `-p "443:443@loadbalancer"` flags tell Docker to forward those ports from `127.0.0.1` on Windows into k3d's built-in `serverlb`, which fronts traefik. That's what makes `http://*.localhost` reach the cluster — no `minikube tunnel`, no controller patching, no extra services.
 
 ---
 
@@ -74,25 +68,9 @@ podinfo        Synced        Healthy
 
 ---
 
-## 2. Wire up host-based access
+## 2. Host-based access
 
-Minikube on the docker driver runs the cluster inside a container, so the ingress LB IP isn't directly routable from Windows. Run `minikube tunnel` in a separate terminal **as Administrator** and leave it running:
-
-```powershell
-minikube tunnel
-```
-
-This binds the cluster's LoadBalancer / ingress IPs to `127.0.0.1` on the host. (k3d users skip this — `-p "80:80@loadbalancer" -p "443:443@loadbalancer"` on `k3d cluster create` maps ports directly.)
-
-No DNS configuration is needed. Hostnames use `*.localhost`, which RFC 6761 reserves as loopback — Windows, Chrome, Firefox, curl, and `kubectl` all resolve `podinfo.localhost → 127.0.0.1` natively without consulting a DNS server. New apps work the moment their Ingress exists.
-
-If you previously pointed Windows DNS at Pi-hole for an earlier iteration of this lab, reset it:
-
-```powershell
-Set-DnsClientServerAddress -InterfaceAlias 'Wi-Fi'    -ResetServerAddresses
-Set-DnsClientServerAddress -InterfaceAlias 'Ethernet' -ResetServerAddresses
-ipconfig /flushdns
-```
+No DNS configuration needed. Hostnames use `*.localhost`, which RFC 6761 reserves as loopback — Windows, Chrome, Firefox, curl, and `kubectl` all resolve `podinfo.localhost → 127.0.0.1` natively without consulting any DNS server. Combined with k3d's `-p "80:80@loadbalancer"` mapping, traefik picks up the request and routes by `Host` header to the right Service. New apps work the moment their Ingress exists.
 
 Verify:
 
@@ -115,7 +93,7 @@ $initialPw = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(
 $initialPw
 ```
 
-The Ingress is annotated `nginx.ingress.kubernetes.io/backend-protocol: HTTPS`, so ingress-nginx speaks HTTPS to argocd-server (which serves a self-signed cert) and the browser sees the same self-signed cert end-to-end. For real deployments, terminate TLS at ingress with a real cert and run argocd-server in `--insecure` mode.
+argocd-server serves its own self-signed cert. To make traefik speak HTTPS to it (instead of trying HTTP and failing), [bootstrap/argocd-ingress.yaml](bootstrap/argocd-ingress.yaml) sets `traefik.ingress.kubernetes.io/service.serversscheme: https` and references a `ServersTransport` in [bootstrap/serverstransport.yaml](bootstrap/serverstransport.yaml) that disables cert verification. The browser sees the same self-signed cert end-to-end. For real deployments, terminate TLS at the ingress with a real cert and run argocd-server in `--insecure` mode.
 
 ### Set password to `admin` (lab convenience)
 
@@ -159,7 +137,7 @@ Browse:
 - <http://podinfo.localhost>
 - <http://openwebui.localhost> — chat UI; first signup becomes admin
 - <http://ollama.localhost> — Ollama HTTP API (e.g. `curl http://ollama.localhost/api/tags`)
-- <http://pihole.localhost/admin> — Pi-hole admin (password `changeme`)
+- <http://pihole.localhost/admin/> — Pi-hole admin (password `changeme`; bare `/` 404s)
 
 After Ollama is up, pull a model before chatting in OpenWebUI:
 
@@ -171,8 +149,8 @@ A 3B-parameter model is ~2 GB and runs reasonably on CPU. Larger models will wor
 
 ### Pi-hole
 
-- Web UI: <http://pihole.localhost/admin> — placeholder password is `changeme` (set via `WEBPASSWORD` env in [manifests/pihole/deployment.yaml](manifests/pihole/deployment.yaml); for non-lab use, source from a Secret).
-- DNS: exposed as a `LoadBalancer` Service on `127.0.0.1:53`. Pi-hole is **not** load-bearing for ingress routing in this lab (`*.localhost` resolves natively), so this is optional. To use Pi-hole as your machine's actual DNS for ad-blocking:
+- Web UI: <http://pihole.localhost/admin/> — placeholder password is `changeme` (set via `WEBPASSWORD` env in [manifests/pihole/deployment.yaml](manifests/pihole/deployment.yaml); for non-lab use, source from a Secret). Note the trailing `/admin/` — Pi-hole returns 404 on bare `/`.
+- DNS: exposed as a `LoadBalancer` Service on `127.0.0.1:53`. Pi-hole is **not** load-bearing for ingress routing in this lab (`*.localhost` resolves natively), so this is optional. To use Pi-hole as your machine's actual DNS for ad-blocking, expose port 53 in your k3d cluster (`-p "53:53@loadbalancer/udp"` on `k3d cluster create`) and then:
 
   ```powershell
   Set-DnsClientServerAddress -InterfaceAlias 'Wi-Fi' -ServerAddresses 127.0.0.1
@@ -180,7 +158,7 @@ A 3B-parameter model is ~2 GB and runs reasonably on CPU. Larger models will wor
   Resolve-DnsName -Server 127.0.0.1 doubleclick.net   # should return 0.0.0.0 (blocked)
   ```
 
-  If `kubectl get svc -n pihole pihole-dns` stays `<pending>`, `minikube tunnel` isn't running. If port 53 fails to bind, something on Windows owns it (DNS Client service, WSL, VPN client). Don't point a corporate / VPN-managed adapter at Pi-hole — it'll break split-DNS for work resources.
+  If port 53 fails to bind on Windows, something else owns it (DNS Client service, WSL, VPN client). Don't point a corporate / VPN-managed adapter at Pi-hole — it'll break split-DNS for work resources.
 
 ---
 
@@ -212,7 +190,7 @@ Bump the tag in [bootstrap/kustomization.yaml](bootstrap/kustomization.yaml) (th
 ```powershell
 kubectl delete -f bootstrap/root-app.yaml   # cascades via finalizer to children + workloads
 kubectl delete -k bootstrap/                # tears down ArgoCD itself + namespace + UI ingress
-minikube addons disable ingress             # optional — keeps the addon for future labs otherwise
+k3d cluster delete dev                      # nuke the whole cluster if you want a clean slate
 ```
 
 Delete the root-app first so its finalizer can clean up child apps and workloads while ArgoCD is still running. Tearing down ArgoCD before the root-app deletes can leave orphaned resources.

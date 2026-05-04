@@ -8,4 +8,4 @@ spec:
   resources:
     requests:
       storage: 20Gi
-  # storageClassName omitted -> uses cluster default (minikube ships `standard`)
+  # storageClassName omitted -> uses cluster default (k3d ships `local-path`)
