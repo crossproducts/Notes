@@ -2,7 +2,7 @@
 
 # Steps
 ```
-k3d cluster create dev --api-port 6550 -p "8080:80@loadbalancer" -p "443:443@loadbalancer"
+k3d cluster create dev --api-port 6550 -p "80:80@loadbalancer" -p "443:443@loadbalancer"
 
 kubectl config get-clusters                 # List Context
 kubectl config get-contexts                 # Current Context
@@ -12,9 +12,10 @@ kubectl apply -k bootstrap/ --server-side
     or
 kubectl apply -k bootstrap/ --server-side --force-conflicts
 
-https://argocd.local                        # admin / admin
-    or
-kubectl port-forward svc/argocd-server -n argocd 8080:443
-https://localhost:8080/
+kubectl -n argocd get secret argocd-initial-admin-secret `
+  -o jsonpath="{.data.password}" | % { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
 
+https://127.0.0.1
+    or
+https://localhost
 ```

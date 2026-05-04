@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/crossproducts/Notes
     targetRevision: main
-    path: DevOps/Labs/argocd/manifests/podinfo
+    path: DevOps/Labs/argocd-k3d/manifests/podinfo
   destination:
     server: https://kubernetes.default.svc
     namespace: podinfo

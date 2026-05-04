@@ -4,11 +4,11 @@ metadata:
   name: argocd-server
   namespace: argocd
   annotations:
-    # argocd-server serves HTTPS with a self-signed cert by default;
-    # tell ingress-nginx to speak HTTPS upstream and skip cert verification.
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    traefik.ingress.kubernetes.io/service.serversscheme: https
+    traefik.ingress.kubernetes.io/service.serverstransport: argocd-argocd-transport@kubernetescrd
+    traefik.ingress.kubernetes.io/service.passhostheader: "true"
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
   rules:
     - host: argocd.local
       http:
