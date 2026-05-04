@@ -2,4 +2,4 @@
 
 
 
-> Purpose: Grafana specific OTEL Collector
+> Purpose: Grafana specific modern, unified observability agent built on OpenTelemetry Collector
