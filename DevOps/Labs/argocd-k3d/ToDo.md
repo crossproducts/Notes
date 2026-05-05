@@ -33,6 +33,8 @@
 - Cilium
 - Flannel
 
+- Istio
+
 - Amazon EBS CSI Driver
 - Ceph CSI
 - Longhorn
