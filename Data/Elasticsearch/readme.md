@@ -80,14 +80,27 @@ Final Tokens
 - Coersion
 
 ## Searching for Data
+- Relevance Scoring
+- Boosting Query
+- match vs term search
+- inverted index
 
 ## Joining Queries
+- Joins are expensive!!!
 
 ## Controlling Query Results
+- from = where to start
+- size = how many results to return
 
-## Aggregatoions
+## Aggregations
+- buckets
 
-## Impriving Search Results
+## Improving Search Results
+- proximity searches: fuzziness
+- fuzzy query
+- synonyms & synonyms_path
+- highlight
+- stemming
 
 ## HTTP Verbs (methods) + Path + JSON Body = API Endpoint
 > Path + Verb = what operation   
