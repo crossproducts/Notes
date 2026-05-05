@@ -1,6 +1,6 @@
 # ArgoCD App-of-Apps
 
-GitOps lab on top of [k3d](../k3d/readme-setup.md). A single `kubectl apply -k bootstrap/` installs ArgoCD, applies the root `Application`, and applies an Ingress for the ArgoCD UI; from that point on, ArgoCD owns everything — root reconciles `apps/`, each child reconciles its folder under `manifests/` (Deployment + Service + Ingress per app). Ingress is handled by **traefik**, which k3s/k3d ships by default.
+GitOps lab on top of [k3d](../k3d/readme-setup.md). A single `kubectl apply -k bootstrap/` installs ArgoCD, applies the root `Application`, and applies an Ingress for the ArgoCD UI; from that point on, ArgoCD owns everything — root reconciles `apps/`, each child either reconciles a folder under `manifests/` (Deployment + Service + Ingress) or pulls a remote Helm chart with inline values. Ingress is handled by **traefik**, which k3s/k3d ships by default.
 
 ```
 argocd/
@@ -10,11 +10,12 @@ argocd/
     argocd-ingress.yaml  # Ingress for the ArgoCD UI (argocd.localhost)
     root-app.yaml        # root Application -> apps/
   apps/
-    nginx.yaml           # child Application -> manifests/nginx
-    podinfo.yaml         # child Application -> manifests/podinfo
-    ollama.yaml          # child Application -> manifests/ollama   (sync-wave 0)
-    openwebui.yaml       # child Application -> manifests/openwebui (sync-wave 1)
-    pihole.yaml          # child Application -> manifests/pihole
+    nginx.yaml                 # child Application -> manifests/nginx
+    podinfo.yaml               # child Application -> manifests/podinfo
+    ollama.yaml                # child Application -> manifests/ollama   (sync-wave 0)
+    openwebui.yaml             # child Application -> manifests/openwebui (sync-wave 1)
+    pihole.yaml                # child Application -> manifests/pihole
+    kube-prometheus-stack.yaml # child Application -> Helm chart (Prometheus + Grafana + Alertmanager + node-exporter + KSM)
   manifests/
     nginx/               # Deployment + Service + Ingress (nginx.localhost)
     podinfo/             # Deployment + Service + Ingress (podinfo.localhost)
@@ -60,11 +61,17 @@ kubectl get applications -n argocd
 Expected after a minute or two:
 
 ```
-NAME           SYNC STATUS   HEALTH STATUS
-root-app       Synced        Healthy
-nginx          Synced        Healthy
-podinfo        Synced        Healthy
+NAME                    SYNC STATUS   HEALTH STATUS
+root-app                Synced        Healthy
+nginx                   Synced        Healthy
+podinfo                 Synced        Healthy
+ollama                  Synced        Healthy
+openwebui               Synced        Healthy
+pihole                  Synced        Healthy
+kube-prometheus-stack   Synced        Healthy
 ```
+
+`kube-prometheus-stack` takes 2-3 minutes longer than the others on a fresh cluster — CRDs install first, then Prometheus / Grafana / Alertmanager. Briefly `OutOfSync` during that window is expected.
 
 ---
 
@@ -138,6 +145,9 @@ Browse:
 - <http://openwebui.localhost> — chat UI; first signup becomes admin
 - <http://ollama.localhost> — Ollama HTTP API (e.g. `curl http://ollama.localhost/api/tags`)
 - <http://pihole.localhost/admin/> — Pi-hole admin (password `changeme`; bare `/` 404s)
+- <http://grafana.localhost> — Grafana (user `admin`; password retrieval below)
+- <http://prometheus.localhost> — Prometheus query UI
+- <http://alertmanager.localhost> — Alertmanager UI
 
 Models are preloaded declaratively. The Ollama Deployment has a `postStart` lifecycle hook that pulls every model listed in the `OLLAMA_PRELOAD_MODELS` env var (space-separated) after the container is ready. Defaults to `llama3.2:3b` (~2 GB, runs reasonably on CPU). To add models, edit [manifests/ollama/deployment.yaml](manifests/ollama/deployment.yaml) and commit:
 
@@ -170,6 +180,29 @@ Larger models work but will be slow without a GPU. The first pull of a 3B model 
   ```
 
   If port 53 fails to bind on Windows, something else owns it (DNS Client service, WSL, VPN client). Don't point a corporate / VPN-managed adapter at Pi-hole — it'll break split-DNS for work resources.
+
+### Monitoring (kube-prometheus-stack)
+
+[apps/kube-prometheus-stack.yaml](apps/kube-prometheus-stack.yaml) is the only Application in this lab that pulls a remote Helm chart instead of pointing at a local `manifests/` folder — values are inlined under `spec.source.helm.values`. The chart deploys Prometheus, Alertmanager, Grafana, node-exporter (DaemonSet), and kube-state-metrics into the `monitoring` namespace, plus the Prometheus Operator and its CRDs (`ServiceMonitor`, `PodMonitor`, `PrometheusRule`, etc.).
+
+Get the Grafana admin password:
+
+```powershell
+kubectl -n monitoring get secret kps-grafana `
+  -o jsonpath="{.data.admin-password}" | % { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+```
+
+Login at <http://grafana.localhost> with `admin` / above. Prometheus is wired as the default datasource and ~25 dashboards (cluster, node, pod, namespace, workload) are preloaded.
+
+**k3d-specific tweaks** baked into the values:
+
+- `kubeControllerManager` / `kubeScheduler` / `kubeProxy` / `kubeEtcd` ServiceMonitors are **disabled** — k3s collapses these into a single binary that doesn't expose metrics on the upstream-default ports, so leaving them on produces four permanently-down scrape targets.
+- `prometheus-node-exporter.hostRootFsMount.enabled: false` — k3d nodes are containers, the host root mount is meaningless.
+- No persistence — pods restart clean. To survive `k3d cluster stop`, add `prometheusSpec.storageSpec` and `grafana.persistence.enabled: true` to the values block.
+
+**Why `ServerSideApply=true`** in `syncOptions`: kube-prometheus-stack's CRDs are larger than the 262 kB annotation limit `kubectl apply` uses for the `last-applied-configuration` annotation, so without it the CRD sync fails with `metadata.annotations: Too long`. Server-side apply doesn't write that annotation. This is the only app in this lab that strictly needs it.
+
+To bump the chart, edit `targetRevision` in [apps/kube-prometheus-stack.yaml](apps/kube-prometheus-stack.yaml). Releases: <https://github.com/prometheus-community/helm-charts/releases?q=kube-prometheus-stack>.
 
 ---
 

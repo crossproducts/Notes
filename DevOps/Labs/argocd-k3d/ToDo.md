@@ -5,8 +5,13 @@
 - K8s MCP
 - Grafana MCP
 
+- ✅ kube-prometheus-stack 
+    - node-exporter
+    - prometheus
+    - alertmanager
+    - grafana
+
 - Grafana Alloy
-- Prometheus 
 - Loki
 - Jeager
 
