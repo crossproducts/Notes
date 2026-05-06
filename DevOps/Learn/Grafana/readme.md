@@ -6,6 +6,7 @@
 
 ## Notes
 - $__auto
+- $__rate_interval
 - Dashboard variables
 
 ## References
