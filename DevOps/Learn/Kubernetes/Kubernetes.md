@@ -30,3 +30,6 @@ Config Injection
 - ConfigMap (non-sensitive config)
 - Secret    (passwords, keys)
 ```
+
+## Mental Model #2
+![alt text](image.png)
