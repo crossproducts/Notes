@@ -1,6 +1,10 @@
 # Kubernetes
 
-## Mental Model
+## Architecture Mental Model
+
+<details>
+<summary>Details: #1</summary>
+
 ```
 🌍 Internet
 (user / browser / API client)
@@ -30,16 +34,20 @@ Config Injection
 - ConfigMap (non-sensitive config)
 - Secret    (passwords, keys)
 ```
+</details>
 
-## Mental Model #2
 <details>
-<summary>Details</summary>
+<summary>Details: #2</summary>
 
 ![alt text](image.png)
  
 </details>
 
 ## Kubectl Commands
+
+<details>
+<summary>Details: #1</summary>
+
 ```bash
 kubectl get           = list things
 kubectl describe      = inspect details and events
@@ -68,3 +76,4 @@ kubectl auth          = check permissions
 kubectl api-resources = list available resource types
 kubectl explain       = explain YAML fields
 ```
+</details>
