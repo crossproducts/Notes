@@ -1,0 +1,16 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: openclaw-inject-user
+  labels:
+    app: openclaw
+spec:
+  # Traefik stamps X-Forwarded-User on every request so OpenClaw's
+  # trusted-proxy auth has an identity to extract. customRequestHeaders
+  # overrides any client-supplied value, so a malicious browser can't
+  # impersonate someone else by setting the header itself. This is fine
+  # for a `*.localhost` lab but is NOT real auth — anyone who can reach
+  # openclaw.localhost effectively logs in as `lab`.
+  headers:
+    customRequestHeaders:
+      X-Forwarded-User: lab

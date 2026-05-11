@@ -13,51 +13,28 @@ data:
   # pod IP. Default upstream bind is "loopback" which only works with kubectl
   # port-forward and produces "connection refused" on Service/Ingress probes.
   #
-  # Local-only Ollama: native API URL (no /v1 — breaks tool calling).
-  # apiKey "ollama-local" is the bypass marker for loopback, private-network,
-  # and *.local hosts (kubernetes.default.svc.cluster.local matches *.local).
+  # Models block intentionally omitted — implicit Ollama discovery is enabled
+  # via OLLAMA_API_KEY=ollama-local in the deployment. Defining a provider
+  # block here would disable auto-discovery and force manual model entries.
+  # Per-model num_ctx control is gone too; the Ollama deployment caps default
+  # context globally with OLLAMA_CONTEXT_LENGTH=4096 to prevent KV-cache OOM.
   openclaw.json: |
     {
       "gateway": {
         "mode": "local",
         "bind": "lan",
         "port": 18789,
-        "auth": { "mode": "token" },
+        "trustedProxies": ["10.42.0.0/16"],
+        "auth": {
+          "mode": "trusted-proxy",
+          "trustedProxy": {
+            "userHeader": "x-forwarded-user",
+            "requiredHeaders": ["x-forwarded-proto", "x-forwarded-host"]
+          }
+        },
         "controlUi": {
           "enabled": true,
           "allowedOrigins": ["http://openclaw.localhost"]
-        }
-      },
-      "models": {
-        "providers": {
-          "ollama": {
-            "baseUrl": "http://ollama.ollama.svc.cluster.local:11434",
-            "apiKey": "ollama-local",
-            "api": "ollama",
-            "timeoutSeconds": 1200,
-            "contextWindow": 4096,
-            "maxTokens": 512,
-            "models": [
-              {
-                "id": "llama3.2:1b",
-                "name": "llama3.2:1b",
-                "input": ["text"],
-                "params": {
-                  "num_ctx": 4096,
-                  "keep_alive": "30m"
-                }
-              },
-              {
-                "id": "llama3.2:3b",
-                "name": "llama3.2:3b",
-                "input": ["text"],
-                "params": {
-                  "num_ctx": 4096,
-                  "keep_alive": "30m"
-                }
-              }
-            ]
-          }
         }
       },
       "agents": {

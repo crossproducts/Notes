@@ -24,7 +24,9 @@
       "PowerShell(gh api 'search/code?q=device+pairing+repo:openclaw/openclaw+path:docs' --jq '.items[].path' 2>&1)",
       "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/gateway/pairing.md' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } | Select-Object -First 200)",
       "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/cli/devices.md' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } | Select-Object -First 150)",
-      "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/web/control-ui.md' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } | Select-Object -First 150)"
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/web/control-ui.md' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } | Select-Object -First 150)",
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/gateway' --jq '.[].name' 2>&1 | Where-Object { $_ -match 'proxy|trust|auth' })",
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/gateway/trusted-proxy-auth.md' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } | Select-Object -First 250)"
     ]
   }
 }

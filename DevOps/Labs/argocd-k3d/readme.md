@@ -25,7 +25,7 @@ argocd/
     ollama/              # Deployment + Service + PVC + Ingress (ollama.localhost)
     openwebui/           # Deployment + Service + PVC + Ingress (openwebui.localhost)
     anythingllm/         # Deployment + Service + PVC + Ingress (anythingllm.localhost)
-    openclaw/            # Deployment + Service + PVC + Ingress + ConfigMap + Secret (openclaw.localhost) — wired to ollama, local-only, fixed lab token
+    openclaw/            # Deployment + Service + PVC + Ingress + ConfigMap + Middleware (openclaw.localhost) — wired to ollama, trusted-proxy auth via traefik, no login
     pihole/              # Deployment + Service (web) + Service (DNS LB) + PVC + Ingress (pihole.localhost)
   helm-charts/
     hello-py/            # custom Helm chart: Python stdlib http.server in a ConfigMap (hello.localhost)
@@ -155,7 +155,7 @@ Browse:
 - <http://hello.localhost> — Python stdlib `http.server` (custom local Helm chart; greeting comes from `values.yaml`)
 - <http://openwebui.localhost> — chat UI; first signup becomes admin
 - <http://anythingllm.localhost> — AnythingLLM workspace UI (wired to Ollama; first signup becomes admin)
-- <http://openclaw.localhost> — OpenClaw gateway UI (local-only; wired to in-cluster Ollama, no cloud keys). Paste the fixed lab `OPENCLAW_GATEWAY_TOKEN` from [manifests/openclaw/secret.yaml](manifests/openclaw/secret.yaml) into the **Gateway Token** field; WebSocket URL stays `ws://openclaw.localhost`
+- <http://openclaw.localhost> — OpenClaw gateway UI (local-only; wired to in-cluster Ollama, no cloud keys). No login or pairing — traefik stamps `X-Forwarded-User: lab` via [manifests/openclaw/middleware.yaml](manifests/openclaw/middleware.yaml) and OpenClaw's `auth.mode: "trusted-proxy"` accepts it. Anyone who can reach `openclaw.localhost` is logged in as `lab`
 - <http://ollama.localhost> — Ollama HTTP API (e.g. `curl http://ollama.localhost/api/tags`)
 - <http://pihole.localhost/admin/> — Pi-hole admin (password `changeme`; bare `/` 404s)
 - <http://grafana.localhost> — Grafana (user `admin`; password retrieval below)

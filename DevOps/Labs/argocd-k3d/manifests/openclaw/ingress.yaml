@@ -2,6 +2,11 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: openclaw
+  annotations:
+    # Inject X-Forwarded-User on every request so OpenClaw's trusted-proxy
+    # auth treats the browser as already-authenticated and skips device
+    # pairing. Middleware ref format: <namespace>-<name>@kubernetescrd.
+    traefik.ingress.kubernetes.io/router.middlewares: openclaw-openclaw-inject-user@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:

@@ -74,11 +74,15 @@ spec:
               value: production
             - name: OPENCLAW_CONFIG_DIR
               value: /home/node/.openclaw
-            - name: OPENCLAW_GATEWAY_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: openclaw-secrets
-                  key: OPENCLAW_GATEWAY_TOKEN
+            # OPENCLAW_GATEWAY_TOKEN intentionally omitted — auth.mode is
+            # "trusted-proxy" in the configmap, and OpenClaw rejects the
+            # gateway with `mixed_trusted_proxy_token` if both are set.
+            # Implicit Ollama discovery: OpenClaw queries /api/tags at the
+            # hardcoded http://127.0.0.1:11434 when this is set and there is
+            # no models.providers.ollama block in openclaw.json. The socat
+            # sidecar below forwards 127.0.0.1:11434 to the cluster service.
+            - name: OLLAMA_API_KEY
+              value: ollama-local
           volumeMounts:
             - name: openclaw-home
               mountPath: /home/node/.openclaw
@@ -120,6 +124,34 @@ spec:
             limits:
               cpu: "1"
               memory: 2Gi
+        # Sidecar: forwards 127.0.0.1:11434 inside the pod to the cluster's
+        # Ollama service. Required because OpenClaw's implicit-discovery code
+        # path is hardcoded to 127.0.0.1:11434 — there's no env var to point
+        # it elsewhere, and any explicit baseUrl in openclaw.json disables
+        # auto-discovery entirely.
+        - name: ollama-proxy
+          image: alpine/socat:1.8.0.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-d"
+            - "TCP-LISTEN:11434,bind=127.0.0.1,fork,reuseaddr"
+            - "TCP:ollama.ollama.svc.cluster.local:11434"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
       volumes:
         - name: openclaw-home
           persistentVolumeClaim:
