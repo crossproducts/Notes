@@ -34,29 +34,28 @@
 ### Docker (with Ollama on host)
 ```bash
 docker run -d \
-  --network=host \
+    --network=host \
     -v open-webui:/app/backend/data \
-      --name open-webui \
-        --restart always \
-          ghcr.io/open-webui/open-webui:main
-          ```
+    --name open-webui \
+    --restart always \
+    ghcr.io/open-webui/open-webui:main
+```
 
-          ### Docker (with bundled Ollama)
-          ```bash
-          docker run -d -p 3000:8080 \
-            --gpus all \
-              -v ollama:/root/.ollama \
-                -v open-webui:/app/backend/data \
-                  --name open-webui \
-                    --restart always \
-                      ghcr.io/open-webui/open-webui:ollama
-                      ```
+### Docker (with bundled Ollama)
+```bash
+docker run -d -p 3000:8080 \
+    --gpus all \
+    -v ollama:/root/.ollama \
+    -v open-webui:/app/backend/data \
+    --name open-webui \
+    --restart always \
+    ghcr.io/open-webui/open-webui:ollama
+```
 
-                      ## Getting Started
+## Getting Started
 
-                      1. Start Open WebUI (see Installation)
-                      2. Navigate to http://localhost:3000
-                      3. Create an admin account on first run
-                      4. Connect to Ollama (auto-detected if on same host)
-                      5. Select a model and start chatting
-                      
+1. Start Open WebUI (see Installation)
+2. Navigate to http://localhost:3000
+3. Create an admin account on first run
+4. Connect to Ollama (auto-detected if on same host)
+5. Select a model and start chatting
