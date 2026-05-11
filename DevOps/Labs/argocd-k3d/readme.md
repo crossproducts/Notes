@@ -15,6 +15,7 @@ argocd/
     ollama.yaml                # child Application -> manifests/ollama       (sync-wave 0)
     openwebui.yaml             # child Application -> manifests/openwebui    (sync-wave 1)
     anythingllm.yaml           # child Application -> manifests/anythingllm  (sync-wave 1)
+    openclaw.yaml              # child Application -> manifests/openclaw     (sync-wave 1)
     pihole.yaml                # child Application -> manifests/pihole
     hello-py.yaml              # child Application -> helm-charts/hello-py (local Helm chart)
     kube-prometheus-stack.yaml # child Application -> remote Helm chart (Prometheus + Grafana + Alertmanager + node-exporter + KSM)
@@ -24,6 +25,7 @@ argocd/
     ollama/              # Deployment + Service + PVC + Ingress (ollama.localhost)
     openwebui/           # Deployment + Service + PVC + Ingress (openwebui.localhost)
     anythingllm/         # Deployment + Service + PVC + Ingress (anythingllm.localhost)
+    openclaw/            # Deployment + Service + PVC + Ingress (openclaw.localhost) — wired to ollama, local-only
     pihole/              # Deployment + Service (web) + Service (DNS LB) + PVC + Ingress (pihole.localhost)
   helm-charts/
     hello-py/            # custom Helm chart: Python stdlib http.server in a ConfigMap (hello.localhost)
@@ -73,6 +75,7 @@ podinfo                 Synced        Healthy
 ollama                  Synced        Healthy
 openwebui               Synced        Healthy
 anythingllm             Synced        Healthy
+openclaw                Synced        Healthy
 pihole                  Synced        Healthy
 hello-py                Synced        Healthy
 kube-prometheus-stack   Synced        Healthy
@@ -152,6 +155,7 @@ Browse:
 - <http://hello.localhost> — Python stdlib `http.server` (custom local Helm chart; greeting comes from `values.yaml`)
 - <http://openwebui.localhost> — chat UI; first signup becomes admin
 - <http://anythingllm.localhost> — AnythingLLM workspace UI (wired to Ollama; first signup becomes admin)
+- <http://openclaw.localhost> — OpenClaw gateway UI (local-only; wired to in-cluster Ollama, no cloud keys)
 - <http://ollama.localhost> — Ollama HTTP API (e.g. `curl http://ollama.localhost/api/tags`)
 - <http://pihole.localhost/admin/> — Pi-hole admin (password `changeme`; bare `/` 404s)
 - <http://grafana.localhost> — Grafana (user `admin`; password retrieval below)

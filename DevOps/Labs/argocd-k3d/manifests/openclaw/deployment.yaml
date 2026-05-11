@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openclaw
+  labels:
+    app: openclaw
+spec:
+  # OpenClaw is a single-instance stateful gateway — never scale past 1.
+  replicas: 1
+  strategy:
+    type: Recreate  # PVC is RWO; rolling update would deadlock on the volume
+  selector:
+    matchLabels:
+      app: openclaw
+  template:
+    metadata:
+      labels:
+        app: openclaw
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: openclaw
+          image: ghcr.io/openclaw/openclaw:latest
+          ports:
+            - name: http
+              containerPort: 18789
+          env:
+            # Local-only: point OpenClaw at the in-cluster Ollama service.
+            # Use the native Ollama API URL (no /v1) — OpenClaw's tool-calling
+            # breaks against the OpenAI-compatible /v1 endpoint.
+            - name: OPENCLAW_CONFIG_JSON
+              value: |
+                {
+                  "gateway": { "port": 18789 },
+                  "defaultProvider": "ollama",
+                  "providers": {
+                    "ollama": {
+                      "baseUrl": "http://ollama.ollama.svc.cluster.local:11434",
+                      "model": "llama3.2:3b"
+                    }
+                  }
+                }
+          volumeMounts:
+            - name: data
+              mountPath: /home/node/.openclaw
+          readinessProbe:
+            tcpSocket:
+              port: 18789
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 18789
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: openclaw-data
