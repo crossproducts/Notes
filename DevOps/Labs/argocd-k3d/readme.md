@@ -1,6 +1,6 @@
 # ArgoCD App-of-Apps
 
-GitOps lab on top of [k3d](../k3d/readme-setup.md). A single `kubectl apply -k bootstrap/` installs ArgoCD, applies the root `Application`, and applies an Ingress for the ArgoCD UI; from that point on, ArgoCD owns everything — root reconciles `apps/`, each child either reconciles a folder under `manifests/` (Deployment + Service + Ingress) or pulls a remote Helm chart with inline values. Ingress is handled by **traefik**, which k3s/k3d ships by default.
+GitOps lab on top of [k3d](../k3d/readme-setup.md). A single `kubectl apply -k bootstrap/` installs ArgoCD, applies the root `Application`, and applies an Ingress for the ArgoCD UI; from that point on, ArgoCD owns everything — root reconciles `apps/`, each child either reconciles a folder under `manifests/` (raw YAML), a folder under `helm-charts/` (custom local Helm chart), or pulls a remote Helm chart with inline values. Ingress is handled by **traefik**, which k3s/k3d ships by default.
 
 ```
 argocd/
@@ -15,13 +15,16 @@ argocd/
     ollama.yaml                # child Application -> manifests/ollama   (sync-wave 0)
     openwebui.yaml             # child Application -> manifests/openwebui (sync-wave 1)
     pihole.yaml                # child Application -> manifests/pihole
-    kube-prometheus-stack.yaml # child Application -> Helm chart (Prometheus + Grafana + Alertmanager + node-exporter + KSM)
+    hello-py.yaml              # child Application -> helm-charts/hello-py (local Helm chart)
+    kube-prometheus-stack.yaml # child Application -> remote Helm chart (Prometheus + Grafana + Alertmanager + node-exporter + KSM)
   manifests/
     nginx/               # Deployment + Service + Ingress (nginx.localhost)
     podinfo/             # Deployment + Service + Ingress (podinfo.localhost)
     ollama/              # Deployment + Service + PVC + Ingress (ollama.localhost)
     openwebui/           # Deployment + Service + PVC + Ingress (openwebui.localhost)
     pihole/              # Deployment + Service (web) + Service (DNS LB) + PVC + Ingress (pihole.localhost)
+  helm-charts/
+    hello-py/            # custom Helm chart: Python stdlib http.server in a ConfigMap (hello.localhost)
 ```
 
 Source repo: <https://github.com/crossproducts/Notes>, branch `main`.
@@ -68,6 +71,7 @@ podinfo                 Synced        Healthy
 ollama                  Synced        Healthy
 openwebui               Synced        Healthy
 pihole                  Synced        Healthy
+hello-py                Synced        Healthy
 kube-prometheus-stack   Synced        Healthy
 ```
 
@@ -142,6 +146,7 @@ Browse:
 
 - <http://nginx.localhost>
 - <http://podinfo.localhost>
+- <http://hello.localhost> — Python stdlib `http.server` (custom local Helm chart; greeting comes from `values.yaml`)
 - <http://openwebui.localhost> — chat UI; first signup becomes admin
 - <http://ollama.localhost> — Ollama HTTP API (e.g. `curl http://ollama.localhost/api/tags`)
 - <http://pihole.localhost/admin/> — Pi-hole admin (password `changeme`; bare `/` 404s)
@@ -167,6 +172,17 @@ kubectl exec -n ollama deploy/ollama -- ollama list
 ```
 
 Larger models work but will be slow without a GPU. The first pull of a 3B model takes ~1–2 minutes depending on bandwidth.
+
+### Local Helm chart (hello-py)
+
+[helm-charts/hello-py/](helm-charts/hello-py/) is a self-contained custom chart — no image build, no remote registry. The Python source sits in [templates/configmap.yaml](helm-charts/hello-py/templates/configmap.yaml) (a stdlib `http.server` so there are no `pip install` deps), gets mounted as a volume into a stock `python:3.12-slim` container, and runs as `python -u /app/app.py`. The greeting string is templated from [values.yaml](helm-charts/hello-py/values.yaml) into a `GREETING` env var, and the Deployment carries a `checksum/config` annotation so a values change rolls the pod automatically.
+
+The ArgoCD Application at [apps/hello-py.yaml](apps/hello-py.yaml) just points `path:` at the chart folder — ArgoCD detects the `Chart.yaml` and renders Helm itself, no chart repo needed. Try editing `greeting:` in `values.yaml`, commit, and watch ArgoCD roll the pod within a minute:
+
+```powershell
+curl http://hello.localhost
+kubectl logs -n hello-py deploy/hello-py -f
+```
 
 ### Pi-hole
 
