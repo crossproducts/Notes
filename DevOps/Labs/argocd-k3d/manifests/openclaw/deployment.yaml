@@ -22,6 +22,38 @@ spec:
         fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
+      # OpenClaw rewrites openclaw.json at runtime (e.g. plugin auto-enable
+      # state). A direct ConfigMap mount is read-only, so the gateway crashes
+      # with EROFS on first start. Copy the file into the writable PVC at
+      # /home/node/.openclaw/ on every pod start — git stays the source of
+      # truth, and any in-cluster mutations get reset to declared state on
+      # restart.
+      initContainers:
+        - name: init-config
+          image: busybox:1.37
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              cp /config/openclaw.json /home/node/.openclaw/openclaw.json
+              mkdir -p /home/node/.openclaw/workspace
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - name: openclaw-home
+              mountPath: /home/node/.openclaw
+            - name: openclaw-config
+              mountPath: /config
+              readOnly: true
       containers:
         - name: gateway
           image: ghcr.io/openclaw/openclaw:slim
@@ -42,14 +74,9 @@ spec:
               value: production
             - name: OPENCLAW_CONFIG_DIR
               value: /home/node/.openclaw
-            - name: OPENCLAW_CONFIG_PATH
-              value: /etc/openclaw/openclaw.json
           volumeMounts:
             - name: openclaw-home
               mountPath: /home/node/.openclaw
-            - name: openclaw-config
-              mountPath: /etc/openclaw
-              readOnly: true
             - name: tmp
               mountPath: /tmp
           # OpenClaw exposes /healthz (liveness) and /readyz (readiness).
@@ -95,5 +122,6 @@ spec:
         - name: openclaw-config
           configMap:
             name: openclaw-config
+        # OpenClaw needs /tmp writable (readOnlyRootFilesystem: true above).
         - name: tmp
           emptyDir: {}
