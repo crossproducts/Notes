@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: anythingllm
+  labels:
+    app: anythingllm
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # PVC is RWO; rolling update would deadlock on the volume
+  selector:
+    matchLabels:
+      app: anythingllm
+  template:
+    metadata:
+      labels:
+        app: anythingllm
+    spec:
+      # The image entrypoint copies seed data into STORAGE_DIR on first boot and
+      # writes there at runtime, so the mount must be writable by the container UID.
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: anythingllm
+          image: mintplexlabs/anythingllm:latest
+          ports:
+            - name: http
+              containerPort: 3001
+          env:
+            - name: STORAGE_DIR
+              value: /app/server/storage
+            - name: SERVER_PORT
+              value: "3001"
+            - name: LLM_PROVIDER
+              value: ollama
+            - name: OLLAMA_BASE_PATH
+              value: http://ollama.ollama.svc.cluster.local:11434
+            - name: OLLAMA_MODEL_PREF
+              value: llama3.2:3b
+            - name: OLLAMA_MODEL_TOKEN_LIMIT
+              value: "4096"
+            - name: EMBEDDING_ENGINE
+              value: ollama
+            - name: EMBEDDING_BASE_PATH
+              value: http://ollama.ollama.svc.cluster.local:11434
+            - name: EMBEDDING_MODEL_PREF
+              value: llama3.2:3b
+            - name: EMBEDDING_MODEL_MAX_CHUNK_LENGTH
+              value: "8192"
+            - name: VECTOR_DB
+              value: lancedb
+            - name: DISABLE_TELEMETRY
+              value: "true"
+          volumeMounts:
+            - name: storage
+              mountPath: /app/server/storage
+          readinessProbe:
+            httpGet:
+              path: /api/ping
+              port: 3001
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/ping
+              port: 3001
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: anythingllm-storage
