@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openclaw-config
+  labels:
+    app: openclaw
+data:
+  # OpenClaw gateway config. Schema reference:
+  # https://github.com/openclaw/openclaw/blob/main/docs/providers/ollama.md
+  # https://github.com/openclaw/openclaw/blob/main/scripts/k8s/manifests/configmap.yaml
+  #
+  # bind=lan (0.0.0.0) so the in-cluster Service can reach the gateway on the
+  # pod IP. Default upstream bind is "loopback" which only works with kubectl
+  # port-forward and produces "connection refused" on Service/Ingress probes.
+  #
+  # Local-only Ollama: native API URL (no /v1 — breaks tool calling).
+  # apiKey "ollama-local" is the bypass marker for loopback, private-network,
+  # and *.local hosts (kubernetes.default.svc.cluster.local matches *.local).
+  openclaw.json: |
+    {
+      "gateway": {
+        "mode": "local",
+        "bind": "lan",
+        "port": 18789,
+        "auth": { "mode": "token" },
+        "controlUi": { "enabled": true }
+      },
+      "models": {
+        "providers": {
+          "ollama": {
+            "baseUrl": "http://ollama.ollama.svc.cluster.local:11434",
+            "apiKey": "ollama-local",
+            "api": "ollama",
+            "timeoutSeconds": 300,
+            "models": [
+              {
+                "id": "llama3.2:3b",
+                "name": "llama3.2:3b",
+                "input": ["text"]
+              }
+            ]
+          }
+        }
+      },
+      "agents": {
+        "defaults": {
+          "workspace": "/home/node/.openclaw/workspace",
+          "model": { "primary": "ollama/llama3.2:3b" }
+        },
+        "list": [
+          {
+            "id": "default",
+            "name": "OpenClaw Assistant",
+            "workspace": "/home/node/.openclaw/workspace"
+          }
+        ]
+      },
+      "cron": { "enabled": false }
+    }

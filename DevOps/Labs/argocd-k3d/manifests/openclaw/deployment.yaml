@@ -5,7 +5,7 @@ metadata:
   labels:
     app: openclaw
 spec:
-  # OpenClaw is a single-instance stateful gateway — never scale past 1.
+  # Single-instance stateful gateway — never scale past 1.
   replicas: 1
   strategy:
     type: Recreate  # PVC is RWO; rolling update would deadlock on the volume
@@ -17,53 +17,83 @@ spec:
       labels:
         app: openclaw
     spec:
+      automountServiceAccountToken: false
       securityContext:
         fsGroup: 1000
-        runAsUser: 1000
-        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
-        - name: openclaw
-          image: ghcr.io/openclaw/openclaw:latest
+        - name: gateway
+          image: ghcr.io/openclaw/openclaw:slim
+          imagePullPolicy: IfNotPresent
+          command:
+            - node
+            - /app/dist/index.js
+            - gateway
+            - run
           ports:
             - name: http
               containerPort: 18789
+              protocol: TCP
           env:
-            # Local-only: point OpenClaw at the in-cluster Ollama service.
-            # Use the native Ollama API URL (no /v1) — OpenClaw's tool-calling
-            # breaks against the OpenAI-compatible /v1 endpoint.
-            - name: OPENCLAW_CONFIG_JSON
-              value: |
-                {
-                  "gateway": { "port": 18789 },
-                  "defaultProvider": "ollama",
-                  "providers": {
-                    "ollama": {
-                      "baseUrl": "http://ollama.ollama.svc.cluster.local:11434",
-                      "model": "llama3.2:3b"
-                    }
-                  }
-                }
+            - name: HOME
+              value: /home/node
+            - name: NODE_ENV
+              value: production
+            - name: OPENCLAW_CONFIG_DIR
+              value: /home/node/.openclaw
+            - name: OPENCLAW_CONFIG_PATH
+              value: /etc/openclaw/openclaw.json
           volumeMounts:
-            - name: data
+            - name: openclaw-home
               mountPath: /home/node/.openclaw
+            - name: openclaw-config
+              mountPath: /etc/openclaw
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          # OpenClaw exposes /healthz (liveness) and /readyz (readiness).
+          # exec probes via node avoid needing curl in the slim image.
           readinessProbe:
-            tcpSocket:
-              port: 18789
+            exec:
+              command:
+                - node
+                - -e
+                - "require('http').get('http://127.0.0.1:18789/readyz', r => process.exit(r.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))"
             initialDelaySeconds: 15
             periodSeconds: 10
+            timeoutSeconds: 5
           livenessProbe:
-            tcpSocket:
-              port: 18789
+            exec:
+              command:
+                - node
+                - -e
+                - "require('http').get('http://127.0.0.1:18789/healthz', r => process.exit(r.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))"
             initialDelaySeconds: 60
             periodSeconds: 30
+            timeoutSeconds: 10
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: 250m
+              memory: 512Mi
             limits:
               cpu: "1"
-              memory: 1Gi
+              memory: 2Gi
       volumes:
-        - name: data
+        - name: openclaw-home
           persistentVolumeClaim:
             claimName: openclaw-data
+        - name: openclaw-config
+          configMap:
+            name: openclaw-config
+        - name: tmp
+          emptyDir: {}

@@ -2,7 +2,24 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:www.datacamp.com)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:ghcr.io)",
+      "WebFetch(domain:docs.openclaw.ai)",
+      "PowerShell(gh api 'repos/openclaw/openclaw' 2>&1)",
+      "PowerShell(gh api 'users/openclaw' 2>&1)",
+      "PowerShell($tok = \\(Invoke-RestMethod -Uri 'https://ghcr.io/token?service=ghcr.io&scope=repository:openclaw/openclaw:pull' -ErrorAction SilentlyContinue\\).token; if \\($tok\\) { Invoke-RestMethod -Uri 'https://ghcr.io/v2/openclaw/openclaw/tags/list' -Headers @{Authorization=\"Bearer $tok\"} -ErrorAction SilentlyContinue } else { 'no token' })",
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/' --jq '.[].name' 2>&1)",
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/Dockerfile' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) })",
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/docker-compose.yml' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) })",
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/deploy' --jq '.[].name' 2>&1)",
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs' --jq '.[].name' 2>&1)",
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/install' --jq '.[].name' 2>&1)",
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/providers' --jq '.[].name' 2>&1)",
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/providers/ollama.md' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) })",
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/install/kubernetes.md' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } | Select-Object -First 200)",
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/scripts/k8s/manifests' --jq '.[].name' 2>&1)",
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/scripts/k8s/manifests/configmap.yaml' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) })",
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/scripts/k8s/manifests/deployment.yaml' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) })"
     ]
   }
 }

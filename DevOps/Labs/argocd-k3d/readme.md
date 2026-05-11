@@ -25,7 +25,7 @@ argocd/
     ollama/              # Deployment + Service + PVC + Ingress (ollama.localhost)
     openwebui/           # Deployment + Service + PVC + Ingress (openwebui.localhost)
     anythingllm/         # Deployment + Service + PVC + Ingress (anythingllm.localhost)
-    openclaw/            # Deployment + Service + PVC + Ingress (openclaw.localhost) — wired to ollama, local-only
+    openclaw/            # Deployment + Service + PVC + Ingress + ConfigMap (openclaw.localhost) — wired to ollama, local-only
     pihole/              # Deployment + Service (web) + Service (DNS LB) + PVC + Ingress (pihole.localhost)
   helm-charts/
     hello-py/            # custom Helm chart: Python stdlib http.server in a ConfigMap (hello.localhost)
