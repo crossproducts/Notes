@@ -35,11 +35,17 @@ data:
             "apiKey": "ollama-local",
             "api": "ollama",
             "timeoutSeconds": 300,
+            "contextWindow": 8192,
+            "maxTokens": 2048,
             "models": [
               {
                 "id": "llama3.2:3b",
                 "name": "llama3.2:3b",
-                "input": ["text"]
+                "input": ["text"],
+                "params": {
+                  "num_ctx": 8192,
+                  "keep_alive": "15m"
+                }
               }
             ]
           }

@@ -49,3 +49,15 @@ kubectl apply -k bootstrap/ --server-side --force-conflicts
     ```powershell
     kubectl -n monitoring get secret kps-grafana -o jsonpath="{.data.admin-password}" | % { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
     ```
+
+## OpenClaw
+```
+# 1. list pending requests (confirm the ID, since pairing requests expire after 5 min)
+kubectl exec -n openclaw deploy/openclaw -- openclaw devices list
+
+# 2. approve by requestId
+kubectl exec -n openclaw deploy/openclaw -- openclaw devices approve 3d937bcd-9c4f-49da-9648-3e75fa3254ff
+
+# http://openclaw.localhost/chat?session=main
+# Token: 5e7a9c3b2f8d1e4a6c8b0d2f5e9a7c3b1f8d4e6a2c9b0d8f5e1a3c7b9d2f6e0a
+```
