@@ -74,6 +74,11 @@ spec:
               value: production
             - name: OPENCLAW_CONFIG_DIR
               value: /home/node/.openclaw
+            - name: OPENCLAW_GATEWAY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-secrets
+                  key: OPENCLAW_GATEWAY_TOKEN
           volumeMounts:
             - name: openclaw-home
               mountPath: /home/node/.openclaw
