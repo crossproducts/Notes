@@ -26,7 +26,7 @@ spec:
             # Space-separated list of models to preload via the postStart hook.
             # Idempotent — already-cached models are a no-op against the PVC.
             - name: OLLAMA_PRELOAD_MODELS
-              value: "llama3.2:3b qwen2.5:3b"
+              value: "llama3.2:1b llama3.2:3b qwen2.5:3b"
           volumeMounts:
             - name: models
               mountPath: /root/.ollama

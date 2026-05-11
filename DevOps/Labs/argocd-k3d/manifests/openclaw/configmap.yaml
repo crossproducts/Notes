@@ -34,17 +34,26 @@ data:
             "baseUrl": "http://ollama.ollama.svc.cluster.local:11434",
             "apiKey": "ollama-local",
             "api": "ollama",
-            "timeoutSeconds": 300,
-            "contextWindow": 8192,
-            "maxTokens": 2048,
+            "timeoutSeconds": 1200,
+            "contextWindow": 4096,
+            "maxTokens": 512,
             "models": [
+              {
+                "id": "llama3.2:1b",
+                "name": "llama3.2:1b",
+                "input": ["text"],
+                "params": {
+                  "num_ctx": 4096,
+                  "keep_alive": "30m"
+                }
+              },
               {
                 "id": "llama3.2:3b",
                 "name": "llama3.2:3b",
                 "input": ["text"],
                 "params": {
-                  "num_ctx": 8192,
-                  "keep_alive": "15m"
+                  "num_ctx": 4096,
+                  "keep_alive": "30m"
                 }
               }
             ]
@@ -54,7 +63,11 @@ data:
       "agents": {
         "defaults": {
           "workspace": "/home/node/.openclaw/workspace",
-          "model": { "primary": "ollama/llama3.2:3b" }
+          "experimental": { "localModelLean": true },
+          "model": {
+            "primary": "ollama/llama3.2:1b",
+            "fallbacks": ["ollama/llama3.2:3b"]
+          }
         },
         "list": [
           {
