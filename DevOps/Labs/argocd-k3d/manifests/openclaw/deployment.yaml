@@ -75,7 +75,11 @@ spec:
           restartPolicy: Always
           args:
             - "-d"
-            - "TCP-LISTEN:11434,bind=127.0.0.1,fork,reuseaddr"
+            # Bind to all interfaces (no bind=127.0.0.1) so kubelet can run
+            # a tcpSocket startup probe against the pod IP. Within the pod
+            # the gateway container still reaches it via 127.0.0.1:11434
+            # — same network namespace as the sidecar.
+            - "TCP-LISTEN:11434,fork,reuseaddr"
             - "TCP:ollama.ollama.svc.cluster.local:11434,connect-timeout=5,keepalive,keepidle=30"
           # startupProbe blocks the main container from starting until socat
           # is actually accepting connections. Without it, the gateway can
@@ -83,7 +87,6 @@ spec:
           # cache an empty Ollama catalog until something triggers a re-probe.
           startupProbe:
             tcpSocket:
-              host: 127.0.0.1
               port: 11434
             periodSeconds: 1
             failureThreshold: 30
