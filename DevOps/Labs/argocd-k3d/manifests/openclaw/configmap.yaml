@@ -53,7 +53,7 @@ data:
             "api": "ollama",
             "timeoutSeconds": 600,
             "models": [
-              { "id": "qwen3:0.6b",  "name": "qwen3:0.6b",  "input": ["text"], "params": { "num_ctx": 4096, "keep_alive": "30m", "think": false } },
+              { "id": "qwen3:0.6b",  "name": "qwen3:0.6b",  "input": ["text"], "params": { "num_ctx": 4096, "keep_alive": "30m", "think": false }, "compat": { "supportsTools": false } },
               { "id": "qwen2.5:3b",  "name": "qwen2.5:3b",  "input": ["text"], "params": { "num_ctx": 4096, "keep_alive": "30m" } }
             ]
           }
@@ -62,6 +62,7 @@ data:
       "agents": {
         "defaults": {
           "workspace": "/home/node/.openclaw/workspace",
+          "experimental": { "localModelLean": true },
           "model": {
             "primary": "ollama/qwen2.5:3b",
             "fallbacks": ["openai/gpt-4o-mini"]
