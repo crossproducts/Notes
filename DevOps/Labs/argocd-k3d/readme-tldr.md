@@ -67,3 +67,14 @@ kubectl exec -n openclaw deploy/openclaw -- openclaw devices approve <Request>
 ```
 kubectl exec -n ollama deploy/ollama -- ollama list
 ```
+
+## MCP
+### K8s MCP
+```
+claude mcp add kubernetes --scope user -- npx -y kubernetes-mcp-server@latest --read-only
+
+VS Code extension: 
+    Ctrl+Shift+P → "Developer: Reload Window". 
+    The Claude panel restarts and the new MCP tools attach.
+```
+### Helm MCP

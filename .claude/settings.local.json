@@ -26,7 +26,25 @@
       "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/cli/devices.md' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } | Select-Object -First 150)",
       "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/web/control-ui.md' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } | Select-Object -First 150)",
       "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/gateway' --jq '.[].name' 2>&1 | Where-Object { $_ -match 'proxy|trust|auth' })",
-      "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/gateway/trusted-proxy-auth.md' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } | Select-Object -First 250)"
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/gateway/trusted-proxy-auth.md' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } | Select-Object -First 250)",
+      "Bash(kubectl get *)",
+      "Bash(kubectl logs *)",
+      "Bash(kubectl describe *)",
+      "Bash(kubectl exec *)",
+      "Bash(claude mcp *)",
+      "PowerShell(gh api 'repos/containers/kubernetes-mcp-server' --jq '{name, description, html_url, language}' 2>&1)",
+      "PowerShell(gh api 'repos/containers/kubernetes-mcp-server/contents/README.md' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } | Select-String -Pattern 'npx|read-only|profile|claude|--' | Select-Object -First 60)",
+      "PowerShell(node --version)",
+      "PowerShell(npx --version)",
+      "PowerShell(kubectl config current-context)",
+      "PowerShell(claude mcp add kubernetes --scope user -- npx -y kubernetes-mcp-server@latest --read-only)",
+      "PowerShell(claude mcp list)",
+      "PowerShell(claude mcp remove kubernetes --scope user)",
+      "PowerShell(claude mcp add kubernetes --scope user -- npx -y kubernetes-mcp-server@latest --read-only --toolsets core,config,helm)",
+      "mcp__kubernetes__pods_list_in_namespace",
+      "mcp__kubernetes",
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/gateway/operator-scopes.md' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } | Select-String -Pattern 'trusted|scope|defaultScopes|allowUsers|operator\\\\.' -Context 0,3 | Select-Object -First 80)",
+      "PowerShell(gh api 'repos/openclaw/openclaw/contents/docs/gateway/trusted-proxy-auth.md' --jq '.content' | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } | Select-String -Pattern 'scope|operator\\\\.|defaultScopes|grantScopes|allowUsers' -Context 0,4 | Select-Object -First 60)"
     ]
   }
 }

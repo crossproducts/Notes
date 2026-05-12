@@ -14,3 +14,8 @@ spec:
   headers:
     customRequestHeaders:
       X-Forwarded-User: lab
+      # Grant operator.admin scope to the lab user. Without this, trusted-proxy
+      # auth defaults to read-only scopes for browser/WS connections and chat.send
+      # fails with "missing scope: operator.write". Admin satisfies every
+      # operator.* scope; for tighter control swap to "operator.read,operator.write".
+      X-Openclaw-Scopes: operator.admin
