@@ -49,6 +49,11 @@ data:
               { "id": "gpt-4o", "name": "gpt-4o", "input": ["text", "image"] }
             ]
           },
+          "ollama": {
+            "baseUrl": "http://127.0.0.1:11434",
+            "apiKey": "ollama-local",
+            "api": "ollama"
+          }
         }
       },
       "agents": {
