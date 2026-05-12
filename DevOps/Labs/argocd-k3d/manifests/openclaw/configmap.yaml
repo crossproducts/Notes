@@ -13,11 +13,14 @@ data:
   # pod IP. Default upstream bind is "loopback" which only works with kubectl
   # port-forward and produces "connection refused" on Service/Ingress probes.
   #
-  # Models block intentionally omitted — implicit Ollama discovery is enabled
-  # via OLLAMA_API_KEY=ollama-local in the deployment. Defining a provider
-  # block here would disable auto-discovery and force manual model entries.
-  # Per-model num_ctx control is gone too; the Ollama deployment caps default
-  # context globally with OLLAMA_CONTEXT_LENGTH=4096 to prevent KV-cache OOM.
+  # No models.providers block — both ollama and openai use plugin-driven
+  # discovery from env vars: OLLAMA_API_KEY (live /api/tags discovery) and
+  # OPENAI_API_KEY (static built-in catalog of ~40 models). Adding any
+  # explicit provider entry suppresses that plugin's discovery, so the
+  # picker would only show what's enumerated in models[] or named in
+  # agents.defaults. Per-model num_ctx control is gone with this pattern;
+  # the Ollama deployment caps default context globally with
+  # OLLAMA_CONTEXT_LENGTH=4096 to prevent KV-cache OOM.
   openclaw.json: |
     {
       "gateway": {
@@ -37,24 +40,6 @@ data:
           "allowedOrigins": ["http://openclaw.localhost"],
           "allowInsecureAuth": true,
           "dangerouslyDisableDeviceAuth": true
-        }
-      },
-      "models": {
-        "providers": {
-          "openai": {
-            "baseUrl": "https://api.openai.com/v1",
-            "apiKey": "OPENAI_API_KEY",
-            "models": [
-              { "id": "gpt-4o-mini", "name": "gpt-4o-mini", "input": ["text", "image"] },
-              { "id": "gpt-4o", "name": "gpt-4o", "input": ["text", "image"] }
-            ]
-          },
-          "ollama": {
-            "baseUrl": "http://127.0.0.1:11434",
-            "apiKey": "ollama-local",
-            "api": "ollama",
-            "models": []
-          }
         }
       },
       "agents": {
