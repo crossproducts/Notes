@@ -74,9 +74,11 @@ spec:
               value: production
             - name: OPENCLAW_CONFIG_DIR
               value: /home/node/.openclaw
-            # OPENCLAW_GATEWAY_TOKEN intentionally omitted — auth.mode is
-            # "trusted-proxy" in the configmap, and OpenClaw rejects the
-            # gateway with `mixed_trusted_proxy_token` if both are set.
+            - name: OPENCLAW_GATEWAY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-secrets
+                  key: OPENCLAW_GATEWAY_TOKEN
             # Implicit Ollama discovery: OpenClaw queries /api/tags at the
             # hardcoded http://127.0.0.1:11434 when this is set and there is
             # no models.providers.ollama block in openclaw.json. The socat

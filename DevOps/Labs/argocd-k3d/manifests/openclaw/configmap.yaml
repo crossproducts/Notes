@@ -10,8 +10,10 @@ data:
   # https://github.com/openclaw/openclaw/blob/main/scripts/k8s/manifests/configmap.yaml
   #
   # bind=lan (0.0.0.0) so the in-cluster Service can reach the gateway on the
-  # pod IP. Default upstream bind is "loopback" which only works with kubectl
-  # port-forward and produces "connection refused" on Service/Ingress probes.
+  # pod IP. Default upstream bind is "loopback" which is service-IP unreachable.
+  # Access path is `kubectl port-forward svc/openclaw 18789:18789` — loopback
+  # browser connections (127.0.0.1) are auto-approved by OpenClaw's pairing
+  # gate, so no device-pair prompt and no x-openclaw-scopes gymnastics.
   #
   # Models block intentionally omitted — implicit Ollama discovery is enabled
   # via OLLAMA_API_KEY=ollama-local in the deployment. Defining a provider
@@ -24,17 +26,10 @@ data:
         "mode": "local",
         "bind": "lan",
         "port": 18789,
-        "trustedProxies": ["10.42.0.0/16"],
-        "auth": {
-          "mode": "trusted-proxy",
-          "trustedProxy": {
-            "userHeader": "x-forwarded-user",
-            "requiredHeaders": ["x-forwarded-proto", "x-forwarded-host"]
-          }
-        },
+        "auth": { "mode": "token" },
         "controlUi": {
           "enabled": true,
-          "allowedOrigins": ["http://openclaw.localhost"]
+          "allowedOrigins": ["http://127.0.0.1:18789", "http://localhost:18789"]
         }
       },
       "agents": {
