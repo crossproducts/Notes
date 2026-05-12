@@ -48,6 +48,7 @@ data:
       "agents": {
         "defaults": {
           "workspace": "/home/node/.openclaw/workspace",
+          "experimental": { "localModelLean": true },
           "model": {
             "primary": "ollama/qwen2.5:3b",
             "fallbacks": ["openai/gpt-4o-mini"]
@@ -57,7 +58,8 @@ data:
           {
             "id": "default",
             "name": "OpenClaw Assistant",
-            "workspace": "/home/node/.openclaw/workspace"
+            "workspace": "/home/node/.openclaw/workspace",
+            "tools": { "profile": "minimal" }
           }
         ]
       },
