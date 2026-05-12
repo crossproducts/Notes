@@ -45,6 +45,20 @@ data:
           "dangerouslyDisableDeviceAuth": true
         }
       },
+      "models": {
+        "providers": {
+          "ollama": {
+            "baseUrl": "http://127.0.0.1:11434",
+            "apiKey": "ollama-local",
+            "api": "ollama",
+            "timeoutSeconds": 600,
+            "models": [
+              { "id": "qwen3:0.6b",  "name": "qwen3:0.6b",  "input": ["text"], "params": { "num_ctx": 4096, "keep_alive": "30m", "think": false } },
+              { "id": "qwen2.5:3b",  "name": "qwen2.5:3b",  "input": ["text"], "params": { "num_ctx": 4096, "keep_alive": "30m" } }
+            ]
+          }
+        }
+      },
       "agents": {
         "defaults": {
           "workspace": "/home/node/.openclaw/workspace",
