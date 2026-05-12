@@ -96,7 +96,7 @@ data:
             ]
           }
         }
-      }
+      },
       "agents": {
         "defaults": {
           "workspace": "/home/node/.openclaw/workspace",
