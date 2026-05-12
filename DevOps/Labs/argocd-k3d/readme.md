@@ -25,7 +25,7 @@ argocd/
     ollama/              # Deployment + Service + PVC + Ingress (ollama.localhost)
     openwebui/           # Deployment + Service + PVC + Ingress (openwebui.localhost)
     anythingllm/         # Deployment + Service + PVC + Ingress (anythingllm.localhost)
-    openclaw/            # Deployment + Service + PVC + ConfigMap + Secret — wired to ollama, accessed via kubectl port-forward (loopback auto-approves pairing)
+    openclaw/            # Deployment + Service + PVC + Ingress + ConfigMap + Middleware (openclaw.localhost) — wired to ollama, trusted-proxy auth via traefik, no login
     pihole/              # Deployment + Service (web) + Service (DNS LB) + PVC + Ingress (pihole.localhost)
   helm-charts/
     hello-py/            # custom Helm chart: Python stdlib http.server in a ConfigMap (hello.localhost)
@@ -155,7 +155,7 @@ Browse:
 - <http://hello.localhost> — Python stdlib `http.server` (custom local Helm chart; greeting comes from `values.yaml`)
 - <http://openwebui.localhost> — chat UI; first signup becomes admin
 - <http://anythingllm.localhost> — AnythingLLM workspace UI (wired to Ollama; first signup becomes admin)
-- OpenClaw gateway UI — **not** on `*.localhost`; access via `kubectl port-forward svc/openclaw 18789:18789 -n openclaw` then browse to <http://127.0.0.1:18789>. Loopback connections are auto-approved by OpenClaw's pairing gate, so no device-pair prompt. Paste the lab `OPENCLAW_GATEWAY_TOKEN` from [manifests/openclaw/secret.yaml](manifests/openclaw/secret.yaml) into the Gateway Token field on first connect; the browser remembers it per profile. Trade-off: ingress would need real device pairing per browser, which is more friction than port-forward in a single-user lab
+- <http://openclaw.localhost> — OpenClaw gateway UI (local-only; wired to in-cluster Ollama, no cloud keys). No login or pairing — traefik stamps `X-Forwarded-User: lab` via [manifests/openclaw/middleware.yaml](manifests/openclaw/middleware.yaml) and OpenClaw's `auth.mode: "trusted-proxy"` accepts it. Anyone who can reach `openclaw.localhost` is logged in as `lab`
 - <http://ollama.localhost> — Ollama HTTP API (e.g. `curl http://ollama.localhost/api/tags`)
 - <http://pihole.localhost/admin/> — Pi-hole admin (password `changeme`; bare `/` 404s)
 - <http://grafana.localhost> — Grafana (user `admin`; password retrieval below)
