@@ -3,6 +3,7 @@
     "allow": [
       "WebSearch",
       "WebFetch(domain:*)",
+
       "Bash(git *)",
       "Bash(kubectl *)",
       "Bash(gh *)",
@@ -11,12 +12,11 @@
       "Bash(npx *)",
       "Bash(argocd *)",
       "Bash(helm *)",
+
       "PowerShell(git *)",
       "PowerShell(kubectl *)",
       "PowerShell(gh *)",
       "PowerShell(gh api *)",
-      "PowerShell(gh api \"*\")",
-      "PowerShell(gh api '*')",
       "PowerShell(claude *)",
       "PowerShell(npx *)",
       "PowerShell(node *)",
@@ -26,24 +26,8 @@
       "PowerShell(k3d *)",
       "PowerShell(Invoke-RestMethod *)",
       "PowerShell(Invoke-WebRequest *)",
-      "mcp__kubernetes__*",
-      "PowerShell(gh api \"repos/openclaw/openclaw/contents/src/config/types.gateway.ts\" --jq \".content\" | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } | Select-String -Pattern \"GatewayControlUiConfig\" -Context 0,40 | Select-Object -First 80)",
-      "PowerShell($content = gh api \"repos/openclaw/openclaw/contents/src/config/types.gateway.ts\" --jq \".content\" | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) }; $content | Out-File -Encoding utf8 \"$env:TEMP\\\\openclaw-config-types.ts\"; Select-String -Path \"$env:TEMP\\\\openclaw-config-types.ts\" -Pattern \"GatewayControlUiConfig|GatewayAuthConfig|allowInsecure|allowBypass|trustedProxy\" -Context 0,15 | Select-Object -First 80)",
-      "Bash(Select-String -Pattern \"POST|error|ERROR\")",
-      "PowerShell(gh api \"repos/openclaw/openclaw/contents/src/agents/models-config.providers.implicit.ts\" --jq \".content\" | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } | Select-String -Pattern \"ollama|implicit|providers\\\\.ollama\" -Context 1,3 | Select-Object -First 60)",
-      "PowerShell($content = gh api \"repos/openclaw/openclaw/contents/extensions/ollama/openclaw.plugin.json\" --jq \".content\" | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) }; $content | Select-Object -First 50)",
-      "PowerShell($content = gh api \"repos/openclaw/openclaw/contents/extensions/ollama/provider-discovery.ts\" --jq \".content\" | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) }; $content | Out-File -Encoding utf8 \"$env:TEMP\\\\ollama-discovery.ts\"; Select-String -Path \"$env:TEMP\\\\ollama-discovery.ts\" -Pattern \"discovery|explicit|configured|skip\" -Context 0,3 | Select-Object -First 60)",
-      "PowerShell($content = gh api \"repos/openclaw/openclaw/contents/extensions/ollama/src/discovery-shared.ts\" --jq \".content\" 2>$null | %{ if\\($_\\) { [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } }; if\\($content\\) { $content | Out-File -Encoding utf8 \"$env:TEMP\\\\ollama-discovery-shared.ts\"; Select-String -Path \"$env:TEMP\\\\ollama-discovery-shared.ts\" -Pattern \"explicit|skip|configured|existing\" -Context 1,3 | Select-Object -First 60 } else { 'file not found' })",
-      "PowerShell(Select-String -Path \"$env:TEMP\\\\ollama-discovery-shared.ts\" -Pattern \"hasOllamaDiscoveryOptIn|hasMeaningfulExplicitOllamaConfig\" -Context 0,8 | Select-Object -First 50)",
-      "PowerShell(gh api \"repos/openclaw/openclaw/contents/extensions/openai/openclaw.plugin.json\" --jq \".content\" 2>$null | %{ if\\($_\\) { [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } else { 'no openai extension found' } })",
-      "PowerShell(Select-String -Path \"$env:TEMP\\\\ollama-discovery-shared.ts\" -Pattern \"OllamaDiscoveryOptIn\" -Context 1,8 | Select-Object -First 30)",
-      "PowerShell(Select-String -Path \"$env:TEMP\\\\ollama-discovery-shared.ts\" -Pattern \"hasOllamaDiscoveryOptIn|hasOllamaDiscovery|hasReal\" -SimpleMatch -Context 0,3 | Select-Object -First 30)",
-      "PowerShell(Get-Content \"$env:TEMP\\\\ollama-discovery-shared.ts\" | Select-String -SimpleMatch \"DiscoveryOptIn\")",
-      "PowerShell(gh api \"repos/openclaw/openclaw/contents/extensions/ollama/src/provider-models.ts\" --jq \".content\" 2>$null | %{ if\\($_\\) { [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } else { 'file not found' } } | Out-File -Encoding utf8 \"$env:TEMP\\\\ollama-provider-models.ts\"; Select-String -Path \"$env:TEMP\\\\ollama-provider-models.ts\" -Pattern \"capabilities|tools|filter|skip\" -Context 1,3 | Select-Object -First 40)",
-      "PowerShell(gh api 'search/code?q=subagent+repo:openclaw/openclaw+filename:types.gateway.ts' --jq '.items[].path' 2>$null | Select-Object -First 5; Write-Host '---'; Select-String -Path \"$env:TEMP\\\\openclaw-config-types.ts\" -Pattern \"subagent|sub-agent|subAgent\" -Context 0,5 | Select-Object -First 30)",
-      "PowerShell($content = gh api \"repos/openclaw/openclaw/contents/src/config/types.tools.ts\" --jq \".content\" | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) }; $content | Out-File -Encoding utf8 \"$env:TEMP\\\\openclaw-types-tools.ts\"; Select-String -Path \"$env:TEMP\\\\openclaw-types-tools.ts\" -Pattern \"subagent|enabled\" -Context 1,3 | Select-Object -First 40)",
-      "PowerShell(gh api \"repos/openclaw/openclaw/contents/src/agents/tools/subagents-tool.ts\" --jq \".content\" | %{ [Text.Encoding]::UTF8.GetString\\([Convert]::FromBase64String\\($_\\)\\) } | Select-Object -First 60)",
-      "PowerShell(Select-String -Path \"$env:TEMP\\\\openclaw-types-tools.ts\" -Pattern \"deny\\\\?|allow\\\\?|^export type ToolsConfig|tools\\\\?: \\\\{\" -Context 0,3 | Select-Object -First 30)"
+
+      "mcp__kubernetes__*"
     ]
   }
 }
