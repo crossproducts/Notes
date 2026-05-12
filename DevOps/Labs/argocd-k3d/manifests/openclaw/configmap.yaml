@@ -74,6 +74,26 @@ data:
                 }
               }
             ]
+          },
+          "openai": {
+            "api": "openai",
+            "baseUrl": "https://api.openai.com/v1",
+            "apiKey": "${OPENAI_API_KEY}",
+            "models": [
+              {
+                "id": "gpt-4o-mini",
+                "name": "GPT-4o Mini",
+                "contextWindow": 128000,
+                "maxTokens": 16384,
+                "input": ["text", "image"],
+                "cost": {
+                  "input": 0.00015,
+                  "output": 0.0006,
+                  "cacheRead": 0,
+                  "cacheWrite": 0
+                }
+              }
+            ]
           }
         }
       },
