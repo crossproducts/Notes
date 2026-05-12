@@ -34,7 +34,9 @@ data:
         },
         "controlUi": {
           "enabled": true,
-          "allowedOrigins": ["http://openclaw.localhost"]
+          "allowedOrigins": ["http://openclaw.localhost"],
+          "allowInsecureAuth": true,
+          "dangerouslyDisableDeviceAuth": true
         }
       },
       "agents": {
