@@ -83,6 +83,16 @@ spec:
             # sidecar below forwards 127.0.0.1:11434 to the cluster service.
             - name: OLLAMA_API_KEY
               value: ollama-local
+            # OpenAI provider key. Secret is created out-of-band from
+            # DevOps/Labs/argocd-k3d/.env via `kubectl create secret …
+            # --from-env-file`, then annotated Prune=false so ArgoCD
+            # doesn't sweep it on sync. See .env.example for setup.
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-llm-keys
+                  key: OPENAI_API_KEY
+                  optional: true
           volumeMounts:
             - name: openclaw-home
               mountPath: /home/node/.openclaw
