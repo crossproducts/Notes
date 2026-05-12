@@ -54,7 +54,19 @@ data:
             "apiKey": "ollama-local",
             "api": "ollama",
             "models": [
-              { "id": "qwen2.5:3b", "name": "Qwen 2.5 3B", "input": ["text"] }
+              {
+                "id": "qwen2.5:3b",
+                "name": "Qwen 2.5 3B",
+                "contextWindow": 2048,
+                "maxTokens": 256,
+                "input": ["text"],
+                "cost": {
+                  "input": 0,
+                  "output": 0,
+                  "cacheRead": 0,
+                  "cacheWrite": 0
+                }
+              }
             ]
           }
         }
