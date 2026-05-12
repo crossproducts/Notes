@@ -57,7 +57,7 @@ data:
               {
                 "id": "qwen2.5:3b",
                 "name": "Qwen 2.5 3B",
-                "contextWindow": 2048,
+                "contextWindow": 4096,
                 "maxTokens": 256,
                 "input": ["text"],
                 "cost": {
