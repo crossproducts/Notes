@@ -26,7 +26,7 @@ spec:
             # Space-separated list of models to preload via the postStart hook.
             # Idempotent — already-cached models are a no-op against the PVC.
             - name: OLLAMA_PRELOAD_MODELS
-              value: "llama3.2:1b llama3.2:3b qwen2.5:3b"
+              value: "qwen2.5:3b"
             # Global cap on default model context. Without this, models that
             # advertise a 128K window (e.g. llama3.2:3b) try to allocate ~87 GiB
             # of KV cache on first load. OpenClaw's auto-discovery path can't
