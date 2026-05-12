@@ -57,8 +57,8 @@ data:
               {
                 "id": "qwen2.5:3b",
                 "name": "Qwen 2.5 3B",
-                "contextWindow": 4096,
-                "maxTokens": 256,
+                "contextWindow": 16384,
+                "maxTokens": 512,
                 "input": ["text"],
                 "cost": {
                   "input": 0,
@@ -75,8 +75,8 @@ data:
         "defaults": {
           "workspace": "/home/node/.openclaw/workspace",
           "model": {
-            "primary": "openai/gpt-4o-mini",
-            "fallbacks": ["ollama/qwen2.5:3b"]
+            "primary": "ollama/qwen2.5:3b",
+            "fallbacks": ["openai/gpt-4o-mini"]
           }
         },
         "list": [
