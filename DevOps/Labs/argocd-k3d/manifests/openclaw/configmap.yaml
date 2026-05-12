@@ -45,6 +45,18 @@ data:
           "dangerouslyDisableDeviceAuth": true
         }
       },
+      "models": {
+        "providers": {
+          "openai": {
+            "baseUrl": "https://api.openai.com/v1",
+            "apiKey": "OPENAI_API_KEY",
+            "models": [
+              { "id": "gpt-4o-mini", "name": "gpt-4o-mini", "input": ["text", "image"] },
+              { "id": "gpt-4o", "name": "gpt-4o", "input": ["text", "image"] }
+            ]
+          }
+        }
+      },
       "agents": {
         "defaults": {
           "workspace": "/home/node/.openclaw/workspace",
