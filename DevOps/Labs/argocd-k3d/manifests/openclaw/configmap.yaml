@@ -48,6 +48,17 @@ data:
               { "id": "gpt-4o-mini", "name": "gpt-4o-mini", "input": ["text", "image"] },
               { "id": "gpt-4o", "name": "gpt-4o", "input": ["text", "image"] }
             ]
+          },
+          "ollama": {
+            "baseUrl": "http://127.0.0.1:11434",
+            "apiKey": "ollama-local",
+            "api": "ollama",
+            "timeoutSeconds": 600,
+            "models": [
+              { "id": "qwen2.5:3b",  "name": "qwen2.5:3b",  "input": ["text"], "params": { "num_ctx": 4096, "keep_alive": "30m" } },
+              { "id": "llama3.2:1b", "name": "llama3.2:1b", "input": ["text"], "params": { "num_ctx": 4096, "keep_alive": "30m" } },
+              { "id": "llama3.2:3b", "name": "llama3.2:3b", "input": ["text"], "params": { "num_ctx": 4096, "keep_alive": "30m" } }
+            ]
           }
         }
       },
