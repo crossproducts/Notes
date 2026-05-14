@@ -8,16 +8,14 @@ metadata:
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:
-    {{- range .Values.ingress.hosts }}
-    - host: {{ . }}
+    - host: {{ .Values.ingress.host }}
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: {{ include "hello-py.fullname" $ }}
+                name: {{ include "hello-py.fullname" . }}
                 port:
-                  number: {{ $.Values.service.port }}
-    {{- end }}
+                  number: {{ .Values.service.port }}
 {{- end -}}

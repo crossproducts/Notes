@@ -15,13 +15,3 @@ spec:
                 name: anythingllm
                 port:
                   number: 3001
-    - host: anythingllm.127.0.0.1.nip.io
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: anythingllm
-                port:
-                  number: 3001

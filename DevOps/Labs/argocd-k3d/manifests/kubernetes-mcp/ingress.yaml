@@ -15,13 +15,3 @@ spec:
                 name: kubernetes-mcp-server
                 port:
                   number: 8080
-    - host: k8s-mcp.127.0.0.1.nip.io
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: kubernetes-mcp-server
-                port:
-                  number: 8080

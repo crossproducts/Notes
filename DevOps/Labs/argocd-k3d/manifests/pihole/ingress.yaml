@@ -15,13 +15,3 @@ spec:
                 name: pihole
                 port:
                   number: 80
-    - host: pihole.127.0.0.1.nip.io
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: pihole
-                port:
-                  number: 80

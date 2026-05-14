@@ -15,13 +15,3 @@ spec:
                 name: podinfo
                 port:
                   number: 9898
-    - host: podinfo.127.0.0.1.nip.io
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: podinfo
-                port:
-                  number: 9898
