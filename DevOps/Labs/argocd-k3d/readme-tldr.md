@@ -84,15 +84,21 @@ kubectl exec -n ollama deploy/ollama -- ollama list
 
 ## MCP
 ### K8s MCP
-Runs in-cluster as the `kubernetes-mcp` ArgoCD app — read-only ServiceAccount, exposed via Traefik at `http://k8s-mcp.localhost/mcp` (Streamable HTTP).
+Runs in-cluster as the `kubernetes-mcp` ArgoCD app — read-only ServiceAccount on a `kubernetes-mcp-server` pod listening on `:8080` (Streamable HTTP). A Traefik ingress at `http://k8s-mcp.localhost/mcp` exists, but `.localhost` only auto-resolves in browsers — Node-based HTTP clients like Claude Code can't reach it. Use `kubectl port-forward` instead.
 
 Register Claude Code against the in-cluster server:
 ```powershell
-claude mcp remove kubernetes -s user
-claude mcp add --transport http kubernetes http://k8s-mcp.localhost/mcp -s user
+# 1. In a dedicated terminal — leave it running:
+kubectl port-forward -n kubernetes-mcp svc/kubernetes-mcp-server 8080:8080
 
-# VS Code: Ctrl+Shift+P → "Developer: Reload Window"
+# 2. In another terminal — register the MCP server:
+claude mcp remove kubernetes -s user
+claude mcp add --transport http kubernetes http://localhost:8080/mcp -s user
+
+# 3. VS Code: Ctrl+Shift+P → "Developer: Reload Window"
 # The Claude panel restarts and the new MCP tools attach.
 ```
+
+The port-forward must stay running. If it stops (terminal closed, pod replaced, cluster restarted), Claude Code's MCP tools go offline silently — restart the port-forward and reload the window.
 
 ### Helm MCP
