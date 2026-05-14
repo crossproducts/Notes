@@ -2,3 +2,17 @@
 **/.env
 **/.env.local
 **/*.secret
+
+# Claude Code per-machine settings
+.claude/settings.local.json
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
