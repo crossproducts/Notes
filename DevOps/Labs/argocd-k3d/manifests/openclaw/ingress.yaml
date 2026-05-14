@@ -20,3 +20,13 @@ spec:
                 name: openclaw
                 port:
                   number: 18789
+    - host: openclaw.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: openclaw
+                port:
+                  number: 18789

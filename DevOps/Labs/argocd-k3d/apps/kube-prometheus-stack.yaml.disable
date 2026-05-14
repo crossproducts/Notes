@@ -31,6 +31,7 @@ spec:
             ingressClassName: traefik
             hosts:
               - prometheus.localhost
+              - prometheus.127.0.0.1.nip.io
             paths:
               - /
             pathType: Prefix
@@ -51,6 +52,7 @@ spec:
             ingressClassName: traefik
             hosts:
               - alertmanager.localhost
+              - alertmanager.127.0.0.1.nip.io
             paths:
               - /
             pathType: Prefix
@@ -61,6 +63,7 @@ spec:
             ingressClassName: traefik
             hosts:
               - grafana.localhost
+              - grafana.127.0.0.1.nip.io
             path: /
           defaultDashboardsTimezone: browser
           # Admin password is auto-generated into secret kps-grafana

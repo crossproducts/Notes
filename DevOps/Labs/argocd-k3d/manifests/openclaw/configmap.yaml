@@ -40,7 +40,7 @@ data:
         },
         "controlUi": {
           "enabled": true,
-          "allowedOrigins": ["http://openclaw.localhost"],
+          "allowedOrigins": ["http://openclaw.localhost", "http://openclaw.127.0.0.1.nip.io"],
           "allowInsecureAuth": true,
           "dangerouslyDisableDeviceAuth": true
         }

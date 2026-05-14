@@ -31,7 +31,7 @@ kubectl apply -k bootstrap/root
 
 ```bash
 kubectl apply -k bootstrap/argocd --server-side --force-conflicts
-kubectl wait --for=condition=Established --timeout=60s `
+kubectl wait --for=condition=Established --timeout=60s `  
   crd/applications.argoproj.io `
   crd/applicationsets.argoproj.io `
   crd/appprojects.argoproj.io

@@ -14,7 +14,9 @@ service:
 ingress:
   enabled: true
   className: traefik
-  host: hello.localhost
+  hosts:
+    - hello.localhost
+    - hello.127.0.0.1.nip.io
 
 resources:
   requests:
