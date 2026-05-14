@@ -1,15 +1,14 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Bootstraps ArgoCD itself + the root-app that hands control over to GitOps.
-# Apply with:  kubectl apply -k bootstrap/ --server-side
+# Argo CD core install + ingress.
+# Apply first; wait for CRDs to register; then apply ../root.
 namespace: argocd
 
 resources:
   - namespace.yaml
   - https://raw.githubusercontent.com/argoproj/argo-cd/v2.13.2/manifests/install.yaml
   - argocd-ingress.yaml
-  - root-app.yaml
 
 # Run argocd-server in insecure mode so it serves plain HTTP on :8080
 patches:

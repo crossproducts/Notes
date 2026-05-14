@@ -1,7 +1,7 @@
 # TL;DR
 
 ## Cluster Management
-```powershell
+```bash
 # Create cluster
 k3d cluster create dev --api-port 6550 -p "80:80@loadbalancer" -p "443:443@loadbalancer"
 
@@ -21,11 +21,25 @@ k3d cluster start dev
 ```
 
 ## Bootstrap
-```powershell
-kubectl apply -k bootstrap/ --server-side
-    or
-kubectl apply -k bootstrap/ --server-side --force-conflicts
+```bash
+kubectl apply -k bootstrap/argocd
+kubectl apply -k bootstrap/root
 ```
+
+<details>
+<summary>Bootstrap Alt Script</summary>
+
+```bash
+kubectl apply -k bootstrap/argocd --server-side --force-conflicts
+kubectl wait --for=condition=Established --timeout=60s `
+  crd/applications.argoproj.io `
+  crd/applicationsets.argoproj.io `
+  crd/appprojects.argoproj.io
+kubectl -n argocd rollout status deploy/argocd-server --timeout=120s
+kubectl apply -k bootstrap/root --server-side --force-conflicts
+```
+</details>
+
 
 ## ArgoCD
 - http://argocd.localhost
