@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kubernetes-mcp-server
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: k8s-mcp.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kubernetes-mcp-server
+                port:
+                  number: 8080

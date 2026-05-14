@@ -2,7 +2,7 @@
 
 - ArgoCD SSO
 
-- K8s MCP
+- ✅ K8s MCP
 - Grafana MCP
 
 - ✅ kube-prometheus-stack 

@@ -1,0 +1,98 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubernetes-mcp-server-read
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+      - pods/log
+      - pods/status
+      - services
+      - endpoints
+      - configmaps
+      - secrets
+      - nodes
+      - nodes/status
+      - namespaces
+      - events
+      - persistentvolumes
+      - persistentvolumeclaims
+      - serviceaccounts
+      - replicationcontrollers
+      - resourcequotas
+      - limitranges
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - deployments/status
+      - statefulsets
+      - statefulsets/status
+      - daemonsets
+      - daemonsets/status
+      - replicasets
+      - replicasets/status
+      - controllerrevisions
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+      - jobs/status
+      - cronjobs
+      - cronjobs/status
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+      - ingressclasses
+      - networkpolicies
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources:
+      - roles
+      - rolebindings
+      - clusterroles
+      - clusterrolebindings
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["discovery.k8s.io"]
+    resources:
+      - endpointslices
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources:
+      - storageclasses
+      - volumeattachments
+      - csidrivers
+      - csinodes
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["policy"]
+    resources:
+      - poddisruptionbudgets
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["autoscaling"]
+    resources:
+      - horizontalpodautoscalers
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources:
+      - customresourcedefinitions
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources:
+      - pods
+      - nodes
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubernetes-mcp-server-read
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubernetes-mcp-server-read
+subjects:
+  - kind: ServiceAccount
+    name: kubernetes-mcp-server
+    namespace: kubernetes-mcp

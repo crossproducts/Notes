@@ -70,11 +70,15 @@ kubectl exec -n ollama deploy/ollama -- ollama list
 
 ## MCP
 ### K8s MCP
-```
-claude mcp add kubernetes --scope user -- npx -y kubernetes-mcp-server@latest --read-only
+Runs in-cluster as the `kubernetes-mcp` ArgoCD app — read-only ServiceAccount, exposed via Traefik at `http://k8s-mcp.localhost/mcp` (Streamable HTTP).
 
-VS Code extension: 
-    Ctrl+Shift+P → "Developer: Reload Window". 
-    The Claude panel restarts and the new MCP tools attach.
+Register Claude Code against the in-cluster server:
+```powershell
+claude mcp remove kubernetes -s user
+claude mcp add --transport http kubernetes http://k8s-mcp.localhost/mcp -s user
+
+# VS Code: Ctrl+Shift+P → "Developer: Reload Window"
+# The Claude panel restarts and the new MCP tools attach.
 ```
+
 ### Helm MCP
