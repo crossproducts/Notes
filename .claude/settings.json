@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:*)",
+
+      "Bash(git *)",
+      "Bash(kubectl *)",
+      "Bash(gh *)",
+      "Bash(gh api *)",
+      "Bash(claude *)",
+      "Bash(npx *)",
+      "Bash(argocd *)",
+      "Bash(helm *)",
+
+      "PowerShell(git *)",
+      "PowerShell(kubectl *)",
+      "PowerShell(gh *)",
+      "PowerShell(gh api *)",
+      "PowerShell(claude *)",
+      "PowerShell(npx *)",
+      "PowerShell(node *)",
+      "PowerShell(argocd *)",
+      "PowerShell(helm *)",
+      "PowerShell(docker *)",
+      "PowerShell(k3d *)",
+      "PowerShell(Invoke-RestMethod *)",
+      "PowerShell(Invoke-WebRequest *)",
+
+      "mcp__kubernetes__*"
+    ]
+  }
+}
