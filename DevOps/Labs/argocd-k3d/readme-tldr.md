@@ -66,7 +66,7 @@ kubectl apply -k bootstrap/root --server-side --force-conflicts
 
 ## OpenClaw
 Skip (locally)
-```
+```bash
 # 1. list pending requests (confirm the ID, since pairing requests expire after 5 min)
 kubectl exec -n openclaw deploy/openclaw -- openclaw devices list
 
@@ -78,7 +78,7 @@ kubectl exec -n openclaw deploy/openclaw -- openclaw devices approve <Request>
 ```
 
 ## Ollama
-```
+```bash
 kubectl exec -n ollama deploy/ollama -- ollama list
 ```
 
@@ -87,7 +87,7 @@ kubectl exec -n ollama deploy/ollama -- ollama list
 Runs in-cluster as the `kubernetes-mcp` ArgoCD app — read-only ServiceAccount on a `kubernetes-mcp-server` pod listening on `:8080` (Streamable HTTP). A Traefik ingress at `http://k8s-mcp.localhost/mcp` exists, but `.localhost` only auto-resolves in browsers — Node-based HTTP clients like Claude Code can't reach it. Use `kubectl port-forward` instead.
 
 Register Claude Code against the in-cluster server:
-```powershell
+```bash
 # 1. In a dedicated terminal — leave it running:
 kubectl port-forward -n kubernetes-mcp svc/kubernetes-mcp-server 8080:8080
 
@@ -97,6 +97,9 @@ claude mcp add --transport http kubernetes http://localhost:8080/mcp -s user
 
 # 3. VS Code: Ctrl+Shift+P → "Developer: Reload Window"
 # The Claude panel restarts and the new MCP tools attach.
+
+# 4. Verify
+claude mcp list
 ```
 
 The port-forward must stay running. If it stops (terminal closed, pod replaced, cluster restarted), Claude Code's MCP tools go offline silently — restart the port-forward and reload the window.
