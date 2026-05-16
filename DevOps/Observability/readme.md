@@ -1,32 +1,19 @@
-# Observability
+# 05 · Observability
 
-> **Status:** 🔴 Pending — umbrella skeleton; deep-dive notes live in sibling folders.
+> Metrics, logs, traces, and profiles — understanding a running system, including
+> the failure mode you did not write a test for.
 
-## Why it matters (2026)
+## Topics
 
-Observability is how you understand a system you did not write the failure mode for.
-The 2026 mental model spans four signals plus the human layer on top.
-
-## Mental model
-
-| Signal | Answers | Tooling here |
-|---|---|---|
-| Metrics | What is happening, numerically | [Prometheus](../Prometheus/), [Grafana](../Grafana/) |
-| Logs | What happened, as events | Loki |
-| Traces | Where time went across services | Tempo / Jaeger |
-| Profiles | Where CPU/memory cost went | Pyroscope |
-| Alerts | When a human must act | Alertmanager, Grafana Alerting |
-| Dashboards | How a human investigates | Grafana |
-
-## Planned topics
-
-- [ ] [OpenTelemetry](../OpenTelemetry/) — vendor-neutral instrumentation
-- [ ] OTel Collector pipeline (receive → process → export)
-- [ ] [Grafana Alloy](../Alloy/) — unified telemetry agent
-- [ ] Golden signals; RED and USE methods
-- [ ] Observability architecture for a multi-service app
-- [ ] Cost of observability (cardinality, retention, sampling)
+| Topic | Focus |
+|---|---|
+| [Observability](Observability/) | Concepts, mental model, golden signals |
+| [Prometheus](Prometheus/) | Metrics collection and alerting |
+| [Grafana](Grafana/) | Dashboards, visualization, alerting |
+| [OpenTelemetry](OpenTelemetry/) | Vendor-neutral instrumentation + Collector |
+| [Alloy](Alloy/) | Unified telemetry agent |
 
 ## See also
 
-- [SRE](../SRE/) · Labs: [Labs/Observability](../../../Labs/Observability/)
+- [SRE](../SRE/) — observability is the input to reliability work
+- Labs: [.labs/Observability](../../.labs/Observability/)

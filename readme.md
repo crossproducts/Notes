@@ -15,12 +15,12 @@
 |---|---|
 | [SWE](SWE/) | Backend, APIs, system design, DSA, testing, design patterns, languages, frameworks |
 | [Cloud](Cloud/) | AWS (IAM, VPC, ECS/EKS, Lambda, Well-Architected, FinOps, certs), Azure, GCP |
-| [DevOps](DevOps/Learn/) | CI/CD, GitOps, ArgoCD, Helm, Terraform/Terragrunt, Platform Engineering, Observability, SRE, Docker, K8s |
+| [DevOps](DevOps/) | Four tracks — Infrastructure Engineering, Platform Engineering, Observability, SRE |
 | [AI](AI/) | ML, LLMs, RAG, Agents, MCP, MLOps, fine-tuning, model serving, AI security, governance |
 | [Data](Data/) | Spark, Kafka, Airflow, lakehouse, Iceberg, Trino, ClickHouse, Elasticsearch |
 | [Security](Security/) | IAM, AppSec, DevSecOps, supply chain, Kubernetes, cloud, AI security |
 | [Architecture](Architecture/) | Reference architectures, diagrams, ADRs, tradeoff analysis, decision trees, PRRs |
-| [Labs](Labs/) | Hands-on, runnable proof — local K8s, AWS, AI apps, observability, security, FinOps |
+| [.labs](.labs/) | Hands-on, runnable proof — local K8s, AWS, AI apps, observability, security, FinOps |
 | [Career](Career/) | Role roadmaps, interview prep, project portfolio, resume bullets, cert notes |
 | [Cybersecurity](Cybersecurity/) | Offensive / blue-team labs and learning |
 | [SysAdmin](SysAdmin/) | Active Directory, Ansible, Chef, Puppet, SaltStack |

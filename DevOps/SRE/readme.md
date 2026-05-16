@@ -26,4 +26,4 @@ It is the language hiring managers use to gauge operational maturity.
 ## See also
 
 - [Observability](../Observability/) · [Platform-Engineering](../Platform-Engineering/)
-- [Production-Readiness-Reviews](../../../Architecture/Production-Readiness-Reviews/)
+- [Production-Readiness-Reviews](../../Architecture/Production-Readiness-Reviews/)
