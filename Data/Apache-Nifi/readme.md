@@ -1,5 +1,0 @@
-# Nifi
-
-> [!NOTE]   
-> **Status**: Pending
----

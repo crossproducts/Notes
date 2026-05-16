@@ -1,6 +1,0 @@
-# Ceph
-
-> [!NOTE]
-> **Status**: Pending
-
----
