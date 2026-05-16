@@ -1,0 +1,58 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hello-py
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  # Local chart: ArgoCD reads Chart.yaml directly out of this git repo.
+  # No publish step — push to the repo and Argo re-renders.
+  source:
+    repoURL: https://github.com/crossproducts/Notes
+    targetRevision: main
+    path: .labs/Local-Kubernetes/argocd-k3d/helm-charts/hello-py
+    helm:
+      releaseName: hello-py
+
+  # ----------------------------------------------------------------------
+  # If the chart were published instead of read from this repo, source:
+  # would point at a Helm repository or OCI registry. Two common shapes:
+  #
+  # (a) HTTP Helm repo (e.g. GitHub Pages via `helm-gh-pages`, ChartMuseum):
+  #
+  # source:
+  #   repoURL: https://crossproducts.github.io/charts
+  #   chart: hello-py
+  #   targetRevision: 0.1.0           # chart version (SemVer), not a git ref
+  #   helm:
+  #     releaseName: hello-py
+  #     values: |
+  #       greeting: "Hello from a published chart!"
+  #
+  # (b) OCI registry (modern; ghcr.io, ECR, Docker Hub, Harbor all work):
+  #
+  # source:
+  #   repoURL: ghcr.io/crossproducts/charts   # NB: no oci:// prefix in Argo
+  #   chart: hello-py
+  #   targetRevision: 0.1.0
+  #   helm:
+  #     releaseName: hello-py
+  #
+  # Differences from the local form:
+  #  - `path:` is gone; `chart:` names the published artifact.
+  #  - `targetRevision:` is the *chart* version, not a git branch/SHA.
+  #  - Promotion = `helm package` + `helm push`, then bump targetRevision.
+  #  - Private OCI registries need a repo credential (Settings -> Repositories
+  #    in the ArgoCD UI, or an `argocd-repo-creds` secret with type: helm).
+  # ----------------------------------------------------------------------
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: hello-py
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

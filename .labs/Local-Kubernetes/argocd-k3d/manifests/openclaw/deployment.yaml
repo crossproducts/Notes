@@ -1,0 +1,214 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openclaw
+  labels:
+    app: openclaw
+spec:
+  # Single-instance stateful gateway — never scale past 1.
+  replicas: 1
+  strategy:
+    type: Recreate  # PVC is RWO; rolling update would deadlock on the volume
+  selector:
+    matchLabels:
+      app: openclaw
+  template:
+    metadata:
+      labels:
+        app: openclaw
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      initContainers:
+        # OpenClaw rewrites openclaw.json at runtime (plugin auto-enable,
+        # discovered model cache, etc.). A direct ConfigMap mount is read-only
+        # so the gateway crashes with EROFS on first start. Copy the file
+        # into the writable PVC at /home/node/.openclaw/ on every pod start
+        # — git is the source of truth; in-cluster mutations to openclaw.json
+        # reset to declared state on restart. Auth profiles, model catalog
+        # cache, and agent state live elsewhere under /home/node/.openclaw/
+        # and DO survive (they're on the PVC, not in /config).
+        - name: init-config
+          image: busybox:1.37
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -ec
+            - |
+              cp /config/openclaw.json /home/node/.openclaw/openclaw.json
+              mkdir -p /home/node/.openclaw/workspace
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - name: openclaw-home
+              mountPath: /home/node/.openclaw
+            - name: openclaw-config
+              mountPath: /config
+              readOnly: true
+
+        # Native sidecar (restartPolicy: Always under initContainers).
+        # Starts before the gateway container and stays running for the
+        # pod's lifetime. The gateway's implicit-discovery code path is
+        # hardcoded to http://127.0.0.1:11434 — there's no env var to
+        # point it elsewhere, and any explicit baseUrl in openclaw.json
+        # disables auto-discovery entirely. socat bridges loopback to the
+        # cluster Service so discovery works without losing GitOps clarity.
+        - name: ollama-proxy
+          image: alpine/socat:1.8.0.0
+          imagePullPolicy: IfNotPresent
+          restartPolicy: Always
+          args:
+            - "-d"
+            # Bind to all interfaces (no bind=127.0.0.1) so kubelet can run
+            # a tcpSocket startup probe against the pod IP. Within the pod
+            # the gateway container still reaches it via 127.0.0.1:11434
+            # — same network namespace as the sidecar.
+            - "TCP-LISTEN:11434,fork,reuseaddr"
+            - "TCP:ollama.ollama.svc.cluster.local:11434,connect-timeout=5,keepalive,keepidle=30"
+          # startupProbe blocks the main container from starting until socat
+          # is actually accepting connections. Without it, the gateway can
+          # race ahead, fire its /api/tags probe, get ECONNREFUSED, and
+          # cache an empty Ollama catalog until something triggers a re-probe.
+          startupProbe:
+            tcpSocket:
+              port: 11434
+            periodSeconds: 1
+            failureThreshold: 30
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            # socat's fork mode wants scratch space; without a writable /tmp
+            # and readOnlyRootFilesystem: true, some versions misbehave under
+            # connection load.
+            - name: socat-tmp
+              mountPath: /tmp
+
+      containers:
+        - name: gateway
+          image: ghcr.io/openclaw/openclaw:slim
+          imagePullPolicy: IfNotPresent
+          command:
+            - node
+            - /app/dist/index.js
+            - gateway
+            - run
+          ports:
+            - name: http
+              containerPort: 18789
+              protocol: TCP
+          env:
+            - name: HOME
+              value: /home/node
+            - name: NODE_ENV
+              value: production
+            - name: OPENCLAW_CONFIG_DIR
+              value: /home/node/.openclaw
+            # OPENCLAW_GATEWAY_TOKEN intentionally omitted — auth.mode is
+            # "trusted-proxy" in the configmap, and OpenClaw rejects the
+            # gateway start with `mixed_trusted_proxy_token` if both are set.
+
+            # Opts into Ollama implicit discovery. OpenClaw queries /api/tags
+            # at the hardcoded http://127.0.0.1:11434 when this is set AND
+            # there is no models.providers.ollama block in openclaw.json.
+            # The ollama-proxy sidecar forwards loopback to the cluster Service.
+            - name: OLLAMA_API_KEY
+              value: ollama-local
+            # OpenAI uses the bundled pi-ai catalog — no models.providers
+            # entry needed. Secret is created out-of-band from
+            # .labs/Local-Kubernetes/argocd-k3d/.env via `kubectl create secret …
+            # --from-env-file`, then annotated Prune=false so ArgoCD doesn't
+            # sweep it. NOT optional: missing secret should fail the deploy
+            # rather than silently disabling OpenAI.
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-llm-keys
+                  key: OPENAI_API_KEY
+          volumeMounts:
+            - name: openclaw-home
+              mountPath: /home/node/.openclaw
+            - name: tmp
+              mountPath: /tmp
+          # /healthz = liveness (HTTP stack responding).
+          # /readyz  = readiness (plugins, channels, and hooks settled).
+          # exec probes via node avoid needing curl in the slim image.
+          # Note: with controlUi.enabled, these may occasionally return HTML
+          # 200 instead of JSON (upstream issue #18446). Status code is still
+          # correct, so the probes pass — just don't tighten to check body.
+          readinessProbe:
+            exec:
+              command:
+                - node
+                - -e
+                - "require('http').get('http://127.0.0.1:18789/readyz', r => process.exit(r.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))"
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - node
+                - -e
+                - "require('http').get('http://127.0.0.1:18789/healthz', r => process.exit(r.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))"
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+
+      volumes:
+        - name: openclaw-home
+          persistentVolumeClaim:
+            claimName: openclaw-data
+        - name: openclaw-config
+          configMap:
+            name: openclaw-config
+        # Gateway needs /tmp writable (readOnlyRootFilesystem: true).
+        - name: tmp
+          emptyDir: {}
+        # socat needs its own /tmp — separate emptyDir keeps the security
+        # boundary clean (no shared writable surface between containers).
+        - name: socat-tmp
+          emptyDir: {}
