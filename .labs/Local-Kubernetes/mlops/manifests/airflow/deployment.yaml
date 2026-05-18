@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow
+  labels:
+    app: airflow
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: airflow
+  template:
+    metadata:
+      labels:
+        app: airflow
+    spec:
+      containers:
+        - name: airflow
+          image: apache/airflow:2.10.4-python3.11
+          command:
+            - /bin/bash
+            - -c
+            - |
+              pip install --quiet mlflow boto3 scikit-learn evidently requests &&
+              airflow standalone
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: AIRFLOW__CORE__LOAD_EXAMPLES
+              value: "False"
+            - name: AIRFLOW__CORE__DAGS_FOLDER
+              value: /opt/airflow/dags
+            - name: MLFLOW_TRACKING_URI
+              value: http://mlflow.mlflow.svc.cluster.local:5000
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: http://minio.minio.svc.cluster.local:9000
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: MINIO_ROOT_USER
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: MINIO_ROOT_PASSWORD
+            - name: OLLAMA_BASE_URL
+              value: http://ollama.ollama.svc.cluster.local:11434
+          volumeMounts:
+            - name: data
+              mountPath: /opt/airflow
+            - name: dags
+              mountPath: /opt/airflow/dags
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 90
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: airflow-data
+        - name: dags
+          configMap:
+            name: airflow-dags

@@ -1,0 +1,191 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: airflow-dags
+data:
+  mlops_pipeline.py: |
+    """
+    MLOps Training Pipeline
+
+    End-to-end DAG: generate data -> train model -> log to MLflow
+    -> generate Evidently report -> store artifacts in MinIO.
+    """
+    import os
+    from datetime import datetime, timedelta
+
+    from airflow import DAG
+    from airflow.operators.python import PythonOperator
+
+    default_args = {
+        "owner": "mlops",
+        "retries": 1,
+        "retry_delay": timedelta(minutes=2),
+    }
+
+    MLFLOW_TRACKING_URI = os.environ.get(
+        "MLFLOW_TRACKING_URI", "http://mlflow.mlflow.svc.cluster.local:5000"
+    )
+    MINIO_ENDPOINT = os.environ.get(
+        "MLFLOW_S3_ENDPOINT_URL", "http://minio.minio.svc.cluster.local:9000"
+    )
+    OLLAMA_URL = os.environ.get(
+        "OLLAMA_BASE_URL", "http://ollama.ollama.svc.cluster.local:11434"
+    )
+
+
+    def prepare_data(**context):
+        """Generate and split the wine dataset."""
+        from sklearn.datasets import load_wine
+        from sklearn.model_selection import train_test_split
+        import json
+
+        wine = load_wine()
+        X_train, X_test, y_train, y_test = train_test_split(
+            wine.data.tolist(),
+            wine.target.tolist(),
+            test_size=0.2,
+            random_state=42,
+        )
+        context["ti"].xcom_push(
+            key="dataset",
+            value=json.dumps({
+                "X_train": X_train,
+                "X_test": X_test,
+                "y_train": y_train,
+                "y_test": y_test,
+                "feature_names": list(wine.feature_names),
+                "target_names": list(wine.target_names),
+            }),
+        )
+        print(f"Prepared {len(X_train)} train / {len(X_test)} test samples")
+
+
+    def train_model(**context):
+        """Train a RandomForest and log to MLflow."""
+        import json
+        import mlflow
+        from sklearn.ensemble import RandomForestClassifier
+        from sklearn.metrics import accuracy_score, f1_score
+        import numpy as np
+
+        data = json.loads(context["ti"].xcom_pull(key="dataset"))
+        X_train = np.array(data["X_train"])
+        X_test = np.array(data["X_test"])
+        y_train = np.array(data["y_train"])
+        y_test = np.array(data["y_test"])
+
+        mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+        mlflow.set_experiment("airflow-wine-pipeline")
+
+        params = {"n_estimators": 100, "max_depth": 7, "random_state": 42}
+
+        with mlflow.start_run(run_name=f"airflow-{datetime.now().strftime('%Y%m%d-%H%M')}") as run:
+            clf = RandomForestClassifier(**params)
+            clf.fit(X_train, y_train)
+            preds = clf.predict(X_test)
+
+            accuracy = accuracy_score(y_test, preds)
+            f1 = f1_score(y_test, preds, average="weighted")
+
+            mlflow.log_params(params)
+            mlflow.log_metrics({"accuracy": accuracy, "f1_score": f1})
+            mlflow.sklearn.log_model(clf, "model")
+            mlflow.set_tag("pipeline", "airflow")
+            mlflow.set_tag("dataset", "wine")
+
+            context["ti"].xcom_push(key="run_id", value=run.info.run_id)
+            context["ti"].xcom_push(key="accuracy", value=accuracy)
+            print(f"Run {run.info.run_id}: accuracy={accuracy:.4f}, f1={f1:.4f}")
+
+
+    def generate_report(**context):
+        """Generate an Evidently data quality report."""
+        import json
+        import numpy as np
+
+        data = json.loads(context["ti"].xcom_pull(key="dataset"))
+        run_id = context["ti"].xcom_pull(key="run_id")
+
+        try:
+            import pandas as pd
+            from evidently.report import Report
+            from evidently.metric_preset import DataQualityPreset
+
+            feature_names = data["feature_names"]
+            df_train = pd.DataFrame(data["X_train"], columns=feature_names)
+            df_test = pd.DataFrame(data["X_test"], columns=feature_names)
+
+            report = Report(metrics=[DataQualityPreset()])
+            report.run(reference_data=df_train, current_data=df_test)
+
+            report_path = f"/tmp/evidently_report_{run_id}.html"
+            report.save_html(report_path)
+
+            # Log report to MLflow as artifact
+            import mlflow
+            mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+            with mlflow.start_run(run_id=run_id):
+                mlflow.log_artifact(report_path, "reports")
+
+            print(f"Evidently report saved and logged to run {run_id}")
+        except ImportError:
+            print("Evidently not installed, skipping report generation")
+
+
+    def summarize_with_ollama(**context):
+        """Use Ollama to summarize the training results."""
+        import requests
+
+        accuracy = context["ti"].xcom_pull(key="accuracy")
+        run_id = context["ti"].xcom_pull(key="run_id")
+
+        prompt = (
+            f"Summarize this ML training result in 2 sentences: "
+            f"A RandomForest model was trained on the Wine dataset with "
+            f"100 estimators and max_depth=7. It achieved {accuracy:.4f} accuracy. "
+            f"Run ID: {run_id}."
+        )
+
+        try:
+            resp = requests.post(
+                f"{OLLAMA_URL}/api/generate",
+                json={"model": "qwen2.5:3b", "prompt": prompt, "stream": False},
+                timeout=60,
+            )
+            summary = resp.json().get("response", "No summary generated")
+            print(f"Ollama summary:\n{summary}")
+        except Exception as e:
+            print(f"Ollama unavailable, skipping summary: {e}")
+
+
+    with DAG(
+        dag_id="mlops_training_pipeline",
+        default_args=default_args,
+        description="End-to-end MLOps pipeline: data -> train -> track -> monitor",
+        schedule=None,
+        start_date=datetime(2024, 1, 1),
+        catchup=False,
+        tags=["mlops", "training", "wine"],
+    ) as dag:
+
+        prepare = PythonOperator(
+            task_id="prepare_data",
+            python_callable=prepare_data,
+        )
+
+        train = PythonOperator(
+            task_id="train_model",
+            python_callable=train_model,
+        )
+
+        report = PythonOperator(
+            task_id="generate_evidently_report",
+            python_callable=generate_report,
+        )
+
+        summarize = PythonOperator(
+            task_id="summarize_with_ollama",
+            python_callable=summarize_with_ollama,
+        )
+
+        prepare >> train >> [report, summarize]

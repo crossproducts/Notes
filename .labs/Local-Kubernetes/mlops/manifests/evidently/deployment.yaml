@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: evidently
+  labels:
+    app: evidently
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: evidently
+  template:
+    metadata:
+      labels:
+        app: evidently
+    spec:
+      containers:
+        - name: evidently
+          image: python:3.11-slim
+          command:
+            - /bin/bash
+            - -c
+            - |
+              pip install --quiet evidently &&
+              evidently ui --host 0.0.0.0 --port 8000 --workspace /workspace
+          ports:
+            - name: http
+              containerPort: 8000
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: config
+              mountPath: /config
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 45
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: workspace
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: evidently-config

@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jupyter
+  labels:
+    app: jupyter
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: jupyter
+  template:
+    metadata:
+      labels:
+        app: jupyter
+    spec:
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 100
+      containers:
+        - name: jupyter
+          image: jupyter/scipy-notebook:latest
+          ports:
+            - name: http
+              containerPort: 8888
+          env:
+            - name: JUPYTER_TOKEN
+              value: "mlops"
+            - name: MLFLOW_TRACKING_URI
+              value: http://mlflow.mlflow.svc.cluster.local:5000
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: http://minio.minio.svc.cluster.local:9000
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: MINIO_ROOT_USER
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: MINIO_ROOT_PASSWORD
+            - name: OLLAMA_BASE_URL
+              value: http://ollama.ollama.svc.cluster.local:11434
+          volumeMounts:
+            - name: work
+              mountPath: /home/jovyan/work
+            - name: notebooks
+              mountPath: /home/jovyan/work/demos
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - pip install --quiet mlflow boto3 requests scikit-learn evidently
+          readinessProbe:
+            httpGet:
+              path: /api
+              port: 8888
+            initialDelaySeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /api
+              port: 8888
+            initialDelaySeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+      volumes:
+        - name: work
+          persistentVolumeClaim:
+            claimName: jupyter-work
+        - name: notebooks
+          configMap:
+            name: jupyter-demo-notebooks

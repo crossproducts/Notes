@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: evidently
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: evidently.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: evidently
+                port:
+                  number: 8000

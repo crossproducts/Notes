@@ -1,0 +1,95 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jupyter-demo-notebooks
+data:
+  mlops-demo.py: |
+    # %% [markdown]
+    # # MLOps Demo Notebook
+    # Train models, log to MLflow, query Ollama — all from JupyterLab on K8s.
+
+    # %% Setup
+    import os
+    import mlflow
+    import requests
+    import numpy as np
+    from sklearn.datasets import load_wine
+    from sklearn.model_selection import train_test_split
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.metrics import accuracy_score, f1_score
+
+    mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
+    mlflow.set_experiment("wine-classification")
+
+    # %% Load data
+    wine = load_wine()
+    X_train, X_test, y_train, y_test = train_test_split(
+        wine.data, wine.target, test_size=0.2, random_state=42
+    )
+    print(f"Training samples: {len(X_train)}, Test samples: {len(X_test)}")
+
+    # %% Train multiple models with different hyperparameters
+    configs = [
+        {"n_estimators": 50, "max_depth": 3},
+        {"n_estimators": 100, "max_depth": 5},
+        {"n_estimators": 200, "max_depth": 10},
+        {"n_estimators": 100, "max_depth": None},
+        {"n_estimators": 300, "max_depth": 7},
+    ]
+
+    best_run_id = None
+    best_accuracy = 0
+
+    for params in configs:
+        with mlflow.start_run():
+            clf = RandomForestClassifier(**params, random_state=42)
+            clf.fit(X_train, y_train)
+            preds = clf.predict(X_test)
+
+            accuracy = accuracy_score(y_test, preds)
+            f1 = f1_score(y_test, preds, average="weighted")
+
+            mlflow.log_params(params)
+            mlflow.log_metrics({"accuracy": accuracy, "f1_score": f1})
+            mlflow.sklearn.log_model(clf, "model")
+
+            print(f"Params: {params} -> Accuracy: {accuracy:.4f}, F1: {f1:.4f}")
+
+            if accuracy > best_accuracy:
+                best_accuracy = accuracy
+                best_run_id = mlflow.active_run().info.run_id
+
+    print(f"\nBest run: {best_run_id} with accuracy {best_accuracy:.4f}")
+
+    # %% Register best model
+    model_uri = f"runs:/{best_run_id}/model"
+    mv = mlflow.register_model(model_uri, "wine-classifier")
+    print(f"Registered model version {mv.version} as '{mv.name}'")
+
+    # %% Query Ollama for feature importance insights
+    ollama_url = os.environ.get("OLLAMA_BASE_URL", "http://ollama.ollama.svc.cluster.local:11434")
+    feature_names = wine.feature_names
+
+    try:
+        response = requests.post(
+            f"{ollama_url}/api/generate",
+            json={
+                "model": "qwen2.5:3b",
+                "prompt": f"Given these wine features: {', '.join(feature_names)}, which 3 features are most important for wine quality classification and why? Be concise.",
+                "stream": False,
+            },
+            timeout=60,
+        )
+        print("\nOllama says:")
+        print(response.json().get("response", "No response"))
+    except Exception as e:
+        print(f"Ollama not available: {e}")
+
+    # %% View experiments
+    experiments = mlflow.search_experiments()
+    for exp in experiments:
+        print(f"Experiment: {exp.name} (ID: {exp.experiment_id})")
+
+    runs = mlflow.search_runs(experiment_names=["wine-classification"])
+    print(f"\nTotal runs: {len(runs)}")
+    print(runs[["params.n_estimators", "params.max_depth", "metrics.accuracy", "metrics.f1_score"]])
