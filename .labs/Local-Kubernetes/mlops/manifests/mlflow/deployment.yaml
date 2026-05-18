@@ -20,16 +20,15 @@ spec:
         - name: mlflow
           image: ghcr.io/mlflow/mlflow:latest
           command:
-            - mlflow
-            - server
-            - --host
-            - "0.0.0.0"
-            - --port
-            - "5000"
-            - --backend-store-uri
-            - sqlite:///mlflow/mlflow.db
-            - --default-artifact-root
-            - s3://mlflow-artifacts/
+            - /bin/bash
+            - -c
+            - |
+              pip install --quiet boto3 &&
+              mlflow server \
+                --host 0.0.0.0 \
+                --port 5000 \
+                --backend-store-uri sqlite:///mlflow/mlflow.db \
+                --default-artifact-root s3://mlflow-artifacts/
           ports:
             - name: http
               containerPort: 5000
@@ -51,14 +50,14 @@ spec:
               mountPath: /mlflow
           readinessProbe:
             httpGet:
-              path: /health
+              path: /
               port: 5000
-            initialDelaySeconds: 10
+            initialDelaySeconds: 30
           livenessProbe:
             httpGet:
-              path: /health
+              path: /
               port: 5000
-            initialDelaySeconds: 20
+            initialDelaySeconds: 45
           resources:
             requests:
               cpu: 100m

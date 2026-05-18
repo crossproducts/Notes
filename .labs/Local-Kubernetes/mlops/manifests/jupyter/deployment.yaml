@@ -26,6 +26,8 @@ spec:
             - name: http
               containerPort: 8888
           env:
+            - name: JUPYTER_PORT
+              value: "8888"
             - name: JUPYTER_TOKEN
               value: "mlops"
             - name: MLFLOW_TRACKING_URI
