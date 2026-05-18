@@ -35,12 +35,14 @@ spec:
             httpGet:
               path: /
               port: 8000
-            initialDelaySeconds: 30
+            initialDelaySeconds: 90
+            periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /
               port: 8000
-            initialDelaySeconds: 45
+            initialDelaySeconds: 120
+            periodSeconds: 15
           resources:
             requests:
               cpu: 50m
