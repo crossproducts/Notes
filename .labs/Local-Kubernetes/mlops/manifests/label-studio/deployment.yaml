@@ -31,6 +31,8 @@ spec:
               value: mlops2024
             - name: DJANGO_DB
               value: default
+            - name: DATABASE_URL
+              value: sqlite:///label-studio/data/label_studio.sqlite3
             - name: LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED
               value: "true"
             - name: LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT

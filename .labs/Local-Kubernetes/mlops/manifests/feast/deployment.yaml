@@ -24,11 +24,9 @@ spec:
             - -c
             - |
               pip install --quiet feast[aws] boto3 &&
-              mkdir -p /feast/repo &&
+              mkdir -p /feast/repo /feast/data &&
               cd /feast/repo &&
-              if [ ! -f feature_store.yaml ]; then
-                feast init --minimal . &&
-                cat > feature_store.yaml <<'FEEOF'
+              cat > feature_store.yaml <<'FEEOF'
               project: mlops_features
               provider: local
               registry:
@@ -41,7 +39,6 @@ spec:
                 type: file
               entity_key_serialization_version: 2
               FEEOF
-              fi &&
               feast ui --host 0.0.0.0 --port 8888 --registry_ttl_sec 5
           ports:
             - name: http

@@ -19,25 +19,17 @@ spec:
     spec:
       containers:
         - name: spark-master
-          image: bitnami/spark:3.5
+          image: apache/spark-py:latest
+          command: ["/opt/spark/sbin/start-master.sh"]
+          args: ["--host", "0.0.0.0", "--port", "7077", "--webui-port", "8080"]
           ports:
             - name: web
               containerPort: 8080
             - name: spark
               containerPort: 7077
           env:
-            - name: SPARK_MODE
-              value: master
-            - name: SPARK_MASTER_HOST
-              value: spark-master
-            - name: SPARK_RPC_AUTHENTICATION_ENABLED
-              value: "no"
-            - name: SPARK_RPC_ENCRYPTION_ENABLED
-              value: "no"
-            - name: SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED
-              value: "no"
-            - name: SPARK_SSL_ENABLED
-              value: "no"
+            - name: SPARK_NO_DAEMONIZE
+              value: "true"
           readinessProbe:
             httpGet:
               path: /

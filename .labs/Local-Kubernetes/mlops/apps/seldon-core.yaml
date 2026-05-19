@@ -12,7 +12,7 @@ spec:
   source:
     repoURL: https://storage.googleapis.com/seldon-charts
     chart: seldon-core-operator
-    targetRevision: 1.18.1
+    targetRevision: 1.19.0
     helm:
       releaseName: seldon-core
       values: |
