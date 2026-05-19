@@ -19,21 +19,24 @@ spec:
     spec:
       containers:
         - name: spark-master
-          image: apache/spark-py:latest
+          image: apache/spark-py:v3.4.0
           command:
             - /bin/bash
             - -c
             - |
-              unset SPARK_MASTER_PORT SPARK_MASTER_HOST
-              /opt/spark/sbin/start-master.sh --host 0.0.0.0 --port 7077 --webui-port 8080
+              export SPARK_MASTER_HOST=0.0.0.0
+              export SPARK_MASTER_PORT=7077
+              export SPARK_MASTER_WEBUI_PORT=8080
+              export SPARK_NO_DAEMONIZE=true
+              export USER=spark
+              mkdir -p /tmp/spark-logs
+              export SPARK_LOG_DIR=/tmp/spark-logs
+              /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
           ports:
             - name: web
               containerPort: 8080
             - name: spark
               containerPort: 7077
-          env:
-            - name: SPARK_NO_DAEMONIZE
-              value: "true"
           readinessProbe:
             httpGet:
               path: /
