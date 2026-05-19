@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasource-elasticsearch
+  labels:
+    grafana_datasource: "1"
+data:
+  elasticsearch-datasource.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Elasticsearch
+        type: elasticsearch
+        access: proxy
+        url: http://elasticsearch-master.elasticsearch.svc.cluster.local:9200
+        isDefault: false
+        jsonData:
+          index: "otel-logs*"
+          timeField: "@timestamp"
+          logMessageField: "body"
+          logLevelField: "severity_text"
+          esVersion: "8.5.1"

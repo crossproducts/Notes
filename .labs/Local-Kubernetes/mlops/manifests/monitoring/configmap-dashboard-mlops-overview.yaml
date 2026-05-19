@@ -1,0 +1,154 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-mlops-overview
+  labels:
+    grafana_dashboard: "1"
+data:
+  mlops-overview.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "links": [],
+      "panels": [
+        {
+          "title": "Pod Status by Namespace",
+          "type": "table",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "count by (namespace, phase) (kube_pod_status_phase{namespace=~\"minio|mlflow|airflow|jupyter|spark|lakefs|feast|evidently|streamlit|ollama|seldon-system|label-studio|elasticsearch|tempo|otel-system|kafka\"} == 1)",
+              "legendFormat": "{{namespace}} - {{phase}}",
+              "refId": "A"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "sortBy",
+              "options": { "fields": {}, "sort": [{ "field": "namespace" }] }
+            }
+          ]
+        },
+        {
+          "title": "CPU Usage by Namespace",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum by (namespace) (rate(container_cpu_usage_seconds_total{namespace=~\"minio|mlflow|airflow|jupyter|spark|lakefs|feast|evidently|streamlit|ollama|seldon-system|label-studio|elasticsearch|tempo|otel-system|kafka\"}[5m]))",
+              "legendFormat": "{{namespace}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "cores",
+              "custom": { "fillOpacity": 20, "stacking": { "mode": "normal" } }
+            }
+          }
+        },
+        {
+          "title": "Memory Usage by Namespace",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum by (namespace) (container_memory_working_set_bytes{namespace=~\"minio|mlflow|airflow|jupyter|spark|lakefs|feast|evidently|streamlit|ollama|seldon-system|label-studio|elasticsearch|tempo|otel-system|kafka\"})",
+              "legendFormat": "{{namespace}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": { "fillOpacity": 20, "stacking": { "mode": "normal" } }
+            }
+          }
+        },
+        {
+          "title": "Container Restarts",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 24, "x": 0, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum by (namespace, pod) (kube_pod_container_status_restarts_total{namespace=~\"minio|mlflow|airflow|jupyter|spark|lakefs|feast|evidently|streamlit|ollama|seldon-system|label-studio|elasticsearch|tempo|otel-system|kafka\"}) > 0",
+              "legendFormat": "{{namespace}}/{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "options": { "colorMode": "background", "graphMode": "none" },
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "red", "value": 5 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "title": "Network I/O by Namespace",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum by (namespace) (rate(container_network_receive_bytes_total{namespace=~\"minio|mlflow|airflow|jupyter|spark|lakefs|feast|evidently|streamlit|ollama|seldon-system|label-studio|elasticsearch|tempo|otel-system|kafka\"}[5m]))",
+              "legendFormat": "{{namespace}} rx",
+              "refId": "A"
+            },
+            {
+              "expr": "sum by (namespace) (rate(container_network_transmit_bytes_total{namespace=~\"minio|mlflow|airflow|jupyter|spark|lakefs|feast|evidently|streamlit|ollama|seldon-system|label-studio|elasticsearch|tempo|otel-system|kafka\"}[5m]))",
+              "legendFormat": "{{namespace}} tx",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": { "unit": "Bps" }
+          }
+        },
+        {
+          "title": "PVC Usage",
+          "type": "bargauge",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "kubelet_volume_stats_used_bytes{namespace=~\"minio|mlflow|airflow|jupyter|spark|lakefs|feast|evidently|streamlit|ollama|seldon-system|label-studio|elasticsearch|tempo|kafka\"} / kubelet_volume_stats_capacity_bytes{namespace=~\"minio|mlflow|airflow|jupyter|spark|lakefs|feast|evidently|streamlit|ollama|seldon-system|label-studio|elasticsearch|tempo|kafka\"}",
+              "legendFormat": "{{namespace}}/{{persistentvolumeclaim}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "max": 1,
+              "thresholds": {
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 0.7 },
+                  { "color": "red", "value": 0.9 }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "schemaVersion": 39,
+      "tags": ["mlops"],
+      "templating": { "list": [] },
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "MLOps Overview",
+      "uid": "mlops-overview"
+    }

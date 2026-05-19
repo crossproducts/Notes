@@ -13,33 +13,63 @@ A self-contained MLOps platform running on a local k3d cluster, managed entirely
 | Notebooks | JupyterLab | http://jupyter.localhost | 3 |
 | Pipeline Orchestration | Airflow | http://airflow.localhost | 4 |
 | ML Monitoring | Evidently | http://evidently.localhost | 5 |
-| Observability | Prometheus + Grafana | http://grafana.localhost / http://prometheus.localhost | 6 |
+| Metrics & Dashboards | Prometheus + Grafana | http://grafana.localhost / http://prometheus.localhost | 6 |
 | Data Labeling | Label Studio | http://label-studio.localhost | 7 |
 | Model Serving | Seldon Core | http://seldon.localhost | 8 |
 | Data Processing | Spark (PySpark) | http://spark.localhost | 9 |
 | Data Versioning | LakeFS | http://lakefs.localhost | 10 |
 | Feature Store | Feast | http://feast.localhost | 11 |
 | ML App Frontend | Streamlit | http://streamlit.localhost | 12 |
+| Log Storage & Search | Elasticsearch | (internal) | 13 |
+| Grafana Extras | Datasources + Dashboards | (via Grafana) | 13 |
+| Log Analytics UI | Kibana | http://kibana.localhost | 14 |
+| Distributed Tracing | Tempo | (via Grafana) | 15 |
+| Telemetry Pipeline | OpenTelemetry Collector | (internal) | 16 |
+| Kafka Operator | Strimzi | (internal) | 17 |
+| Event Streaming | Kafka + Kafka UI | http://kafka-ui.localhost | 18 |
 
 ## Architecture
 <div style="text-align: center;">
 
 ```
-  [Label Studio] --> [LakeFS] --> [MinIO]
-       |                ^            ^
-       v                |            |
-  [Feast] -------> [Spark] ---------+
-       |                |
-       v                v
-  [JupyterLab] --> [Airflow] -----> [MLflow] --> [Seldon Core]
-       |                |               |              |
-       v                v               v              v
-  [Ollama]        [Evidently]     [MinIO S3]    [seldon.localhost]
-       |
-       v
-  [Streamlit] <--- predictions --- [Seldon / MLflow]
+                        ┌─────────────────────────────────────────────┐
+                        │           Observability Layer               │
+                        │                                             │
+  [All Pods] ────────── │ ──→ [OTel Collector] ──→ [Elasticsearch]    │
+                        │          │                    │              │
+                        │          └── traces ──→ [Tempo]             │
+                        │                           │                 │
+                        │  [Prometheus] ←── ServiceMonitors           │
+                        │       │                                     │
+                        │       └──→ [Grafana] ←── Tempo, ES          │
+                        │                                             │
+                        │            [Kibana] ←── Elasticsearch       │
+                        └─────────────────────────────────────────────┘
 
-  [Prometheus + Grafana] --- monitors all pods
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │                        MLOps Pipeline                               │
+  │                                                                     │
+  │  [Label Studio] --> [LakeFS] --> [MinIO]                            │
+  │       |                ^            ^                               │
+  │       v                |            |                               │
+  │  [Feast] -------> [Spark] ---------+                                │
+  │       |                |                                            │
+  │       v                v                                            │
+  │  [JupyterLab] --> [Airflow] -----> [MLflow] --> [Seldon Core]       │
+  │       |                |               |              |             │
+  │       v                v               v              v             │
+  │  [Ollama]        [Evidently]     [MinIO S3]    [seldon.localhost]    │
+  │       |                                                             │
+  │       v                                                             │
+  │  [Streamlit] <--- predictions --- [Seldon / MLflow]                 │
+  └─────────────────────────────────────────────────────────────────────┘
+
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │                     Event Streaming                                 │
+  │                                                                     │
+  │  [Kafka (Strimzi KRaft)] ←→ [Kafka UI]                             │
+  │       ↕ available to all services via mlops-kafka-kafka-bootstrap   │
+  └─────────────────────────────────────────────────────────────────────┘
 ```
 </div>
 
@@ -96,6 +126,12 @@ ArgoCD will automatically discover and sync all apps in the `apps/` directory, d
 11. LakeFS (wave 10)
 12. Feast (wave 11)
 13. Streamlit (wave 12)
+14. Elasticsearch + Grafana Extras (wave 13)
+15. Kibana (wave 14)
+16. Tempo (wave 15)
+17. OpenTelemetry Collector (wave 16)
+18. Strimzi Kafka Operator (wave 17)
+19. Kafka Cluster + UI (wave 18)
 
 ### 4. Verify
 
@@ -124,10 +160,36 @@ Visit [argocd.localhost](http://argocd.localhost) to see all apps synced.
 | LakeFS | http://lakefs.localhost | (setup wizard on first visit) |
 | Feast | http://feast.localhost | (no auth) |
 | Streamlit | http://streamlit.localhost | (no auth) |
+| Kibana | http://kibana.localhost | (no auth) |
+| Kafka UI | http://kafka-ui.localhost | (no auth) |
 
 Airflow standalone prints the admin password on first start:
 ```bash
 kubectl logs -n airflow deployment/airflow | grep "password"
+```
+
+## Observability
+
+### Metrics (Prometheus + Grafana)
+- Prometheus scrapes K8s infra metrics + ServiceMonitors for MinIO and LakeFS
+- Custom Grafana dashboards: **MLOps Overview** (pod status, CPU, memory, restarts, PVC usage) and **MinIO** (request rates, latency, bucket usage)
+- Access at http://grafana.localhost (admin / prom-operator)
+
+### Logs (OTel Collector → Elasticsearch → Kibana)
+- OpenTelemetry Collector runs as a DaemonSet, collecting container logs from all pods
+- Logs are shipped to Elasticsearch and indexed as `otel-logs*`
+- Browse and search logs in Kibana at http://kibana.localhost
+- Elasticsearch is also available as a Grafana datasource for cross-correlation
+
+### Traces (OTel Collector → Tempo → Grafana)
+- OpenTelemetry Collector accepts OTLP traces on ports 4317 (gRPC) and 4318 (HTTP)
+- Traces are stored in Tempo and visualized in Grafana Explore
+- Tempo datasource includes trace-to-log linking via Elasticsearch
+
+### Sending Traces from Your Apps
+Apps can send traces to the OTel Collector via:
+```
+OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector-opentelemetry-collector.otel-system.svc.cluster.local:4317
 ```
 
 ## Demo Workflows
@@ -182,6 +244,13 @@ k3d cluster delete mlops
 | LakeFS | 256Mi | 512Mi | 1Gi |
 | Feast | 256Mi | 1Gi | 1Gi |
 | Streamlit | 256Mi | 1Gi | - |
-| **Total** | **~5Gi** | **~25Gi** | **43Gi** |
+| Elasticsearch | 512Mi | 2Gi | 10Gi |
+| Kibana | 256Mi | 1Gi | - |
+| Tempo | 256Mi | 1Gi | 5Gi |
+| OTel Collector | 64Mi | 256Mi | - |
+| Strimzi Operator | 256Mi | 512Mi | - |
+| Kafka (1 broker) | 512Mi | 2Gi | 5Gi |
+| Kafka UI | 128Mi | 512Mi | - |
+| **Total** | **~7Gi** | **~32Gi** | **63Gi** |
 
 > Note: Memory limits are burst capacity, not sustained usage. Actual consumption is typically 30-50% of limits.

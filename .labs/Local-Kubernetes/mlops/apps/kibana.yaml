@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kibana
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "14"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://helm.elastic.co
+    chart: kibana
+    targetRevision: 8.5.1
+    helm:
+      releaseName: kibana
+      values: |
+        elasticsearchHosts: "http://elasticsearch-master.elasticsearch.svc.cluster.local:9200"
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            cpu: "1"
+            memory: 1Gi
+        ingress:
+          enabled: true
+          className: traefik
+          hosts:
+            - host: kibana.localhost
+              paths:
+                - path: /
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: elasticsearch
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
