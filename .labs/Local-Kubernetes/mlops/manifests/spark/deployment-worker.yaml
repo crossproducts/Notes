@@ -24,17 +24,22 @@ spec:
             - /bin/bash
             - -c
             - |
+              # Fix: ensure current UID has a passwd entry (fixes Hadoop KerberosAuthException)
+              if ! whoami &>/dev/null; then
+                echo "spark:x:$(id -u):$(id -g):spark:/tmp:/bin/bash" >> /etc/passwd
+              fi
               export SPARK_NO_DAEMONIZE=true
               export SPARK_WORKER_MEMORY=1G
               export SPARK_WORKER_CORES=2
               export SPARK_WORKER_WEBUI_PORT=8081
-              export USER=spark
-              mkdir -p /tmp/spark-logs
+              mkdir -p /tmp/spark-logs /tmp/spark-work
               export SPARK_LOG_DIR=/tmp/spark-logs
               /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
           ports:
             - name: web
               containerPort: 8081
+          securityContext:
+            runAsUser: 0
           resources:
             requests:
               cpu: 200m
