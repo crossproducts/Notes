@@ -1,0 +1,80 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 65.5.0
+    helm:
+      releaseName: kps
+      values: |
+        kubeControllerManager:
+          enabled: false
+        kubeScheduler:
+          enabled: false
+        kubeProxy:
+          enabled: false
+        kubeEtcd:
+          enabled: false
+
+        prometheus:
+          ingress:
+            enabled: true
+            ingressClassName: traefik
+            hosts:
+              - prometheus.localhost
+            paths:
+              - /
+            pathType: Prefix
+          prometheusSpec:
+            retention: 7d
+            resources:
+              requests:
+                cpu: 100m
+                memory: 400Mi
+            serviceMonitorSelectorNilUsesHelmValues: false
+            podMonitorSelectorNilUsesHelmValues: false
+            ruleSelectorNilUsesHelmValues: false
+
+        alertmanager:
+          ingress:
+            enabled: true
+            ingressClassName: traefik
+            hosts:
+              - alertmanager.localhost
+            paths:
+              - /
+            pathType: Prefix
+
+        grafana:
+          ingress:
+            enabled: true
+            ingressClassName: traefik
+            hosts:
+              - grafana.localhost
+            path: /
+          defaultDashboardsTimezone: browser
+
+        prometheus-node-exporter:
+          hostRootFsMount:
+            enabled: false
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true

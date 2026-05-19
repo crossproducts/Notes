@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: feast
+  labels:
+    app: feast
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: feast
+  template:
+    metadata:
+      labels:
+        app: feast
+    spec:
+      containers:
+        - name: feast
+          image: python:3.11-slim
+          command:
+            - /bin/bash
+            - -c
+            - |
+              pip install --quiet feast[aws] boto3 &&
+              mkdir -p /feast/repo &&
+              cd /feast/repo &&
+              if [ ! -f feature_store.yaml ]; then
+                feast init --minimal . &&
+                cat > feature_store.yaml <<'FEEOF'
+              project: mlops_features
+              provider: local
+              registry:
+                registry_type: file
+                path: /feast/data/registry.db
+              online_store:
+                type: sqlite
+                path: /feast/data/online_store.db
+              offline_store:
+                type: file
+              entity_key_serialization_version: 2
+              FEEOF
+              fi &&
+              feast ui --host 0.0.0.0 --port 8888 --registry_ttl_sec 5
+          ports:
+            - name: http
+              containerPort: 8888
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: MINIO_ROOT_USER
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: MINIO_ROOT_PASSWORD
+            - name: AWS_ENDPOINT_URL
+              value: http://minio.minio.svc.cluster.local:9000
+            - name: FEAST_PORT
+              value: "8888"
+          volumeMounts:
+            - name: data
+              mountPath: /feast/data
+            - name: repo
+              mountPath: /feast/repo
+          startupProbe:
+            httpGet:
+              path: /
+              port: 8888
+            failureThreshold: 40
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8888
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8888
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: feast-data
+        - name: repo
+          emptyDir: {}

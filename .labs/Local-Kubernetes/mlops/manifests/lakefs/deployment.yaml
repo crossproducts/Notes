@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lakefs
+  labels:
+    app: lakefs
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: lakefs
+  template:
+    metadata:
+      labels:
+        app: lakefs
+    spec:
+      containers:
+        - name: lakefs
+          image: treeverse/lakefs:1.48
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: LAKEFS_BLOCKSTORE_TYPE
+              value: s3
+            - name: LAKEFS_BLOCKSTORE_S3_ENDPOINT
+              value: http://minio.minio.svc.cluster.local:9000
+            - name: LAKEFS_BLOCKSTORE_S3_FORCE_PATH_STYLE
+              value: "true"
+            - name: LAKEFS_BLOCKSTORE_S3_CREDENTIALS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: MINIO_ROOT_USER
+            - name: LAKEFS_BLOCKSTORE_S3_CREDENTIALS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: MINIO_ROOT_PASSWORD
+            - name: LAKEFS_DATABASE_TYPE
+              value: local
+            - name: LAKEFS_DATABASE_LOCAL_PATH
+              value: /lakefs/db
+            - name: LAKEFS_AUTH_ENCRYPT_SECRET_KEY
+              value: mlops-lakefs-secret-key-change-me
+            - name: LAKEFS_LOGGING_LEVEL
+              value: INFO
+          volumeMounts:
+            - name: data
+              mountPath: /lakefs
+          startupProbe:
+            httpGet:
+              path: /_health
+              port: 8000
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /_health
+              port: 8000
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /_health
+              port: 8000
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: lakefs-data

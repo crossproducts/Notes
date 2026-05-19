@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: seldon-core
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "8"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://storage.googleapis.com/seldon-charts
+    chart: seldon-core-operator
+    targetRevision: 1.18.1
+    helm:
+      releaseName: seldon-core
+      values: |
+        usageMetrics:
+          enabled: false
+        istio:
+          enabled: false
+        ambassador:
+          enabled: false
+        executor:
+          enabled: true
+        crd:
+          create: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: seldon-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

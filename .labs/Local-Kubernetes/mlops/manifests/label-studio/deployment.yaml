@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: label-studio
+  labels:
+    app: label-studio
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: label-studio
+  template:
+    metadata:
+      labels:
+        app: label-studio
+    spec:
+      containers:
+        - name: label-studio
+          image: heartexlabs/label-studio:latest
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: LABEL_STUDIO_DISABLE_SIGNUP_WITHOUT_LINK
+              value: "true"
+            - name: LABEL_STUDIO_USERNAME
+              value: admin@mlops.local
+            - name: LABEL_STUDIO_PASSWORD
+              value: mlops2024
+            - name: DJANGO_DB
+              value: default
+            - name: LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED
+              value: "true"
+            - name: LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT
+              value: /label-studio/data
+          volumeMounts:
+            - name: data
+              mountPath: /label-studio/data
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: label-studio-data

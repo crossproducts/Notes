@@ -1,0 +1,105 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: streamlit-app
+data:
+  app.py: |
+    """
+    MLOps Demo App
+
+    Interactive Streamlit app that:
+    - Lists MLflow experiments and registered models
+    - Loads a model from the registry for live predictions
+    - Queries Ollama for AI-powered insights
+    """
+    import os
+    import streamlit as st
+    import requests
+    import pandas as pd
+    import numpy as np
+
+    MLFLOW_URI = os.environ.get("MLFLOW_TRACKING_URI", "http://mlflow.mlflow.svc.cluster.local:5000")
+    OLLAMA_URL = os.environ.get("OLLAMA_BASE_URL", "http://ollama.ollama.svc.cluster.local:11434")
+
+    st.set_page_config(page_title="MLOps Demo", page_icon="🔬", layout="wide")
+    st.title("MLOps Platform Demo")
+
+    # --- Sidebar ---
+    st.sidebar.header("Platform Links")
+    st.sidebar.markdown("""
+    - [MLflow](http://mlflow.localhost)
+    - [Airflow](http://airflow.localhost)
+    - [MinIO](http://minio-console.localhost)
+    - [Grafana](http://grafana.localhost)
+    - [Label Studio](http://label-studio.localhost)
+    - [LakeFS](http://lakefs.localhost)
+    - [Feast](http://feast.localhost)
+    - [Evidently](http://evidently.localhost)
+    """)
+
+    # --- MLflow Experiments ---
+    st.header("MLflow Experiments")
+    try:
+        import mlflow
+        mlflow.set_tracking_uri(MLFLOW_URI)
+
+        experiments = mlflow.search_experiments()
+        if experiments:
+            exp_data = [{"Name": e.name, "ID": e.experiment_id, "Lifecycle": e.lifecycle_stage} for e in experiments]
+            st.dataframe(pd.DataFrame(exp_data), use_container_width=True)
+
+            selected_exp = st.selectbox("Select experiment", [e.name for e in experiments])
+            if selected_exp:
+                runs = mlflow.search_runs(experiment_names=[selected_exp])
+                if not runs.empty:
+                    st.subheader(f"Runs in '{selected_exp}'")
+                    display_cols = [c for c in runs.columns if c.startswith("params.") or c.startswith("metrics.") or c == "run_id"]
+                    st.dataframe(runs[display_cols].head(10), use_container_width=True)
+        else:
+            st.info("No experiments found. Run the Airflow DAG or Jupyter notebook first!")
+    except Exception as e:
+        st.error(f"Cannot connect to MLflow: {e}")
+
+    # --- Live Prediction ---
+    st.header("Live Prediction")
+    st.write("Enter wine features to get a classification prediction from the registered model.")
+
+    try:
+        from sklearn.datasets import load_wine
+        wine = load_wine()
+        feature_names = wine.feature_names
+
+        col1, col2, col3 = st.columns(3)
+        inputs = {}
+        for i, name in enumerate(feature_names):
+            col = [col1, col2, col3][i % 3]
+            inputs[name] = col.number_input(name, value=float(wine.data[0][i]), format="%.4f")
+
+        if st.button("Predict"):
+            try:
+                model_name = "wine-classifier"
+                model = mlflow.sklearn.load_model(f"models:/{model_name}/latest")
+                features = np.array([[inputs[n] for n in feature_names]])
+                prediction = model.predict(features)[0]
+                proba = model.predict_proba(features)[0]
+
+                st.success(f"Predicted class: **{wine.target_names[prediction]}** (class {prediction})")
+                st.bar_chart(pd.DataFrame({"Probability": proba}, index=wine.target_names))
+            except Exception as e:
+                st.warning(f"Model not found. Register a model first via JupyterLab or Airflow. Error: {e}")
+    except Exception as e:
+        st.error(f"Error loading wine dataset: {e}")
+
+    # --- Ollama Chat ---
+    st.header("Ask the AI")
+    user_prompt = st.text_input("Ask about MLOps, wine classification, or your experiments:")
+    if user_prompt and st.button("Ask Ollama"):
+        try:
+            resp = requests.post(
+                f"{OLLAMA_URL}/api/generate",
+                json={"model": "qwen2.5:3b", "prompt": user_prompt, "stream": False},
+                timeout=60,
+            )
+            st.write(resp.json().get("response", "No response"))
+        except Exception as e:
+            st.error(f"Ollama unavailable: {e}")

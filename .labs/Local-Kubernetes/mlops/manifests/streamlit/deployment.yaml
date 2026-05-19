@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streamlit
+  labels:
+    app: streamlit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: streamlit
+  template:
+    metadata:
+      labels:
+        app: streamlit
+    spec:
+      containers:
+        - name: streamlit
+          image: python:3.11-slim
+          command:
+            - /bin/bash
+            - -c
+            - |
+              pip install --quiet streamlit mlflow boto3 requests scikit-learn pandas &&
+              streamlit run /app/app.py \
+                --server.port 8501 \
+                --server.address 0.0.0.0 \
+                --server.headless true \
+                --browser.gatherUsageStats false
+          ports:
+            - name: http
+              containerPort: 8501
+          env:
+            - name: MLFLOW_TRACKING_URI
+              value: http://mlflow.mlflow.svc.cluster.local:5000
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: http://minio.minio.svc.cluster.local:9000
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: MINIO_ROOT_USER
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: MINIO_ROOT_PASSWORD
+            - name: OLLAMA_BASE_URL
+              value: http://ollama.ollama.svc.cluster.local:11434
+          volumeMounts:
+            - name: app
+              mountPath: /app
+          startupProbe:
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: app
+          configMap:
+            name: streamlit-app

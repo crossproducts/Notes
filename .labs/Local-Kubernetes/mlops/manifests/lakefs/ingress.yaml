@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lakefs
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: lakefs.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: lakefs
+                port:
+                  number: 8000

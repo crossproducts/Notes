@@ -4,30 +4,44 @@ A self-contained MLOps platform running on a local k3d cluster, managed entirely
 
 ## Stack
 
-| Component | Tool | Ingress | Port |
+| Component | Tool | Ingress | Wave |
 |-----------|------|---------|------|
-| GitOps | ArgoCD | argocd.localhost | 80 |
-| LLM Serving | Ollama | ollama.localhost | 11434 |
-| Object Storage | MinIO | minio.localhost / minio-console.localhost | 9000 / 9001 |
-| Experiment Tracking | MLflow | mlflow.localhost | 5000 |
-| Notebooks | JupyterLab | jupyter.localhost | 8888 |
-| Pipeline Orchestration | Airflow | airflow.localhost | 8080 |
-| ML Monitoring | Evidently | evidently.localhost | 8000 |
+| GitOps | ArgoCD | http://argocd.localhost | - |
+| LLM Serving | Ollama | http://ollama.localhost | 0 |
+| Object Storage | MinIO | http://minio-console.localhost | 1 |
+| Experiment Tracking | MLflow | http://mlflow.localhost | 2 |
+| Notebooks | JupyterLab | http://jupyter.localhost | 3 |
+| Pipeline Orchestration | Airflow | http://airflow.localhost | 4 |
+| ML Monitoring | Evidently | http://evidently.localhost | 5 |
+| Observability | Prometheus + Grafana | http://grafana.localhost / http://prometheus.localhost | 6 |
+| Data Labeling | Label Studio | http://label-studio.localhost | 7 |
+| Model Serving | Seldon Core | http://seldon.localhost | 8 |
+| Data Processing | Spark (PySpark) | http://spark.localhost | 9 |
+| Data Versioning | LakeFS | http://lakefs.localhost | 10 |
+| Feature Store | Feast | http://feast.localhost | 11 |
+| ML App Frontend | Streamlit | http://streamlit.localhost | 12 |
 
 ## Architecture
+<div style="text-align: center;">
 
 ```
-  [JupyterLab] -----> [Ollama]
-      |
-      v
-  [MLflow] ---------> [MinIO]
-      ^                  ^
-      |                  |
-  [Airflow] ------------|
-      |
-      v
-  [Evidently]
+  [Label Studio] --> [LakeFS] --> [MinIO]
+       |                ^            ^
+       v                |            |
+  [Feast] -------> [Spark] ---------+
+       |                |
+       v                v
+  [JupyterLab] --> [Airflow] -----> [MLflow] --> [Seldon Core]
+       |                |               |              |
+       v                v               v              v
+  [Ollama]        [Evidently]     [MinIO S3]    [seldon.localhost]
+       |
+       v
+  [Streamlit] <--- predictions --- [Seldon / MLflow]
+
+  [Prometheus + Grafana] --- monitors all pods
 ```
+</div>
 
 All services communicate via cluster-internal DNS: `<svc>.<ns>.svc.cluster.local`
 
@@ -45,7 +59,7 @@ k3d cluster create mlops \
 Or with Traefik (default k3s behavior):
 
 ```bash
-k3d cluster create mlops --port "80:80@loadbalancer"
+k3d cluster create mlops --api-port 6550 -p "80:80@loadbalancer" -p "443:443@loadbalancer"
 ```
 
 ### 2. Bootstrap ArgoCD
@@ -55,10 +69,10 @@ k3d cluster create mlops --port "80:80@loadbalancer"
 kubectl apply -k bootstrap/argocd/
 
 # Wait for ArgoCD to be ready
-kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=120s
+kubectl apply -f bootstrap/root/
 
 # Get initial admin password
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | % { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
 ```
 
 ### 3. Deploy the root app (app-of-apps)
@@ -75,6 +89,13 @@ ArgoCD will automatically discover and sync all apps in the `apps/` directory, d
 4. JupyterLab (wave 3)
 5. Airflow (wave 4)
 6. Evidently (wave 5)
+7. Prometheus + Grafana (wave 6)
+8. Label Studio (wave 7)
+9. Seldon Core (wave 8)
+10. Spark (wave 9)
+11. LakeFS (wave 10)
+12. Feast (wave 11)
+13. Streamlit (wave 12)
 
 ### 4. Verify
 
@@ -95,6 +116,14 @@ Visit [argocd.localhost](http://argocd.localhost) to see all apps synced.
 | Airflow | http://airflow.localhost | admin / (check pod logs) |
 | Evidently | http://evidently.localhost | (no auth) |
 | Ollama | http://ollama.localhost | (API only) |
+| Grafana | http://grafana.localhost | admin / prom-operator |
+| Prometheus | http://prometheus.localhost | (no auth) |
+| Alertmanager | http://alertmanager.localhost | (no auth) |
+| Label Studio | http://label-studio.localhost | admin@mlops.local / mlops2024 |
+| Spark Master | http://spark.localhost | (no auth) |
+| LakeFS | http://lakefs.localhost | (setup wizard on first visit) |
+| Feast | http://feast.localhost | (no auth) |
+| Streamlit | http://streamlit.localhost | (no auth) |
 
 Airflow standalone prints the admin password on first start:
 ```bash
@@ -142,8 +171,17 @@ k3d cluster delete mlops
 |-----------|---------------|--------------|---------|
 | Ollama | 1Gi | 8Gi | 20Gi |
 | MinIO | 256Mi | 1Gi | 5Gi |
-| MLflow | 256Mi | 512Mi | 1Gi |
+| MLflow | 256Mi | 2Gi | 1Gi |
 | JupyterLab | 256Mi | 2Gi | 2Gi |
 | Airflow | 512Mi | 2Gi | 1Gi |
-| Evidently | 128Mi | 512Mi | - |
-| **Total** | **~2.4Gi** | **~14Gi** | **29Gi** |
+| Evidently | 256Mi | 1Gi | - |
+| Prometheus + Grafana | ~400Mi | ~1.5Gi | 10Gi |
+| Label Studio | 256Mi | 1Gi | 2Gi |
+| Seldon Core Operator | 128Mi | 512Mi | - |
+| Spark (master + worker) | 1Gi | 3Gi | - |
+| LakeFS | 256Mi | 512Mi | 1Gi |
+| Feast | 256Mi | 1Gi | 1Gi |
+| Streamlit | 256Mi | 1Gi | - |
+| **Total** | **~5Gi** | **~25Gi** | **43Gi** |
+
+> Note: Memory limits are burst capacity, not sustained usage. Actual consumption is typically 30-50% of limits.

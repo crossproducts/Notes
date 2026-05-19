@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: label-studio
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: label-studio.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: label-studio
+                port:
+                  number: 8080
