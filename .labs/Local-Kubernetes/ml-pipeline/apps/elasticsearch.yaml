@@ -33,7 +33,13 @@ spec:
         esConfig:
           elasticsearch.yml: |
             xpack.security.enabled: false
-            discovery.type: single-node
+        extraEnvs:
+          - name: xpack.security.enabled
+            value: "false"
+          - name: xpack.security.transport.ssl.enabled
+            value: "false"
+          - name: xpack.security.http.ssl.enabled
+            value: "false"
         antiAffinity: "soft"
         esJavaOpts: "-Xmx1g -Xms1g"
   destination:

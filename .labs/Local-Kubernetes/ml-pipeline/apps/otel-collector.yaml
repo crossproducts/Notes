@@ -67,7 +67,7 @@ spec:
                 enabled: true
                 num_consumers: 2
                 queue_size: 1000
-              retry_on_failure:
+              retry:
                 enabled: true
             otlp/tempo:
               endpoint: tempo.tempo.svc.cluster.local:4317
