@@ -32,14 +32,7 @@ spec:
               storage: 10Gi
         esConfig:
           elasticsearch.yml: |
-            xpack.security.enabled: false
-        extraEnvs:
-          - name: xpack.security.enabled
-            value: "false"
-          - name: xpack.security.transport.ssl.enabled
-            value: "false"
-          - name: xpack.security.http.ssl.enabled
-            value: "false"
+            xpack.security.enabled: true
         antiAffinity: "soft"
         esJavaOpts: "-Xmx1g -Xms1g"
   destination:
