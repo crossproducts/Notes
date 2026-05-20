@@ -1,10 +1,10 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: mlflow
+  name: streamlit
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "12"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -12,10 +12,10 @@ spec:
   source:
     repoURL: https://github.com/crossproducts/Notes
     targetRevision: main
-    path: .labs/Local-Kubernetes/mlops/manifests/mlflow
+    path: .labs/Local-Kubernetes/ml-pipeline/manifests/streamlit
   destination:
     server: https://kubernetes.default.svc
-    namespace: mlflow
+    namespace: streamlit
   syncPolicy:
     automated:
       prune: true

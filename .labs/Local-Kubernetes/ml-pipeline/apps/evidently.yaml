@@ -1,10 +1,10 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: monitoring-extras
+  name: evidently
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "13"
+    argocd.argoproj.io/sync-wave: "5"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -12,10 +12,10 @@ spec:
   source:
     repoURL: https://github.com/crossproducts/Notes
     targetRevision: main
-    path: .labs/Local-Kubernetes/mlops/manifests/monitoring
+    path: .labs/Local-Kubernetes/ml-pipeline/manifests/evidently
   destination:
     server: https://kubernetes.default.svc
-    namespace: monitoring
+    namespace: evidently
   syncPolicy:
     automated:
       prune: true

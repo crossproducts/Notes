@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/crossproducts/Notes
     targetRevision: main
-    path: .labs/Local-Kubernetes/mlops/apps
+    path: .labs/Local-Kubernetes/ml-pipeline/apps
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

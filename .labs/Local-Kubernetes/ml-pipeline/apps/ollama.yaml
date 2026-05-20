@@ -1,10 +1,10 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: streamlit
+  name: ollama
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "12"
+    argocd.argoproj.io/sync-wave: "0"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -12,10 +12,10 @@ spec:
   source:
     repoURL: https://github.com/crossproducts/Notes
     targetRevision: main
-    path: .labs/Local-Kubernetes/mlops/manifests/streamlit
+    path: .labs/Local-Kubernetes/ml-pipeline/manifests/ollama
   destination:
     server: https://kubernetes.default.svc
-    namespace: streamlit
+    namespace: ollama
   syncPolicy:
     automated:
       prune: true

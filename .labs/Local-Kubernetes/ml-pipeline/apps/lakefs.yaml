@@ -1,10 +1,10 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: minio
+  name: lakefs
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "10"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -12,10 +12,10 @@ spec:
   source:
     repoURL: https://github.com/crossproducts/Notes
     targetRevision: main
-    path: .labs/Local-Kubernetes/mlops/manifests/minio
+    path: .labs/Local-Kubernetes/ml-pipeline/manifests/lakefs
   destination:
     server: https://kubernetes.default.svc
-    namespace: minio
+    namespace: lakefs
   syncPolicy:
     automated:
       prune: true

@@ -29,49 +29,8 @@ A self-contained MLOps platform running on a local k3d cluster, managed entirely
 | Event Streaming | Kafka + Kafka UI | http://kafka-ui.localhost | 18 |
 
 ## Architecture
-<div style="text-align: center;">
 
-```
-                        ┌─────────────────────────────────────────────┐
-                        │           Observability Layer               │
-                        │                                             │
-  [All Pods] ────────── │ ──→ [OTel Collector] ──→ [Elasticsearch]    │
-                        │          │                    │              │
-                        │          └── traces ──→ [Tempo]             │
-                        │                           │                 │
-                        │  [Prometheus] ←── ServiceMonitors           │
-                        │       │                                     │
-                        │       └──→ [Grafana] ←── Tempo, ES          │
-                        │                                             │
-                        │            [Kibana] ←── Elasticsearch       │
-                        └─────────────────────────────────────────────┘
-
-  ┌─────────────────────────────────────────────────────────────────────┐
-  │                        MLOps Pipeline                               │
-  │                                                                     │
-  │  [Label Studio] --> [LakeFS] --> [MinIO]                            │
-  │       |                ^            ^                               │
-  │       v                |            |                               │
-  │  [Feast] -------> [Spark] ---------+                                │
-  │       |                |                                            │
-  │       v                v                                            │
-  │  [JupyterLab] --> [Airflow] -----> [MLflow] --> [Seldon Core]       │
-  │       |                |               |              |             │
-  │       v                v               v              v             │
-  │  [Ollama]        [Evidently]     [MinIO S3]    [seldon.localhost]    │
-  │       |                                                             │
-  │       v                                                             │
-  │  [Streamlit] <--- predictions --- [Seldon / MLflow]                 │
-  └─────────────────────────────────────────────────────────────────────┘
-
-  ┌─────────────────────────────────────────────────────────────────────┐
-  │                     Event Streaming                                 │
-  │                                                                     │
-  │  [Kafka (Strimzi KRaft)] ←→ [Kafka UI]                             │
-  │       ↕ available to all services via mlops-kafka-kafka-bootstrap   │
-  └─────────────────────────────────────────────────────────────────────┘
-```
-</div>
+> Interactive diagram: [architecture.excalidraw](architecture.excalidraw) — open with the [Excalidraw](https://excalidraw.com) editor or the VS Code Excalidraw extension.
 
 All services communicate via cluster-internal DNS: `<svc>.<ns>.svc.cluster.local`
 
