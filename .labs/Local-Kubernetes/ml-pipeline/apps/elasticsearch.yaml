@@ -33,6 +33,7 @@ spec:
         esConfig:
           elasticsearch.yml: |
             xpack.security.enabled: false
+            ingest.geoip.downloader.enabled: false
           log4j2.properties: |
             logger.coordinator.name = org.elasticsearch.cluster.coordination.Coordinator
             logger.coordinator.level = error
