@@ -37,6 +37,9 @@ spec:
         createCert: false
         secret:
           enabled: false
+        extraEnvs:
+          - name: ELASTIC_PASSWORD
+            value: "unused-security-disabled"
         antiAffinity: "soft"
         esJavaOpts: "-Xmx1g -Xms1g"
   destination:
