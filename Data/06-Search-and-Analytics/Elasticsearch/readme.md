@@ -1,7 +1,7 @@
 # Elasticsearch
 
 > [!NOTE]   
-> **Status**: Pending
+> **Status**: In Progress
 ---
 
 ## ELK Tech Stack
