@@ -1,0 +1,75 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: adot-collector
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+    chart: opentelemetry-collector
+    targetRevision: "0.86.0"
+    helm:
+      valuesObject:
+        mode: daemonset
+        image:
+          repository: public.ecr.aws/aws-observability/aws-otel-collector
+          tag: v0.39.0
+        serviceAccount:
+          create: true
+          name: adot-collector
+          annotations:
+            eks.amazonaws.com/role-arn: arn:aws:iam::role/eks-prod-adot-collector
+        config:
+          receivers:
+            otlp:
+              protocols:
+                grpc:
+                  endpoint: 0.0.0.0:4317
+                http:
+                  endpoint: 0.0.0.0:4318
+          processors:
+            batch:
+              timeout: 10s
+            k8sattributes:
+              extract:
+                metadata:
+                  - k8s.namespace.name
+                  - k8s.pod.name
+                  - k8s.node.name
+                  - k8s.deployment.name
+          exporters:
+            awsxray:
+              region: us-east-1
+            awscloudwatchlogs:
+              region: us-east-1
+              log_group_name: /eks/eks-prod/otel
+          service:
+            pipelines:
+              traces:
+                receivers: [otlp]
+                processors: [batch, k8sattributes]
+                exporters: [awsxray]
+              logs:
+                receivers: [otlp]
+                processors: [batch, k8sattributes]
+                exporters: [awscloudwatchlogs]
+        resources:
+          requests:
+            cpu: 64m
+            memory: 128Mi
+          limits:
+            memory: 256Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: opentelemetry
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
