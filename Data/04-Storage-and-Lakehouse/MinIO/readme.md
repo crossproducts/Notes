@@ -7,12 +7,16 @@
 
 ## Notes:
 - `mc` = MinIO Client
-- Object Storage
-- S3-Compatible 
-- PBAC (Policy-Based Access Control): AWS IAM-style JSON policies for S3/object-storage access
-- Apps can talk to MinIO over HTTP/HTTPS using S3-style APIs
-- Browser UI
-- Custom expiration of sharable link to file
+- S3-compatible object storage; self-hosted (on-prem, K8s, edge)
+- Apps talk to MinIO over HTTP/HTTPS using S3 APIs — drop-in for `boto3`, `aws-sdk`, etc.
+- PBAC (Policy-Based Access Control): AWS IAM-style JSON policies
+- Erasure coding spreads object shards across drives/nodes for redundancy without RAID
+- Distributed mode: 4+ nodes pooled into a single namespace
+- Versioning + object locking (WORM) for compliance / ransomware recovery
+- Server-side encryption (SSE-S3, SSE-KMS, SSE-C)
+- Built-in browser console at `:9001`
+- Pre-signed URLs with custom expiration for temporary sharing
+- Bucket notifications → Kafka, webhooks, NATS, etc.
 
 <div style="text-align: center;">
 
@@ -31,29 +35,29 @@ Encrypted local disk / on-prem storage
 
 --- 
 
-## MinIO CLient Commands
+## MinIO Client Commands
 
 ### Essential Client Commands
-- `mc alias set`: Configures a new MinIO or S3-compatible server with an alias, URL, and credentials.
-- `mc ls`: Lists buckets and objects. Use --recursive (or -r) to see all contents.
-- `mc mb`: Creates a new bucket (Make Bucket).
-- `mc cp`: Copies objects between sources (local or remote) and targets.
-- `mc mv`: Moves objects from one location to another.
-- `mc mirror`: Synchronizes (mirrors) a local folder with a remote bucket or vice versa.
-- `mc rm`: Removes specific objects.
-- `mc rb`: Removes an entire bucket and its contents.
-- `mc find`: Searches for objects based on names, sizes, or patterns.
-- `mc stat`: Displays detailed metadata for objects and buckets.
-- `mc cat`: Displays the content of an object to the standard output.
-- `mc share`: Generates temporary URLs for secure object sharing
+- `mc alias set` — register a server (alias, URL, credentials)
+- `mc ls` — list buckets/objects (`-r` for recursive)
+- `mc mb` — make bucket
+- `mc cp` — copy objects (local ↔ remote)
+- `mc mv` — move objects
+- `mc mirror` — sync folder ↔ bucket
+- `mc rm` — remove objects
+- `mc rb` — remove bucket (and contents)
+- `mc find` — search by name, size, or pattern
+- `mc stat` — show object/bucket metadata
+- `mc cat` — stream object to stdout
+- `mc share` — generate pre-signed URL
 
 ### Administration Commands (`mc admin`)
-- `mc admin info`: Displays overall server status, including disk usage and uptime.
-- `mc admin user`: Manages users (add, disable, or list).
-- `mc admin policy`: Manages Access Control Policies (IAM).
-- `mc admin heal`: Scans and repairs damaged or corrupted data.
-- `mc admin update`: Updates all MinIO servers in the deployment to the latest version.
-- `mc admin service`: Restarts or stops MinIO server instances
+- `mc admin info` — server status, disk usage, uptime
+- `mc admin user` — add / disable / list users
+- `mc admin policy` — manage IAM policies
+- `mc admin heal` — scan and repair corrupted data
+- `mc admin update` — update servers in the deployment
+- `mc admin service` — restart or stop server instances
 
 ---
 
