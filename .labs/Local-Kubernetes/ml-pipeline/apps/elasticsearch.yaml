@@ -49,6 +49,12 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: elasticsearch
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      jsonPointers:
+        - /spec/revisionHistoryLimit
+        - /spec/persistentVolumeClaimRetentionPolicy
   syncPolicy:
     automated:
       prune: true
