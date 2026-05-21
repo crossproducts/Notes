@@ -1,15 +1,5 @@
 # AWS
 
-## Certifications
-
-| Certification | Level | Focus |
-|---|---|---|
-| [Cloud Practitioner](./Foundational-Cloud_Practitioner/) | Foundational | Broad AWS overview, billing, support |
-| [AI Practitioner](./Foundational-AI_Practitioner/) | Foundational | AI/ML concepts, responsible AI, AWS AI services |
-| [Solutions Architect – Associate](./Associate-Solution_Architect/) | Associate | Architecture best practices, resilient & cost-efficient systems |
-| [Machine Learning – Associate](./!Associate-Machine_Learning/) | Associate | ML pipeline, SageMaker, data prep, model deployment |
-| [Security – Specialty](./!Specialty-Security/) | Specialty | IAM, encryption, threat detection, compliance |
-
 ---
 
 ## AWS Architecture Patterns

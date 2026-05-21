@@ -1,3 +1,0 @@
-# VPC Networking
-
-> Status: Pending
