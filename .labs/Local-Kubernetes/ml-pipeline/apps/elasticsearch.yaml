@@ -55,6 +55,7 @@ spec:
       jsonPointers:
         - /spec/revisionHistoryLimit
         - /spec/persistentVolumeClaimRetentionPolicy
+        - /spec/volumeClaimTemplates
   syncPolicy:
     automated:
       prune: true
