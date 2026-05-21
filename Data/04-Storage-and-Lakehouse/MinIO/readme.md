@@ -1,7 +1,7 @@
 # MinIO
 
 > [!NOTE]   
-> **Status**: In Progress
+> **Status**: Done
 
 ---
 
