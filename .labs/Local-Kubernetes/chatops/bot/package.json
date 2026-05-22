@@ -1,0 +1,23 @@
+{
+  "name": "chatops-bot",
+  "version": "1.0.0",
+  "description": "Mattermost ChatOps bot with MCP Kubernetes integration",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "@mattermost/client": "^10.0.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "kubernetes-mcp-server": "^0.0.62",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.0",
+    "typescript": "^5.5.0"
+  }
+}
