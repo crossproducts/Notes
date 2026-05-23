@@ -29,6 +29,11 @@ or
 choco install psmux -y
 psmux new-session -s claude "claude /remote-control -c"
 ```
+or
+```bash
+psmux ls
+psmux attach -t claude
+```
 
 ## Scheduled for Token Window
 - Token resets every 5 hours
