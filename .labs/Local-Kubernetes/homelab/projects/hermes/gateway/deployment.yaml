@@ -23,7 +23,7 @@ spec:
         fsGroup: 10000
       containers:
         - name: hermes
-          image: ghcr.io/nousresearch/hermes-agent:latest
+          image: nousresearch/hermes-agent:latest
           ports:
             - containerPort: 9000
               protocol: TCP
