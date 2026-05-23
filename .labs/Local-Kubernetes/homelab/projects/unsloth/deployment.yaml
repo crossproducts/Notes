@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unsloth-studio
+  namespace: unsloth
+  labels:
+    app: unsloth-studio
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: unsloth-studio
+  template:
+    metadata:
+      labels:
+        app: unsloth-studio
+    spec:
+      containers:
+        - name: unsloth
+          image: unsloth/unsloth:latest
+          ports:
+            - name: studio
+              containerPort: 8000
+              protocol: TCP
+            - name: jupyter
+              containerPort: 8888
+              protocol: TCP
+          env:
+            - name: JUPYTER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: unsloth-secrets
+                  key: JUPYTER_PASSWORD
+          volumeMounts:
+            - name: unsloth-work
+              mountPath: /workspace/work
+          resources:
+            requests:
+              memory: 2Gi
+              cpu: "1"
+            limits:
+              memory: 8Gi
+              cpu: "4"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+      volumes:
+        - name: unsloth-work
+          persistentVolumeClaim:
+            claimName: unsloth-work

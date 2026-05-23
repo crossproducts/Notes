@@ -1,0 +1,93 @@
+# AI Platform: Ollama + Open WebUI + AgentGateway + Unsloth Studio
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-ollama
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/crossproducts/Notes
+    targetRevision: main
+    path: .labs/Local-Kubernetes/homelab/projects/ollama
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: platform
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: openwebui
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/crossproducts/Notes
+    targetRevision: main
+    path: .labs/Local-Kubernetes/homelab/projects/openwebui
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openwebui
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: agentgateway
+#   namespace: argocd
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "3"
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://github.com/crossproducts/Notes
+#     targetRevision: main
+#     path: .labs/Local-Kubernetes/homelab/projects/agentgateway
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: agentgateway
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+---
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: unsloth-studio
+#   namespace: argocd
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "4"
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://github.com/crossproducts/Notes
+#     targetRevision: main
+#     path: .labs/Local-Kubernetes/homelab/projects/unsloth
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: unsloth
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true

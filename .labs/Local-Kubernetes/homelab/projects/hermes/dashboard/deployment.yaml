@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-dashboard
+  namespace: hermes
+  labels:
+    app: hermes-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hermes-dashboard
+  template:
+    metadata:
+      labels:
+        app: hermes-dashboard
+    spec:
+      containers:
+        - name: dashboard
+          image: ghcr.io/nousresearch/hermes-agent:latest
+          args: ["dashboard"]
+          ports:
+            - containerPort: 9119
+              protocol: TCP
+          env:
+            - name: HERMES_GATEWAY_URL
+              value: http://hermes-gateway.hermes.svc.cluster.local:9000
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 512Mi
+              cpu: 500m
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9119
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9119
+            initialDelaySeconds: 10
+            periodSeconds: 30

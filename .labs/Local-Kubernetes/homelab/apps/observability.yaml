@@ -1,0 +1,360 @@
+# Observability: Prometheus + Grafana + Elasticsearch + Tempo + OTel Collector + Kibana
+---
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: kube-prometheus-stack
+#   namespace: argocd
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "1"
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://prometheus-community.github.io/helm-charts
+#     chart: kube-prometheus-stack
+#     targetRevision: 65.5.0
+#     helm:
+#       releaseName: kps
+#       values: |
+#         kubeControllerManager:
+#           enabled: false
+#         kubeScheduler:
+#           enabled: false
+#         kubeProxy:
+#           enabled: false
+#         kubeEtcd:
+#           enabled: false
+
+#         prometheus:
+#           ingress:
+#             enabled: true
+#             ingressClassName: traefik
+#             hosts:
+#               - prometheus.localhost
+#             paths:
+#               - /
+#             pathType: Prefix
+#           prometheusSpec:
+#             retention: 7d
+#             resources:
+#               requests:
+#                 cpu: 100m
+#                 memory: 400Mi
+#             serviceMonitorSelectorNilUsesHelmValues: false
+#             podMonitorSelectorNilUsesHelmValues: false
+#             ruleSelectorNilUsesHelmValues: false
+
+#         alertmanager:
+#           ingress:
+#             enabled: true
+#             ingressClassName: traefik
+#             hosts:
+#               - alertmanager.localhost
+#             paths:
+#               - /
+#             pathType: Prefix
+
+#         grafana:
+#           ingress:
+#             enabled: true
+#             ingressClassName: traefik
+#             hosts:
+#               - grafana.localhost
+#             path: /
+#           defaultDashboardsTimezone: browser
+#           sidecar:
+#             datasources:
+#               enabled: true
+#               searchNamespace: ALL
+
+#         prometheus-node-exporter:
+#           hostRootFsMount:
+#             enabled: false
+
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: monitoring
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#       - ServerSideApply=true
+#       - SkipDryRunOnMissingResource=true
+---
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: elasticsearch
+#   namespace: argocd
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "1"
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://helm.elastic.co
+#     chart: elasticsearch
+#     targetRevision: 8.5.1
+#     helm:
+#       releaseName: elasticsearch
+#       values: |
+#         replicas: 1
+#         minimumMasterNodes: 1
+#         resources:
+#           requests:
+#             cpu: 100m
+#             memory: 512Mi
+#           limits:
+#             cpu: "1"
+#             memory: 2Gi
+#         volumeClaimTemplate:
+#           accessModes: ["ReadWriteOnce"]
+#           resources:
+#             requests:
+#               storage: 10Gi
+#         esConfig:
+#           elasticsearch.yml: |
+#             xpack.security.enabled: false
+#             ingest.geoip.downloader.enabled: false
+#           log4j2.properties: |
+#             logger.coordinator.name = org.elasticsearch.cluster.coordination.Coordinator
+#             logger.coordinator.level = error
+#         protocol: http
+#         createCert: false
+#         secret:
+#           enabled: false
+#         extraEnvs:
+#           - name: ELASTIC_PASSWORD
+#             value: "unused-security-disabled"
+#         antiAffinity: "soft"
+#         esJavaOpts: "-Xmx1g -Xms1g"
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: elasticsearch
+#   ignoreDifferences:
+#     - group: apps
+#       kind: StatefulSet
+#       jsonPointers:
+#         - /spec/revisionHistoryLimit
+#         - /spec/persistentVolumeClaimRetentionPolicy
+#         - /spec/volumeClaimTemplates
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#       - ServerSideApply=true
+---
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: tempo
+#   namespace: argocd
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "1"
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://grafana.github.io/helm-charts
+#     chart: tempo
+#     targetRevision: 1.24.4
+#     helm:
+#       releaseName: tempo
+#       values: |
+#         tempo:
+#           receivers:
+#             otlp:
+#               protocols:
+#                 grpc:
+#                   endpoint: "0.0.0.0:4317"
+#                 http:
+#                   endpoint: "0.0.0.0:4318"
+#             zipkin:
+#               endpoint: "0.0.0.0:9411"
+#             jaeger:
+#               protocols:
+#                 thrift_http:
+#                   endpoint: "0.0.0.0:14268"
+#           retention: 48h
+#         resources:
+#           requests:
+#             cpu: 50m
+#             memory: 256Mi
+#           limits:
+#             cpu: 500m
+#             memory: 1Gi
+#         persistence:
+#           enabled: true
+#           size: 5Gi
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: tempo
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#       - ServerSideApply=true
+---
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: otel-collector
+#   namespace: argocd
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "2"
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+#     chart: opentelemetry-collector
+#     targetRevision: 0.156.0
+#     helm:
+#       releaseName: otel-collector
+#       values: |
+#         mode: daemonset
+#         image:
+#           repository: otel/opentelemetry-collector-contrib
+#           tag: 0.152.0
+#         resources:
+#           requests:
+#             cpu: 25m
+#             memory: 64Mi
+#           limits:
+#             cpu: 200m
+#             memory: 256Mi
+#         presets:
+#           logsCollection:
+#             enabled: true
+#           kubernetesAttributes:
+#             enabled: true
+#           kubeletMetrics:
+#             enabled: true
+#         config:
+#           receivers:
+#             otlp:
+#               protocols:
+#                 grpc:
+#                   endpoint: "0.0.0.0:4317"
+#                 http:
+#                   endpoint: "0.0.0.0:4318"
+#           processors:
+#             batch:
+#               send_batch_size: 1000
+#               timeout: 10s
+#             k8sattributes:
+#               extract:
+#                 metadata:
+#                   - k8s.namespace.name
+#                   - k8s.pod.name
+#                   - k8s.pod.uid
+#                   - k8s.node.name
+#                   - k8s.deployment.name
+#                   - k8s.container.name
+#             resource:
+#               attributes:
+#                 - key: cluster.name
+#                   value: homelab
+#                   action: upsert
+#           exporters:
+#             elasticsearch:
+#               endpoints:
+#                 - http://elasticsearch-master.elasticsearch.svc.cluster.local:9200
+#               logs_index: otel-logs
+#               sending_queue:
+#                 enabled: true
+#                 num_consumers: 2
+#                 queue_size: 1000
+#               retry:
+#                 enabled: true
+#             otlp/tempo:
+#               endpoint: tempo.tempo.svc.cluster.local:4317
+#               tls:
+#                 insecure: true
+#             prometheus:
+#               endpoint: "0.0.0.0:8889"
+#               resource_to_telemetry_conversion:
+#                 enabled: true
+#           service:
+#             pipelines:
+#               logs:
+#                 receivers: [filelog]
+#                 processors: [k8sattributes, resource, batch]
+#                 exporters: [elasticsearch]
+#               traces:
+#                 receivers: [otlp]
+#                 processors: [k8sattributes, resource, batch]
+#                 exporters: [otlp/tempo]
+#               metrics:
+#                 receivers: [otlp]
+#                 processors: [k8sattributes, resource, batch]
+#                 exporters: [prometheus]
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: otel-system
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#       - ServerSideApply=true
+---
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: kibana
+#   namespace: argocd
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "2"
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://github.com/crossproducts/Notes
+#     targetRevision: main
+#     path: .labs/Local-Kubernetes/homelab/projects/observability/kibana
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: kibana
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+---
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: grafana-datasources
+#   namespace: argocd
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "2"
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://github.com/crossproducts/Notes
+#     targetRevision: main
+#     path: .labs/Local-Kubernetes/homelab/projects/observability/grafana-datasources
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: monitoring
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true

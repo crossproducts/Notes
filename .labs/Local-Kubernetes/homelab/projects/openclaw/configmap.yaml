@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openclaw-config
+  namespace: openclaw
+  labels:
+    app: openclaw
+data:
+  openclaw.json: |
+    {
+      "agent": {
+        "model": "anthropic/claude-sonnet-4-20250514"
+      },
+      "channels": {}
+    }

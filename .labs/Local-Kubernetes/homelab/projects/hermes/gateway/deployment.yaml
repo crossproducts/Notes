@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-gateway
+  namespace: hermes
+  labels:
+    app: hermes-gateway
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: hermes-gateway
+  template:
+    metadata:
+      labels:
+        app: hermes-gateway
+    spec:
+      securityContext:
+        runAsUser: 10000
+        runAsGroup: 10000
+        fsGroup: 10000
+      containers:
+        - name: hermes
+          image: ghcr.io/nousresearch/hermes-agent:latest
+          ports:
+            - containerPort: 9000
+              protocol: TCP
+          env:
+            - name: OLLAMA_BASE_URL
+              value: http://ollama.platform.svc.cluster.local:11434
+            - name: HERMES_UID
+              value: "10000"
+            - name: OPENROUTER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-api-keys
+                  key: OPENROUTER_API_KEY
+                  optional: true
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-api-keys
+                  key: ANTHROPIC_API_KEY
+                  optional: true
+            - name: EXA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-api-keys
+                  key: EXA_API_KEY
+                  optional: true
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-api-keys
+                  key: GITHUB_TOKEN
+                  optional: true
+            - name: TELEGRAM_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-api-keys
+                  key: TELEGRAM_BOT_TOKEN
+                  optional: true
+          volumeMounts:
+            - name: hermes-data
+              mountPath: /opt/data
+            - name: cli-config
+              mountPath: /opt/config/cli-config.yaml
+              subPath: cli-config.yaml
+              readOnly: true
+          resources:
+            requests:
+              memory: 1Gi
+              cpu: 500m
+            limits:
+              memory: 4Gi
+              cpu: "2"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: hermes-data
+          persistentVolumeClaim:
+            claimName: hermes-data
+        - name: cli-config
+          configMap:
+            name: hermes-cli-config

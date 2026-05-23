@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agentgateway-config
+  namespace: agentgateway
+  labels:
+    app: agentgateway
+data:
+  config.yaml: |
+    # LLM provider routing
+    llm:
+      - name: ollama
+        provider:
+          ollama:
+            host: http://ollama.platform.svc.cluster.local:11434
+        models:
+          - qwen3:0.6b
+          - qwen2.5:3b
+
+      - name: anthropic
+        provider:
+          anthropic:
+            model: claude-sonnet-4-20250514
+        policies:
+          backendAuth:
+            key: "$ANTHROPIC_API_KEY"
+
+      - name: openrouter
+        provider:
+          openAI:
+            host: https://openrouter.ai/api/v1
+            model: anthropic/claude-sonnet-4
+        policies:
+          backendAuth:
+            key: "$OPENROUTER_API_KEY"
+
+    # Proxy listener
+    binds:
+      - port: 3000
+        listeners:
+          - routes:
+              - backends:
+                  - ai:
+                      provider:
+                        ollama:
+                          host: http://ollama.platform.svc.cluster.local:11434
