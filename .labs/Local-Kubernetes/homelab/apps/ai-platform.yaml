@@ -46,28 +46,28 @@ spec:
     syncOptions:
       - CreateNamespace=true
 ---
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: n8n
-  namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "3"
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/crossproducts/Notes
-    targetRevision: main
-    path: .labs/Local-Kubernetes/homelab/projects/n8n
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: n8n
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: n8n
+#   namespace: argocd
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "3"
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://github.com/crossproducts/Notes
+#     targetRevision: main
+#     path: .labs/Local-Kubernetes/homelab/projects/n8n
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: n8n
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
 ---
 # apiVersion: argoproj.io/v1alpha1
 # kind: Application

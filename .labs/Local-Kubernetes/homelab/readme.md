@@ -162,3 +162,12 @@ mkdir -p projects/newproject
 ```bash
 k3d cluster delete homelab
 ```
+
+## To add Hermes as an additional connection, do it through the UI:
+
+1. Go to http://chat.localhost
+2. Click Admin Panel (gear icon, top right) → Settings → Connections
+3. Under OpenAI API, click + to add a new connection:
+    - URL: http://hermes-gateway.hermes.svc.cluster.local:9000/v1
+    - API Key: pFKVYlGeweBWBee5GqJuDaVSOVlaNpWT
+4. Click the checkmark to verify/save
