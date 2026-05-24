@@ -40,36 +40,6 @@ spec:
                 secretKeyRef:
                   name: hermes-api-server-key
                   key: API_SERVER_KEY
-            - name: OPENROUTER_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: hermes-api-keys
-                  key: OPENROUTER_API_KEY
-                  optional: true
-            - name: ANTHROPIC_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: hermes-api-keys
-                  key: ANTHROPIC_API_KEY
-                  optional: true
-            - name: EXA_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: hermes-api-keys
-                  key: EXA_API_KEY
-                  optional: true
-            - name: GITHUB_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: hermes-api-keys
-                  key: GITHUB_TOKEN
-                  optional: true
-            - name: TELEGRAM_BOT_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: hermes-api-keys
-                  key: TELEGRAM_BOT_TOKEN
-                  optional: true
           volumeMounts:
             - name: hermes-data
               mountPath: /opt/data
