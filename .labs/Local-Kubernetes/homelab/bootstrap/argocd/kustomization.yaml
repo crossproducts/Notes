@@ -19,3 +19,14 @@ patches:
         name: argocd-cmd-params-cm
       data:
         server.insecure: "true"
+  - target:
+      kind: Secret
+      name: argocd-secret
+    patch: |
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: argocd-secret
+      stringData:
+        admin.password: "$2b$10$snhGfQkT/mzrtoC0N/n.AOpvCW5o4gw4YmImd1BaOQM2z07EeqOQW"
+        admin.passwordMtime: "2026-01-01T00:00:00Z"
