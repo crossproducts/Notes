@@ -33,12 +33,6 @@ spec:
               value: "0.0.0.0"
             - name: API_SERVER_PORT
               value: "9000"
-            - name: API_SERVER_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: hermes-api-keys
-                  key: API_SERVER_KEY
-                  optional: true
             - name: OPENROUTER_API_KEY
               valueFrom:
                 secretKeyRef:
