@@ -32,7 +32,7 @@ psmux new-session -s claude "claude /remote-control -c"
 or
 ```bash
 psmux ls
-psmux attach -t claude
+psmux attach claude
 ```
 
 ## Scheduled for Token Window

@@ -157,6 +157,29 @@ mkdir -p projects/newproject
 # 4. Commit + push — ArgoCD auto-syncs
 ```
 
+## Free LLM API Options
+
+For resource-constrained environments where local CPU inference is too slow, these free OpenAI-compatible APIs can replace or supplement in-cluster Ollama:
+
+| Provider | Base URL | Free Tier | Rate Limits | Best Free Model |
+|---|---|---|---|---|
+| **NVIDIA NIM** | `https://integrate.api.nvidia.com/v1` | No card, no expiry | 40 RPM | Llama 4, DeepSeek, Qwen, Nemotron (100+) |
+| **Groq** | `https://api.groq.com/openai/v1` | No card | 30 RPM / 1,000 RPD | Llama 3.3 70B, DeepSeek-R1 |
+| **Google Gemini** | `https://generativelanguage.googleapis.com/v1beta/openai/` | Google account | 15 RPM / 1,500 RPD | Gemini 2.5 Flash |
+| **Together.ai** | `https://api.together.xyz/v1` | $25 signup credits | 2 RPM | Llama 4, DeepSeek-V3 |
+| **Google Colab** | Dynamic (cloudflared tunnel) | T4 GPU, 15GB VRAM | Session-based (~12h max) | 7B-14B models via Ollama |
+| **OpenAI** | `https://api.openai.com/v1` | $5 new account credits | Credit-capped | gpt-4o-mini |
+| **Anthropic** | `https://api.anthropic.com` | No free tier | N/A | claude-sonnet-4 ($3/M input) |
+
+To add a provider to Hermes, add a `custom_providers` entry to the gateway config:
+```yaml
+custom_providers:
+- name: nvidia
+  base_url: https://integrate.api.nvidia.com/v1
+  model: meta/llama-4-maverick-17b-128e
+  api_key: <your-api-key>
+```
+
 ## Teardown
 
 ```bash
