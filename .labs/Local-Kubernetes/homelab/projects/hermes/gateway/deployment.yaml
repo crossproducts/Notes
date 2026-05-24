@@ -29,6 +29,16 @@ spec:
               value: http://ollama.platform.svc.cluster.local:11434
             - name: HERMES_UID
               value: "10000"
+            - name: API_SERVER_HOST
+              value: "0.0.0.0"
+            - name: API_SERVER_PORT
+              value: "9000"
+            - name: API_SERVER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-api-keys
+                  key: API_SERVER_KEY
+                  optional: true
             - name: OPENROUTER_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -74,14 +84,12 @@ spec:
               memory: 4Gi
               cpu: "2"
           readinessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 9000
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             periodSeconds: 15
           livenessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 9000
             initialDelaySeconds: 30
             periodSeconds: 30
