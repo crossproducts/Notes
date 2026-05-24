@@ -28,6 +28,10 @@ spec:
               value: http://ollama.platform.svc.cluster.local:11434
             - name: WEBUI_AUTH
               value: "false"
+            - name: OPENAI_API_BASE_URLS
+              value: "http://hermes-gateway.hermes.svc.cluster.local:9000/v1"
+            - name: OPENAI_API_KEYS
+              value: "pFKVYlGeweBWBee5GqJuDaVSOVlaNpWT"
             - name: WEBUI_SECRET_KEY
               valueFrom:
                 secretKeyRef:
