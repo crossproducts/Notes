@@ -27,6 +27,10 @@ spec:
           env:
             - name: OLLAMA_BASE_URL
               value: http://ollama.platform.svc.cluster.local:11434
+            - name: HERMES_INFERENCE_PROVIDER
+              value: ollama
+            - name: LLM_MODEL
+              value: qwen2.5:3b
             - name: HERMES_UID
               value: "10000"
             - name: API_SERVER_ENABLED
