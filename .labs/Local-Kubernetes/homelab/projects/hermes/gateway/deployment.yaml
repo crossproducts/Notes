@@ -29,6 +29,8 @@ spec:
               value: http://ollama.platform.svc.cluster.local:11434
             - name: HERMES_UID
               value: "10000"
+            - name: API_SERVER_ENABLED
+              value: "true"
             - name: API_SERVER_HOST
               value: "0.0.0.0"
             - name: API_SERVER_PORT
