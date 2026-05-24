@@ -17,14 +17,10 @@ spec:
       labels:
         app: hermes-gateway
     spec:
-      securityContext:
-        runAsUser: 10000
-        runAsGroup: 10000
-        fsGroup: 10000
       containers:
         - name: hermes
           image: nousresearch/hermes-agent:latest
-          command: ["gateway", "run"]
+          args: ["gateway", "run"]
           ports:
             - containerPort: 9000
               protocol: TCP
