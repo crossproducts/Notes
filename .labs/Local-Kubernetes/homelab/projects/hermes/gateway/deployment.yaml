@@ -49,6 +49,11 @@ spec:
                 secretKeyRef:
                   name: hermes-cloud-keys
                   key: NVIDIA_API_KEY
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-cloud-keys
+                  key: GITHUB_TOKEN
           volumeMounts:
             - name: hermes-data
               mountPath: /opt/data
