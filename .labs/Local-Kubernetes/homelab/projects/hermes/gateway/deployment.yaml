@@ -44,6 +44,11 @@ spec:
                 secretKeyRef:
                   name: hermes-api-server-key
                   key: API_SERVER_KEY
+            - name: NVIDIA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-cloud-keys
+                  key: NVIDIA_API_KEY
           volumeMounts:
             - name: hermes-data
               mountPath: /opt/data
