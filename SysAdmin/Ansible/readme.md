@@ -45,6 +45,22 @@ dallas_nodes
 </details>
 
 ### Variables
+- Variable precedence
+- Magic variables
+- Facts
+    - playbook
+        gather_facts: no
+    - /etc/ansible/ansible.cfg
+        gathering = implicit
+        or
+        gathering = explicit
+
+<details><summary>Sample variables</summary>
+
+```
+```
+</details>
+
 ### Playbooks
 ### Handlers, Roles, Collections
 ### Advanced topics
