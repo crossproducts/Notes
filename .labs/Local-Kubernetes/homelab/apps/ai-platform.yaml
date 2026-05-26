@@ -1,27 +1,27 @@
 # AI Platform: Ollama + Open WebUI + n8n + AgentGateway + Unsloth Studio
 ---
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: platform-ollama
-  namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/crossproducts/Notes
-    targetRevision: main
-    path: .labs/Local-Kubernetes/homelab/projects/ollama
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: platform
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: platform-ollama
+#   namespace: argocd
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "0"
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://github.com/crossproducts/Notes
+#     targetRevision: main
+#     path: .labs/Local-Kubernetes/homelab/projects/ollama
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: platform
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application

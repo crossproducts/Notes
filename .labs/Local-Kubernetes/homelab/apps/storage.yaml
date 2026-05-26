@@ -1,0 +1,188 @@
+# Storage: Rook Ceph (operator + cluster)
+#
+# Distributed storage for the homelab — block (RBD), file (CephFS), object (S3/RGW).
+# See readme-rook-ceph.md for the full guide (architecture, topology, dashboard, usage).
+#
+# Two Helm Applications:
+#   storage-rook-ceph         (wave 0) — the operator (CRDs + controller)
+#   storage-rook-ceph-cluster (wave 1) — the CephCluster + pools + StorageClasses + dashboard
+#
+# k3d caveat: k3d "nodes" are containers with no raw block devices, so OSDs are
+# backed by PVCs from the built-in `local-path` StorageClass instead of real disks.
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: storage-rook-ceph
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.rook.io/release
+    chart: rook-ceph
+    targetRevision: v1.16.0   # operator chart; check `helm search repo rook-release/rook-ceph --versions`
+    helm:
+      releaseName: rook-ceph
+      values: |
+        # CSI provisioners only need block + file; trim object/NFS to save resources.
+        csi:
+          enableRbdDriver: true
+          enableCephfsDriver: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            memory: 512Mi
+        # Watch all namespaces for Ceph CRs (default).
+        currentNamespaceOnly: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: rook-ceph
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: storage-rook-ceph-cluster
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.rook.io/release
+    chart: rook-ceph-cluster
+    targetRevision: v1.16.0
+    helm:
+      releaseName: rook-ceph-cluster
+      values: |
+        operatorNamespace: rook-ceph
+
+        # ---- Toolbox: shell with `ceph` / `rbd` CLIs for poking the cluster ----
+        toolbox:
+          enabled: true
+
+        # ---- Ceph dashboard, exposed via Traefik at ceph.localhost ----
+        cephClusterSpec:
+          mon:
+            count: 1            # single-node homelab; use 3 on a real multi-node cluster
+            allowMultiplePerNode: true
+          mgr:
+            count: 1
+            modules:
+              - name: rook
+                enabled: true
+          dashboard:
+            enabled: true
+            ssl: false          # Traefik terminates; serve plain http inside cluster
+
+          # k3d nodes have no real disks — provision OSDs on local-path PVCs instead.
+          storage:
+            useAllNodes: false
+            useAllDevices: false
+            storageClassDeviceSets:
+              - name: local-osd
+                count: 3                 # 3 OSDs so replica size 3 (or topology spread) works
+                portable: false
+                tuneDeviceClass: true
+                encrypted: false
+                placement: {}             # see "Topology" in the readme to spread across nodes
+                volumeClaimTemplates:
+                  - metadata:
+                      name: data
+                    spec:
+                      resources:
+                        requests:
+                          storage: 10Gi
+                      storageClassName: local-path
+                      volumeMode: Block
+                      accessModes:
+                        - ReadWriteOnce
+
+          resources:
+            mgr:
+              requests: {cpu: 100m, memory: 256Mi}
+              limits: {memory: 768Mi}
+            mon:
+              requests: {cpu: 100m, memory: 256Mi}
+              limits: {memory: 768Mi}
+            osd:
+              requests: {cpu: 100m, memory: 512Mi}
+              limits: {memory: 2Gi}
+
+        ingress:
+          dashboard:
+            ingressClassName: traefik
+            host:
+              name: ceph.localhost
+              path: /
+
+        # ---- Block storage: RBD pool + StorageClass (default for the homelab) ----
+        cephBlockPools:
+          - name: replicapool
+            spec:
+              failureDomain: osd          # single node: spread replicas across OSDs, not hosts
+              replicated:
+                size: 3
+            storageClass:
+              enabled: true
+              name: ceph-block
+              isDefault: false
+              reclaimPolicy: Delete
+              allowVolumeExpansion: true
+              parameters:
+                imageFormat: "2"
+                imageFeatures: layering
+                csi.storage.k8s.io/fstype: ext4
+
+        # ---- File storage: CephFS shared filesystem + StorageClass (RWX) ----
+        cephFileSystems:
+          - name: ceph-filesystem
+            spec:
+              metadataPool:
+                replicated:
+                  size: 3
+              dataPools:
+                - name: data0
+                  failureDomain: osd
+                  replicated:
+                    size: 3
+              metadataServer:
+                activeCount: 1
+                activeStandby: true
+                resources:
+                  requests: {cpu: 100m, memory: 256Mi}
+                  limits: {memory: 1Gi}
+            storageClass:
+              enabled: true
+              name: ceph-filesystem
+              reclaimPolicy: Delete
+              parameters:
+                csi.storage.k8s.io/fstype: ext4
+
+        # ---- Object storage: disabled by default (enable to learn the S3/RGW side) ----
+        cephObjectStores: []
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: rook-ceph
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
