@@ -16,6 +16,7 @@ the build pipeline, the cluster, the cloud account, and AI systems.
 | [Kubernetes-Security](Kubernetes-Security/) | RBAC, NetworkPolicy, admission control, runtime | 🔴 Pending |
 | [Cloud-Security](Cloud-Security/) | Account guardrails, posture, detection | 🔴 Pending |
 | [AI-Security](AI-Security/) | LLM/agent threats as a security program | 🔴 Pending |
+| [Firewalls](Firewalls/) | Network/host firewalls, rules, segmentation | 🔴 Pending |
 
 ## See also
 

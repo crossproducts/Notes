@@ -12,6 +12,9 @@
 | [ArgoCD](ArgoCD/) | GitOps continuous delivery controller |
 | [GitOps](GitOps/) | Git as the single source of truth for cluster state |
 | [Nginx](Nginx/) | Ingress, reverse proxy, load balancing |
+| [HAProxy](HAProxy/) | Load balancer / reverse proxy |
+| [OpenShift](OpenShift/) | Red Hat enterprise Kubernetes distribution |
+| [RKE2](RKE2/) | Rancher's security-hardened Kubernetes distribution |
 
 ## See also
 

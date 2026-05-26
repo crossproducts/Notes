@@ -1,4 +1,4 @@
-# AWS Infrastructure Composer
+# HAProxy
 
 > [!NOTE]
 > **Status**: Pending

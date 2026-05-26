@@ -1,4 +1,4 @@
-# AWS Infrastructure Composer
+# JanusGraph
 
 > [!NOTE]
 > **Status**: Pending

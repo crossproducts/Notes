@@ -1,4 +1,4 @@
-# AWS Infrastructure Composer
+# Apache Cassandra
 
 > [!NOTE]
 > **Status**: Pending

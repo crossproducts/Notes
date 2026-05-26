@@ -1,4 +1,4 @@
-# AWS Infrastructure Composer
+# OpenShift
 
 > [!NOTE]
 > **Status**: Pending

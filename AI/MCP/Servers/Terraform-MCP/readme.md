@@ -1,4 +1,4 @@
-# AWS Infrastructure Composer
+# AWS Terraform MCP
 
 > [!NOTE]
 > **Status**: Pending

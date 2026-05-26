@@ -1,4 +1,4 @@
-# AWS Infrastructure Composer
+# Firewalls
 
 > [!NOTE]
 > **Status**: Pending
