@@ -27,6 +27,9 @@ k3d cluster "homelab"
 ├── otel-system namespace   ← Telemetry pipeline
 │   └── OTel Collector      ← auto-discovery, logs + traces + metrics
 │
+├── rook-ceph namespace     ← Distributed storage
+│   └── Rook Ceph           ← block/file/object storage + dashboard (see readme-rook-ceph.md)
+│
 ├── platform namespace      ← Shared infra
 │   └── Ollama              ← local LLM for all projects
 │
@@ -48,6 +51,7 @@ k3d cluster "homelab"
 ```
 
 **Flat app-of-apps**: Root app discovers `apps/` directory. Apps grouped into 3 files:
+- `storage.yaml` — Rook Ceph operator + cluster (waves 0-1) — see [readme-rook-ceph.md](readme-rook-ceph.md)
 - `observability.yaml` — kube-prometheus-stack, Elasticsearch, Tempo, OTel Collector, Kibana, Grafana datasources (waves 1-2)
 - `ai-platform.yaml` — Ollama, Open WebUI, AgentGateway, Unsloth Studio (waves 0-4)
 - `agents.yaml` — Hermes gateway + dashboard, OpenClaw (waves 5-7)
@@ -58,6 +62,7 @@ k3d cluster "homelab"
 
 | Project | Namespace | Description |
 |---------|-----------|-------------|
+| Rook Ceph | rook-ceph | Distributed block/file/object storage + dashboard ([guide](readme-rook-ceph.md)) |
 | Prometheus + Grafana | monitoring | Metrics, dashboards, alerting (kube-prometheus-stack) |
 | Elasticsearch | elasticsearch | Log storage for OTel pipeline |
 | Kibana | kibana | Log exploration UI |
@@ -75,6 +80,7 @@ k3d cluster "homelab"
 | Service | URL |
 |---------|-----|
 | ArgoCD | http://argocd.localhost |
+| Ceph Dashboard | http://ceph.localhost |
 | Grafana | http://grafana.localhost |
 | Prometheus | http://prometheus.localhost |
 | Alertmanager | http://alertmanager.localhost |
