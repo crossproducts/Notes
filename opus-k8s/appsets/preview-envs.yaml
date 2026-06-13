@@ -6,6 +6,11 @@
 #   kubectl -n argocd create secret generic github-scm-token \
 #     --from-literal=token=<github_pat> \
 #     -l argocd.argoproj.io/secret-type=scm-creds
+# Or commit it encrypted as a SealedSecret (see docs/sealed-secrets.md):
+#   kubectl -n argocd create secret generic github-scm-token \
+#     --from-literal=token=<github_pat> \
+#     -l argocd.argoproj.io/secret-type=scm-creds \
+#     --dry-run=client -o yaml | ./scripts/seal-secret.sh
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:

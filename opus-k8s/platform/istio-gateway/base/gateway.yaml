@@ -1,11 +1,11 @@
 # Gateway API Gateway. With PILOT_ENABLE_GATEWAY_API_DEPLOYMENT_CONTROLLER=true,
 # istiod auto-provisions the data-plane Deployment + a LoadBalancer Service named
-# `fable-gateway-istio` in istio-system. servicelb assigns it an IP and k3d maps
+# `opus-gateway-istio` in istio-system. servicelb assigns it an IP and k3d maps
 # host :443 → it. Per-app HTTPRoutes attach to this Gateway via parentRefs.
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: fable-gateway
+  name: opus-gateway
   namespace: istio-system
 spec:
   gatewayClassName: istio
@@ -18,7 +18,7 @@ spec:
         mode: Terminate
         certificateRefs:
           - kind: Secret
-            name: fable-wildcard-tls
+            name: opus-wildcard-tls
       allowedRoutes:
         namespaces:
           from: All

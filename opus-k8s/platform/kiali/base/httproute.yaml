@@ -5,7 +5,7 @@ metadata:
   namespace: istio-system
 spec:
   parentRefs:
-    - name: fable-gateway
+    - name: opus-gateway
       namespace: istio-system
       sectionName: https
   hostnames:

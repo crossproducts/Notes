@@ -5,7 +5,7 @@ set -euo pipefail
 
 ENV="${1:-dev}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CLUSTER="fable-${ENV}"
+CLUSTER="opus-${ENV}"
 
 case "$ENV" in dev|staging|prod) ;; *) echo "Unknown env: $ENV"; exit 1 ;; esac
 

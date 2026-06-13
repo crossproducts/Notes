@@ -1,6 +1,6 @@
 # SSO setup (ArgoCD + Kiali via Keycloak)
 
-Keycloak imports the `fable` realm on startup from the ConfigMap in
+Keycloak imports the `opus` realm on startup from the ConfigMap in
 `platform/keycloak/base/realm-configmap.yaml`. It pre-creates:
 
 - OIDC client `argocd` (redirect `https://argocd.<env>.127.0.0.1.sslip.io/auth/callback`)
@@ -24,11 +24,11 @@ both from the placeholder for any real use.**
 
 ## 2. Trust the CA (HTTPS to Keycloak)
 
-ArgoCD talks to Keycloak over HTTPS with a cert from the self-signed `fable-ca`.
+ArgoCD talks to Keycloak over HTTPS with a cert from the self-signed `opus-ca`.
 Paste the CA into `oidc.config.rootCA` in `argocd-cm-patch.yaml`:
 
 ```bash
-kubectl -n cert-manager get secret fable-ca-key-pair \
+kubectl -n cert-manager get secret opus-ca-key-pair \
   -o jsonpath='{.data.tls\.crt}' | base64 -d
 ```
 
@@ -66,7 +66,7 @@ file (or a prod-overlay copy of the chart values):
 auth:
   strategy: openid
   openid:
-    issuer_uri: "https://keycloak.<env>.127.0.0.1.sslip.io/realms/fable"
+    issuer_uri: "https://keycloak.<env>.127.0.0.1.sslip.io/realms/opus"
     client_id: "kiali"
     scopes: ["openid", "profile", "email"]
 ```

@@ -17,6 +17,7 @@ Argo Rollouts does progressive delivery. Runs on **k3d** with three environments
 | Mesh observability | Kiali + kube-prometheus-stack |
 | Progressive delivery | Argo Rollouts (canary via Istio traffic split) |
 | Preview envs | ApplicationSet pullRequest generator |
+| Secret management | Sealed Secrets (encrypted manifests safe to commit) |
 
 ## Quick start
 
@@ -55,7 +56,7 @@ annotations do NOT order separate Applications):
 
 | Wave | Component | Why first |
 |---|---|---|
-| 0 | gateway-api-crds, cert-manager | CRDs + CA issuer needed by everything |
+| 0 | gateway-api-crds, cert-manager, sealed-secrets | CRDs + CA issuer + secret decryption needed by everything |
 | 1 | istio-base | Istio CRDs |
 | 2 | istiod | control plane (Gateway API + Prometheus merge enabled) |
 | 3 | istio-gateway | Gateway + wildcard Certificate (TLS termination) |
@@ -83,5 +84,10 @@ annotations do NOT order separate Applications):
   only works after the platform converges.
 - **Keycloak uses `codecentric/keycloakx`** — the Bitnami Keycloak chart moved to
   a legacy/paid registry in 2025.
+- **Secrets are sealed, not plaintext** — a wave-0 Sealed Secrets controller
+  decrypts committed `SealedSecret` CRs. They're bound to the cluster's key, so
+  they're sealed *after* bootstrap with `scripts/seal-secret.sh`; dev keeps inline
+  placeholders so `bootstrap.sh dev` works out of the box. See
+  `docs/sealed-secrets.md`.
 
 See `docs/architecture.md` for the full data flow.

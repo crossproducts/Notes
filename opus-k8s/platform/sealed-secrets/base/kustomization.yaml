@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: sealed-secrets
+
+# Sealed Secrets controller. Decrypts SealedSecret CRs (safe to commit to Git)
+# into native Secrets in-cluster. The controller owns the private key; only it
+# can decrypt. Encrypt with `kubeseal` (see scripts/seal-secret.sh).
+# Pinned name + namespace so kubeseal can target it without --fetch-cert.
+helmCharts:
+  - name: sealed-secrets
+    repo: https://bitnami-labs.github.io/sealed-secrets
+    version: 2.16.1
+    releaseName: sealed-secrets
+    namespace: sealed-secrets
+    includeCRDs: true
+    valuesFile: values.yaml

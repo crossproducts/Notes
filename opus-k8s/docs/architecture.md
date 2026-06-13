@@ -35,7 +35,7 @@ client ──https──► k3d :443 ──► servicelb ──► istio ingress
 ```
 
 cert-manager runs with `ExperimentalGatewayAPISupport=true` and issues a wildcard
-`*.<env>.127.0.0.1.sslip.io` cert from the self-signed `fable-ca` ClusterIssuer.
+`*.<env>.127.0.0.1.sslip.io` cert from the self-signed `opus-ca` ClusterIssuer.
 The Istio `Gateway` listener references the resulting secret.
 
 ## Progressive delivery (podinfo)
@@ -65,7 +65,7 @@ PR's head branch. Requires a `github-scm-token` Secret in `argocd` (see
 
 ## Multi-env model
 
-k3d runs one cluster per environment (`fable-dev`, `fable-staging`, `fable-prod`).
+k3d runs one cluster per environment (`opus-dev`, `opus-staging`, `opus-prod`).
 You bootstrap an env, and the ApplicationSets deploy the overlays whose
 `config.json` matches. Overlays differ by domain (`*.dev` / `*.staging` / `*.prod`)
 and resource sizing (replicas, retention, rollout steps).

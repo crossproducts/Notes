@@ -1,0 +1,6 @@
+{
+  "component": "sealed-secrets",
+  "env": "staging",
+  "wave": "0",
+  "namespace": "sealed-secrets"
+}

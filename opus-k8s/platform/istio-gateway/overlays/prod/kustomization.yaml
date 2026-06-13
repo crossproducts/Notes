@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
   - ../../base
 patches:
-  - target: { kind: Gateway, name: fable-gateway }
+  - target: { kind: Gateway, name: opus-gateway }
     patch: |
       - op: replace
         path: /spec/listeners/0/hostname
@@ -11,7 +11,7 @@ patches:
       - op: replace
         path: /spec/listeners/1/hostname
         value: "*.prod.127.0.0.1.sslip.io"
-  - target: { kind: Certificate, name: fable-wildcard }
+  - target: { kind: Certificate, name: opus-wildcard }
     patch: |
       - op: replace
         path: /spec/dnsNames

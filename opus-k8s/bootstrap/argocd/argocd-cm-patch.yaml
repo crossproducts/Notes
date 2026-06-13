@@ -12,7 +12,7 @@ data:
   # The local `admin` account stays enabled as break-glass for first access.
   oidc.config: |
     name: Keycloak
-    issuer: https://keycloak.dev.127.0.0.1.sslip.io/realms/fable
+    issuer: https://keycloak.dev.127.0.0.1.sslip.io/realms/opus
     clientID: argocd
     clientSecret: $oidc.keycloak.clientSecret
     requestedScopes:
@@ -26,7 +26,7 @@ data:
     rootCA: |
       -----BEGIN CERTIFICATE-----
       # PASTE the self-signed CA cert here (kubectl -n cert-manager get secret
-      # fable-ca-key-pair -o jsonpath='{.data.tls\.crt}' | base64 -d).
+      # opus-ca-key-pair -o jsonpath='{.data.tls\.crt}' | base64 -d).
       # Dev fallback only: set `oidc.tls.insecure.skip.verify: "true"` in
       # argocd-cmd-params-cm instead of pinning rootCA.
       -----END CERTIFICATE-----

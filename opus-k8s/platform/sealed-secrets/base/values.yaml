@@ -1,0 +1,10 @@
+# Fixed controller name so kubeseal can address it as
+# sealed-secrets-controller in the sealed-secrets namespace.
+fullnameOverride: sealed-secrets-controller
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 128Mi

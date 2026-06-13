@@ -1,7 +1,7 @@
 apiVersion: k3d.io/v1alpha5
 kind: Simple
 metadata:
-  name: fable-prod
+  name: opus-prod
 servers: 3
 agents: 3
 ports:

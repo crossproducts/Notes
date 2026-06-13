@@ -1,4 +1,4 @@
-# Realm `fable` imported on Keycloak startup. Defines OIDC clients for ArgoCD and
+# Realm `opus` imported on Keycloak startup. Defines OIDC clients for ArgoCD and
 # Kiali, groups (argocd-admins, developers), a groups protocol mapper, and a test
 # user. Lab credentials only — do not reuse in production.
 apiVersion: v1
@@ -7,9 +7,9 @@ metadata:
   name: keycloak-realm
   namespace: keycloak
 data:
-  fable-realm.json: |
+  opus-realm.json: |
     {
-      "realm": "fable",
+      "realm": "opus",
       "enabled": true,
       "groups": [
         { "name": "argocd-admins" },
@@ -65,7 +65,7 @@ data:
         {
           "username": "devadmin",
           "enabled": true,
-          "email": "devadmin@fable.local",
+          "email": "devadmin@opus.local",
           "emailVerified": true,
           "firstName": "Dev",
           "lastName": "Admin",

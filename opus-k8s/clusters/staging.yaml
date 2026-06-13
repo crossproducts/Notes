@@ -1,7 +1,7 @@
 apiVersion: k3d.io/v1alpha5
 kind: Simple
 metadata:
-  name: fable-staging
+  name: opus-staging
 servers: 1
 agents: 2
 ports:
