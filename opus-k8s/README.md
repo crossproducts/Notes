@@ -39,7 +39,7 @@ Tear down with `./scripts/teardown.sh dev`.
 clusters/      k3d configs per env (Traefik disabled, servicelb kept)
 scripts/       bootstrap / teardown / access helpers
 bootstrap/     manually-applied ArgoCD install + root app-of-appsets
-appsets/       ApplicationSets: platform, apps, preview-envs
+appsets/       ApplicationSets (platform, apps, preview-envs) + argocd-self app
 platform/      infra services (base + dev/staging/prod overlays)
 apps/          workloads (podinfo: Rollout + Istio canary)
 docs/          architecture, SSO, progressive delivery
@@ -89,5 +89,10 @@ annotations do NOT order separate Applications):
   they're sealed *after* bootstrap with `scripts/seal-secret.sh`; dev keeps inline
   placeholders so `bootstrap.sh dev` works out of the box. See
   `docs/sealed-secrets.md`.
+- **ArgoCD self-manages** — after the day-0 imperative install, the `argocd-self`
+  Application reconciles `bootstrap/argocd/` from Git, so ArgoCD config/version
+  changes become a `git push`. Scoped to be non-destructive: `prune: false`,
+  `selfHeal` with `RespectIgnoreDifferences`, and `argocd-secret` `/data` ignored
+  (server writes the admin password + OIDC secret there at runtime).
 
 See `docs/architecture.md` for the full data flow.

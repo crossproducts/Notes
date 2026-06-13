@@ -1,0 +1,60 @@
+# Self-management: ArgoCD reconciles its OWN install + config from Git, using the
+# same bootstrap/argocd kustomization that bootstrap.sh applies imperatively on
+# day 0. After bootstrap, changes to argocd-cm / RBAC / cmd-params / the pinned
+# ArgoCD version become a `git push` instead of a manual `kubectl apply -k`.
+#
+# Created by the root app-of-appsets (it syncs everything under appsets/), so this
+# Application is itself GitOps-managed.
+#
+# Carefully scoped automated sync — the safe defaults that make self-management
+# non-destructive:
+#   - prune: false                 ArgoCD must NEVER delete its own resources.
+#                                  Runtime-generated objects (argocd-redis secret,
+#                                  the TLS/cluster secrets) aren't in Git; pruning
+#                                  them would break the install.
+#   - selfHeal: true               Manual `kubectl` edits to argocd-cm / RBAC /
+#                                  cmd-params are reverted back to Git.
+#   - ServerSideApply=true         Required: the applicationsets CRD exceeds the
+#                                  262 KiB client-side last-applied annotation
+#                                  limit. Matches bootstrap.sh (--server-side).
+#   - RespectIgnoreDifferences     selfHeal honors the ignoreDifferences below
+#                                  instead of stomping the runtime-managed Secret.
+#   - ignoreDifferences argocd-secret /data: argocd-server writes admin password,
+#                                  server.secretkey, and oidc.keycloak.clientSecret
+#                                  here at runtime; Git's empty data must not win.
+#
+# Note: the self-sync relies on argocd-repo-server having egress to
+# raw.githubusercontent.com (the kustomization pulls install.yaml remotely).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-self
+  namespace: argocd
+  annotations:
+    # Settle ArgoCD's own config a step before the platform rolls out.
+    argocd.argoproj.io/sync-wave: "-1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/crossproducts/Notes.git
+    targetRevision: main
+    path: opus-k8s/bootstrap/argocd
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+  ignoreDifferences:
+    # argocd-server populates these at runtime — never revert from Git.
+    - group: ""
+      kind: Secret
+      name: argocd-secret
+      jsonPointers:
+        - /data
