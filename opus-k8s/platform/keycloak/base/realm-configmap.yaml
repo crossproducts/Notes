@@ -1,0 +1,78 @@
+# Realm `fable` imported on Keycloak startup. Defines OIDC clients for ArgoCD and
+# Kiali, groups (argocd-admins, developers), a groups protocol mapper, and a test
+# user. Lab credentials only — do not reuse in production.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-realm
+  namespace: keycloak
+data:
+  fable-realm.json: |
+    {
+      "realm": "fable",
+      "enabled": true,
+      "groups": [
+        { "name": "argocd-admins" },
+        { "name": "developers" }
+      ],
+      "clients": [
+        {
+          "clientId": "argocd",
+          "enabled": true,
+          "protocol": "openid-connect",
+          "publicClient": false,
+          "secret": "argocd-client-secret-CHANGEME",
+          "redirectUris": [
+            "https://argocd.dev.127.0.0.1.sslip.io/auth/callback"
+          ],
+          "webOrigins": ["https://argocd.dev.127.0.0.1.sslip.io"],
+          "defaultClientScopes": ["openid", "profile", "email", "groups"],
+          "protocolMappers": [
+            {
+              "name": "groups",
+              "protocol": "openid-connect",
+              "protocolMapper": "oidc-group-membership-mapper",
+              "config": {
+                "claim.name": "groups",
+                "full.path": "false",
+                "id.token.claim": "true",
+                "access.token.claim": "true",
+                "userinfo.token.claim": "true"
+              }
+            }
+          ]
+        },
+        {
+          "clientId": "kiali",
+          "enabled": true,
+          "protocol": "openid-connect",
+          "publicClient": false,
+          "secret": "kiali-client-secret-CHANGEME",
+          "redirectUris": [
+            "https://kiali.dev.127.0.0.1.sslip.io/*"
+          ],
+          "defaultClientScopes": ["openid", "profile", "email", "groups"]
+        }
+      ],
+      "clientScopes": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "attributes": { "include.in.token.scope": "true" }
+        }
+      ],
+      "users": [
+        {
+          "username": "devadmin",
+          "enabled": true,
+          "email": "devadmin@fable.local",
+          "emailVerified": true,
+          "firstName": "Dev",
+          "lastName": "Admin",
+          "credentials": [
+            { "type": "password", "value": "devadmin", "temporary": false }
+          ],
+          "groups": ["argocd-admins"]
+        }
+      ]
+    }

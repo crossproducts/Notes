@@ -1,0 +1,53 @@
+# Preview environments: one ephemeral Application per open GitHub PR.
+# Requires an SCM token Secret (see below) and, ideally, a webhook for instant
+# reconciliation. Each PR gets its own namespace + HTTPRoute and is pruned on close.
+#
+# Create the token Secret once:
+#   kubectl -n argocd create secret generic github-scm-token \
+#     --from-literal=token=<github_pat> \
+#     -l argocd.argoproj.io/secret-type=scm-creds
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: preview-envs
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - pullRequest:
+        github:
+          owner: crossproducts
+          repo: Notes
+          tokenRef:
+            secretName: github-scm-token
+            key: token
+        # Only build previews for PRs labelled `preview`.
+        labels:
+          - preview
+        requeueAfterSeconds: 60
+  template:
+    metadata:
+      name: "preview-pr-{{.number}}"
+      labels:
+        preview: "true"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/crossproducts/Notes.git
+        # Build the app from the PR's head branch, dev overlay.
+        targetRevision: "{{.branch}}"
+        path: opus-k8s/apps/podinfo/overlays/dev
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "preview-pr-{{.number}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          # Namespace gets the mesh injection label so previews show in Kiali.
+          - ApplyOutOfSyncOnly=true
+      # Ephemeral hostname: pr-<n>.preview.127.0.0.1.sslip.io (templated into the
+      # overlay's HTTPRoute via a values/patch — see docs/architecture.md).

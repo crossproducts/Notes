@@ -1,0 +1,21 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: fable-prod
+servers: 3
+agents: 3
+ports:
+  - port: 9080:80
+    nodeFilters:
+      - loadbalancer
+  - port: 9443:443
+    nodeFilters:
+      - loadbalancer
+options:
+  k3s:
+    extraArgs:
+      # Disable Traefik only — Istio provides ingress. servicelb (klipper) is
+      # kept so the Istio ingress-gateway LoadBalancer Service gets an IP.
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*

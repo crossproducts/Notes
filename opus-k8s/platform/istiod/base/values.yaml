@@ -1,0 +1,21 @@
+pilot:
+  env:
+    # Let istiod reconcile Gateway API (Gateway/HTTPRoute) resources.
+    PILOT_ENABLE_GATEWAY_API: "true"
+    PILOT_ENABLE_GATEWAY_API_STATUS: "true"
+    PILOT_ENABLE_GATEWAY_API_DEPLOYMENT_CONTROLLER: "true"
+
+meshConfig:
+  # Merge Istio sidecar metrics into the app's Prometheus scrape so kube-prometheus
+  # picks up mesh telemetry → Kiali traffic graph works.
+  enablePrometheusMerge: true
+  # Access logs to stdout (handy for the lab).
+  accessLogFile: /dev/stdout
+
+global:
+  proxy:
+    # Modest sidecar resources for a local cluster.
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi

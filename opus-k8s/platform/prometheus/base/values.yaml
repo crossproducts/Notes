@@ -1,0 +1,33 @@
+# Trim kube-prometheus-stack for a local cluster. Kiali + Rollouts only need
+# Prometheus itself; Grafana/Alertmanager kept small.
+prometheus:
+  prometheusSpec:
+    retention: 6h
+    resources:
+      requests:
+        cpu: 100m
+        memory: 400Mi
+    # Scrape pods that carry Istio's merged metrics (prometheus.io/scrape).
+    podMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelectorNilUsesHelmValues: false
+
+alertmanager:
+  enabled: false
+
+grafana:
+  enabled: true
+  defaultDashboardsEnabled: false
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+# k3d single-node: don't fight kubelet/etcd scrape on managed control plane.
+kubeEtcd:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false

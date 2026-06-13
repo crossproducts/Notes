@@ -1,0 +1,6 @@
+{
+  "component": "prometheus",
+  "env": "prod",
+  "wave": "4",
+  "namespace": "monitoring"
+}

@@ -1,0 +1,6 @@
+{
+  "component": "keycloak",
+  "env": "staging",
+  "wave": "5",
+  "namespace": "keycloak"
+}

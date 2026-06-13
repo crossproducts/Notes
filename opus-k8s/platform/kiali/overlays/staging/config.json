@@ -1,0 +1,6 @@
+{
+  "component": "kiali",
+  "env": "staging",
+  "wave": "6",
+  "namespace": "istio-system"
+}

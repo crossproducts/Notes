@@ -1,0 +1,12 @@
+crds:
+  enabled: true
+
+# Enable Gateway API support so cert-manager can issue certs for Gateway listeners.
+featureGates: ExperimentalGatewayAPISupport=true
+
+# Keep footprint small for a local k3d cluster.
+replicaCount: 1
+webhook:
+  replicaCount: 1
+cainjector:
+  replicaCount: 1

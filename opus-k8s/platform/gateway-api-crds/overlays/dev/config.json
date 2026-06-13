@@ -1,0 +1,6 @@
+{
+  "component": "gateway-api-crds",
+  "env": "dev",
+  "wave": "0",
+  "namespace": "default"
+}

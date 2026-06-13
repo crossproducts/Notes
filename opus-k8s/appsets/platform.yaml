@@ -1,0 +1,60 @@
+# Platform ApplicationSet: one Application per platform/<component>/overlays/<env>.
+# Each overlay dir carries a config.json ({component, env, wave, namespace}) so the
+# sync-wave is explicit data rather than a fragile name lookup.
+# RollingSync rolls components out in wave order (0..7); see plan v2 for the ordering.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: platform
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  strategy:
+    type: RollingSync
+    rollingSync:
+      steps:
+        - matchExpressions: [{ key: wave, operator: In, values: ["0"] }]
+        - matchExpressions: [{ key: wave, operator: In, values: ["1"] }]
+        - matchExpressions: [{ key: wave, operator: In, values: ["2"] }]
+        - matchExpressions: [{ key: wave, operator: In, values: ["3"] }]
+        - matchExpressions: [{ key: wave, operator: In, values: ["4"] }]
+        - matchExpressions: [{ key: wave, operator: In, values: ["5"] }]
+        - matchExpressions: [{ key: wave, operator: In, values: ["6"] }]
+        - matchExpressions: [{ key: wave, operator: In, values: ["7"] }]
+  generators:
+    - git:
+        repoURL: https://github.com/crossproducts/Notes.git
+        revision: main
+        files:
+          - path: opus-k8s/platform/*/overlays/*/config.json
+  template:
+    metadata:
+      name: "{{.component}}-{{.env}}"
+      labels:
+        wave: "{{.wave}}"
+        env: "{{.env}}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "{{.wave}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/crossproducts/Notes.git
+        targetRevision: main
+        path: "opus-k8s/platform/{{.component}}/overlays/{{.env}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{.namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m

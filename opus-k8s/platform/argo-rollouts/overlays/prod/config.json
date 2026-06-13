@@ -1,0 +1,6 @@
+{
+  "component": "argo-rollouts",
+  "env": "prod",
+  "wave": "7",
+  "namespace": "argo-rollouts"
+}

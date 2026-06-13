@@ -1,0 +1,42 @@
+# Bootstrap a self-signed CA, then a CA-backed ClusterIssuer that all envs use to
+# issue TLS certs (Istio gateway, Keycloak). Let's Encrypt can't validate private
+# *.sslip.io wildcards via HTTP-01, so the lab uses a self-signed CA everywhere.
+# (Production path: a DNS-01 ACME issuer with a real domain — see docs.)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: fable-ca
+  namespace: cert-manager
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  isCA: true
+  commonName: fable-ca
+  secretName: fable-ca-key-pair
+  duration: 87600h # 10y
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: selfsigned
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: fable-ca
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  ca:
+    secretName: fable-ca-key-pair

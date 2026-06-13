@@ -1,0 +1,5 @@
+{
+  "app": "podinfo",
+  "env": "staging",
+  "namespace": "podinfo-staging"
+}

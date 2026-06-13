@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: keycloak
+
+# codecentric/keycloakx (the Bitnami keycloak chart moved to a legacy/paid registry
+# in 2025). Realm `fable` is imported from a ConfigMap-mounted JSON at startup.
+helmCharts:
+  - name: keycloakx
+    repo: https://codecentric.github.io/helm-charts
+    version: 7.0.1
+    releaseName: keycloak
+    namespace: keycloak
+    valuesFile: values.yaml
+
+resources:
+  - realm-configmap.yaml
+  - httproute.yaml

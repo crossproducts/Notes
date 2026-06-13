@@ -1,0 +1,19 @@
+# Wildcard TLS cert for the env, issued by the self-signed CA ClusterIssuer.
+# Overlays patch dnsNames for staging/prod domains. Istio terminates TLS using
+# the resulting `fable-wildcard-tls` secret referenced by the Gateway listener.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: fable-wildcard
+  namespace: istio-system
+spec:
+  secretName: fable-wildcard-tls
+  duration: 2160h # 90d
+  renewBefore: 360h
+  issuerRef:
+    name: fable-ca
+    kind: ClusterIssuer
+    group: cert-manager.io
+  dnsNames:
+    - "*.dev.127.0.0.1.sslip.io"
+    - "*.preview.127.0.0.1.sslip.io"

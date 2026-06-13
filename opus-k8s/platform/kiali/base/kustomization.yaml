@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: istio-system
+
+# kiali-server (the in-cluster server, not the operator). Reads metrics from
+# kube-prometheus-stack and talks to istiod. Overlays set the auth strategy
+# (anonymous in dev, OIDC via Keycloak in prod).
+helmCharts:
+  - name: kiali-server
+    repo: https://kiali.org/helm-charts
+    version: 1.89.0
+    releaseName: kiali
+    namespace: istio-system
+    valuesFile: values.yaml
+
+resources:
+  - httproute.yaml

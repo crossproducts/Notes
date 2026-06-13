@@ -1,0 +1,6 @@
+{
+  "component": "istio-gateway",
+  "env": "staging",
+  "wave": "3",
+  "namespace": "istio-system"
+}

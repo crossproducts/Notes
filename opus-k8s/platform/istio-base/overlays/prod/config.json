@@ -1,0 +1,6 @@
+{
+  "component": "istio-base",
+  "env": "prod",
+  "wave": "1",
+  "namespace": "istio-system"
+}

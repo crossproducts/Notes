@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+data:
+  url: https://argocd.dev.127.0.0.1.sslip.io
+
+  # Keycloak OIDC SSO configuration.
+  # rootCA pins the self-signed CA that cert-manager issues Keycloak's cert from,
+  # so ArgoCD trusts the OIDC issuer over HTTPS. Replace the PEM below with the
+  # CA emitted by the cert-manager ClusterIssuer (see docs/sso-setup.md).
+  # The local `admin` account stays enabled as break-glass for first access.
+  oidc.config: |
+    name: Keycloak
+    issuer: https://keycloak.dev.127.0.0.1.sslip.io/realms/fable
+    clientID: argocd
+    clientSecret: $oidc.keycloak.clientSecret
+    requestedScopes:
+      - openid
+      - profile
+      - email
+      - groups
+    requestedIDTokenClaims:
+      groups:
+        essential: true
+    rootCA: |
+      -----BEGIN CERTIFICATE-----
+      # PASTE the self-signed CA cert here (kubectl -n cert-manager get secret
+      # fable-ca-key-pair -o jsonpath='{.data.tls\.crt}' | base64 -d).
+      # Dev fallback only: set `oidc.tls.insecure.skip.verify: "true"` in
+      # argocd-cmd-params-cm instead of pinning rootCA.
+      -----END CERTIFICATE-----
+
+  # Kustomize build options
+  kustomize.buildOptions: --enable-helm

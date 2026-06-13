@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+data:
+  policy.default: role:readonly
+  # Map Keycloak groups (from the `groups` claim) to ArgoCD roles.
+  policy.csv: |
+    g, argocd-admins, role:admin
+    g, developers, role:readonly
+  # Treat the groups claim values as-is (Keycloak emits plain group names).
+  scopes: "[groups, email]"

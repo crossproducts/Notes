@@ -1,0 +1,5 @@
+{
+  "app": "podinfo",
+  "env": "dev",
+  "namespace": "podinfo-dev"
+}

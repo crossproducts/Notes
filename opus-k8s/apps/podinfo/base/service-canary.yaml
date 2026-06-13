@@ -1,0 +1,12 @@
+# Canary Service — receives the shifting canary weight during a rollout.
+apiVersion: v1
+kind: Service
+metadata:
+  name: podinfo-canary
+spec:
+  selector:
+    app: podinfo
+  ports:
+    - name: http
+      port: 9898
+      targetPort: 9898

@@ -1,0 +1,29 @@
+# Root "app-of-appsets": a single Application that applies every ApplicationSet
+# manifest under appsets/. Those ApplicationSets then generate the per-component
+# Applications. Inter-component ordering lives in each ApplicationSet's
+# spec.strategy.RollingSync (see appsets/platform.yaml), not here.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/crossproducts/Notes.git
+    targetRevision: main
+    path: opus-k8s/appsets
+    directory:
+      recurse: false
+      include: "*.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

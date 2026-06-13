@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd-params-cm
+data:
+  # Istio terminates TLS at the gateway, so argocd-server runs plain HTTP.
+  server.insecure: "true"
+  # Enable Helm support inside Kustomize builds (helmCharts in kustomization.yaml).
+  server.repo.server.timeout.seconds: "180"

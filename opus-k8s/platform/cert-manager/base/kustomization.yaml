@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: cert-manager
+
+helmCharts:
+  - name: cert-manager
+    repo: https://charts.jetstack.io
+    version: v1.16.3
+    releaseName: cert-manager
+    namespace: cert-manager
+    includeCRDs: true
+    valuesFile: values.yaml
+
+# Self-signed CA + ClusterIssuer. Annotated to a later within-app wave so they
+# apply after the CRDs/webhook exist (the platform appset's retry covers races).
+resources:
+  - ca-clusterissuer.yaml

@@ -1,0 +1,6 @@
+{
+  "component": "cert-manager",
+  "env": "dev",
+  "wave": "0",
+  "namespace": "cert-manager"
+}

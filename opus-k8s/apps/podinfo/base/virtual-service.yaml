@@ -1,0 +1,19 @@
+# Istio VirtualService that Argo Rollouts rewrites during a canary. Rollouts
+# adjusts the `weight` on the stable/canary routes as the rollout progresses.
+# The route host (gateway HTTPRoute) directs external traffic to podinfo-stable's
+# clusterIP; this VS does the in-mesh split.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: podinfo
+spec:
+  hosts:
+    - podinfo-stable
+  http:
+    - route:
+        - destination:
+            host: podinfo-stable
+          weight: 100
+        - destination:
+            host: podinfo-canary
+          weight: 0

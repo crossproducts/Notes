@@ -1,0 +1,40 @@
+# Workload ApplicationSet: one Application per apps/<app>/overlays/<env>.
+# Each overlay dir carries config.json ({app, env, namespace}). Apps deploy after
+# the platform appset (the root app's RollingSync orders platform before apps).
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: apps
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/crossproducts/Notes.git
+        revision: main
+        files:
+          - path: opus-k8s/apps/*/overlays/*/config.json
+  template:
+    metadata:
+      name: "{{.app}}-{{.env}}"
+      labels:
+        env: "{{.env}}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "10"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/crossproducts/Notes.git
+        targetRevision: main
+        path: "opus-k8s/apps/{{.app}}/overlays/{{.env}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{.namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true

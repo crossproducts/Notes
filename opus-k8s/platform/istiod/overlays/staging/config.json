@@ -1,0 +1,6 @@
+{
+  "component": "istiod",
+  "env": "staging",
+  "wave": "2",
+  "namespace": "istio-system"
+}

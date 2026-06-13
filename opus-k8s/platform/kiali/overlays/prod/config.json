@@ -1,0 +1,6 @@
+{
+  "component": "kiali",
+  "env": "prod",
+  "wave": "6",
+  "namespace": "istio-system"
+}

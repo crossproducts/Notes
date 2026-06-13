@@ -1,0 +1,32 @@
+# Canary success check. Argo Rollouts runs this between canary steps, querying
+# Prometheus for the istio request success rate of the canary pods. If the rate
+# drops below the threshold the rollout auto-aborts and rolls back.
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: podinfo-success-rate
+spec:
+  args:
+    - name: namespace
+  metrics:
+    - name: istio-success-rate
+      interval: 30s
+      count: 4
+      successCondition: result[0] >= 0.95
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://kube-prometheus-stack-prometheus.monitoring:9090
+          query: |
+            sum(irate(istio_requests_total{
+              reporter="destination",
+              destination_workload_namespace="{{args.namespace}}",
+              destination_workload=~"podinfo.*",
+              response_code!~"5.*"
+            }[1m]))
+            /
+            sum(irate(istio_requests_total{
+              reporter="destination",
+              destination_workload_namespace="{{args.namespace}}",
+              destination_workload=~"podinfo.*"
+            }[1m]))

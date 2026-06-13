@@ -1,0 +1,17 @@
+# Environment secrets
+.env
+*.local
+
+# Kubeconfig
+kubeconfig*
+*.kubeconfig
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

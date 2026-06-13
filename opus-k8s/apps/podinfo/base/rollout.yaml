@@ -1,0 +1,62 @@
+# Argo Rollout (replaces Deployment). Canary strategy with Istio traffic routing:
+# Rollouts rewrites the podinfo VirtualService weights and runs the analysis
+# template between steps. Overlays tune step weights / replicas per environment.
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: podinfo
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: podinfo
+  template:
+    metadata:
+      labels:
+        app: podinfo
+    spec:
+      containers:
+        - name: podinfo
+          image: ghcr.io/stefanprodan/podinfo:6.7.0
+          ports:
+            - name: http
+              containerPort: 9898
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9898
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 9898
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+  strategy:
+    canary:
+      canaryService: podinfo-canary
+      stableService: podinfo-stable
+      trafficRouting:
+        istio:
+          virtualService:
+            name: podinfo
+            routes:
+              - http
+      analysis:
+        templates:
+          - templateName: podinfo-success-rate
+        args:
+          - name: namespace
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+      steps:
+        - setWeight: 10
+        - pause: { duration: 30s }
+        - setWeight: 25
+        - pause: { duration: 30s }
+        - setWeight: 50
+        - pause: { duration: 30s }
+        - setWeight: 100

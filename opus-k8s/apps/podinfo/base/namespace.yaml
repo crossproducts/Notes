@@ -1,0 +1,8 @@
+# App namespace with sidecar injection so podinfo joins the mesh — required for
+# mTLS, Istio traffic splitting, and Kiali graph edges. Overlays set the real name.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: podinfo
+  labels:
+    istio-injection: enabled

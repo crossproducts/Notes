@@ -1,0 +1,36 @@
+# Dev-grade Keycloak: in-memory dev DB is not used; keycloakx defaults to an
+# embedded H2 unless a DB is configured. For a lab that's acceptable.
+# Realm JSON is mounted and imported on start (--import-realm).
+command:
+  - "/opt/keycloak/bin/kc.sh"
+  - "start"
+  - "--http-enabled=true"
+  - "--http-port=8080"
+  - "--hostname-strict=false"
+  - "--proxy-headers=xforwarded"
+  - "--import-realm"
+
+extraEnv: |
+  - name: KEYCLOAK_ADMIN
+    value: admin
+  - name: KEYCLOAK_ADMIN_PASSWORD
+    value: admin   # lab only — override via Secret in real use
+  - name: KC_HEALTH_ENABLED
+    value: "true"
+
+extraVolumes: |
+  - name: realm
+    configMap:
+      name: keycloak-realm
+extraVolumeMounts: |
+  - name: realm
+    mountPath: /opt/keycloak/data/import
+    readOnly: true
+
+http:
+  relativePath: "/"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi

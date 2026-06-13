@@ -1,0 +1,16 @@
+auth:
+  # Dev default; prod overlay switches to openid (Keycloak).
+  strategy: anonymous
+
+deployment:
+  ingress:
+    enabled: false # we expose Kiali via the Istio gateway HTTPRoute instead
+
+external_services:
+  prometheus:
+    url: http://kube-prometheus-stack-prometheus.monitoring:9090
+  istio:
+    root_namespace: istio-system
+
+server:
+  web_root: /
