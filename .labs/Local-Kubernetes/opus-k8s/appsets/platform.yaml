@@ -27,7 +27,7 @@ spec:
         repoURL: https://github.com/crossproducts/Notes.git
         revision: main
         files:
-          - path: opus-k8s/platform/*/overlays/*/config.json
+          - path: .labs/Local-Kubernetes/opus-k8s/platform/*/overlays/*/config.json
   template:
     metadata:
       name: "{{.component}}-{{.env}}"
@@ -41,7 +41,7 @@ spec:
       source:
         repoURL: https://github.com/crossproducts/Notes.git
         targetRevision: main
-        path: "opus-k8s/platform/{{.component}}/overlays/{{.env}}"
+        path: ".labs/Local-Kubernetes/opus-k8s/platform/{{.component}}/overlays/{{.env}}"
       destination:
         server: https://kubernetes.default.svc
         namespace: "{{.namespace}}"

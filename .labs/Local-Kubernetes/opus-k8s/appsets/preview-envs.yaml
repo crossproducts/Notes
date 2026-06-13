@@ -42,7 +42,7 @@ spec:
         repoURL: https://github.com/crossproducts/Notes.git
         # Build the app from the PR's head branch, dev overlay.
         targetRevision: "{{.branch}}"
-        path: opus-k8s/apps/podinfo/overlays/dev
+        path: .labs/Local-Kubernetes/opus-k8s/apps/podinfo/overlays/dev
       destination:
         server: https://kubernetes.default.svc
         namespace: "preview-pr-{{.number}}"
