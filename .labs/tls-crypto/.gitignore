@@ -1,0 +1,2 @@
+# Generated keys/certs are regenerable AND contain private keys — never commit them.
+out/
