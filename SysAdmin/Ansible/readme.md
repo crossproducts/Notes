@@ -64,5 +64,38 @@ dallas_nodes
 ### Playbooks
 ### Handlers, Roles, Collections
 ### Advanced topics
+<details><summary>Example: Jinja2 Templates for Dynamic Configs</summary>
+
+- `/etc/ansible/hosts`
+```bash
+[web_servers]
+web1 ansible_host=172.20.1.100
+web2 ansible_host=172.20.1.101
+web3 ansible_host=172.20.1.102
+```
+
+- `playbook.yaml`
+```bash
+-
+    hosts: web_servers
+    tasks:
+        - name: Copy index.html to remote servers
+          template:
+            src: index.html.j2
+            dest: /var/www/nginx-default/index.html
+```
+
+- `index.html.j2`
+```html
+<!DOCTYPE html>
+<html>
+<body>
+
+This is {{inventory_hostname }} Server
+
+</body>
+</html>
+``` 
+</details>
 
 ## References
