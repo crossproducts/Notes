@@ -1,0 +1,28 @@
+{
+  "name": "Bull vs Bear Debate Strategy (TowerIC-inspired)",
+  "description": "Multi-agent system where bull and bear analysts argue for/against each trade. Only execute when bull case significantly outweighs bear case. Combines fundamental analysis, sentiment, news momentum, and adversarial debate scoring.",
+  "source_video": "https://www.instagram.com/reel/DZ6KTeTP-8o/",
+  "instrument": "Large-cap US stocks",
+  "timeframe": "daily",
+  "setup": {
+    "type": "multi_agent_debate",
+    "description": "Fundamental analyst scores value, sentiment analyst scores momentum/news, bull agent argues for entry, bear agent argues against. Trade only when bull score > bear score by a threshold. Risk manager validates position sizing."
+  },
+  "agents": [
+    {"name": "fundamental_analyst", "role": "Score intrinsic value signals"},
+    {"name": "sentiment_analyst", "role": "Score news/momentum sentiment"},
+    {"name": "bull_agent", "role": "Argue FOR the trade - scores bullish factors"},
+    {"name": "bear_agent", "role": "Argue AGAINST the trade - scores bearish risks"},
+    {"name": "trader", "role": "Makes final call based on bull vs bear score"},
+    {"name": "risk_manager", "role": "Validates position size and portfolio risk"}
+  ],
+  "entry": {
+    "long": "Bull score > Bear score by debate_threshold AND fundamentals positive AND sentiment positive",
+    "short": "Bear score > Bull score by debate_threshold AND fundamentals negative AND sentiment negative"
+  },
+  "exit": {
+    "rebalance": "Weekly re-evaluation",
+    "stop_loss": "Risk manager enforced",
+    "take_profit": "When bull/bear score flips"
+  }
+}

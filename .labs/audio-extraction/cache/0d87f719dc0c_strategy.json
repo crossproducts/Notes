@@ -1,0 +1,25 @@
+{
+  "name": "Multi-Factor AI Analyst (ValueCell-inspired)",
+  "description": "Combine fundamental analysis, market sentiment, and technical signals to rank and trade stocks. Mimics a team of AI analyst agents: one for fundamentals, one for sentiment, one for technicals.",
+  "source_video": "https://www.instagram.com/reel/DZ3-dJ-PiCm/",
+  "instrument": "SPY constituents / large-cap US stocks",
+  "timeframe": "daily",
+  "setup": {
+    "type": "multi_factor_ranking",
+    "description": "Score stocks on 3 factors: (1) Fundamental value (P/E, revenue growth), (2) Sentiment (recent price momentum as proxy), (3) Technical (RSI, moving average trend). Buy top-ranked, sell bottom-ranked."
+  },
+  "entry": {
+    "long": "Buy stocks ranking in top quintile across all 3 factors",
+    "short": "Optional — short bottom quintile"
+  },
+  "exit": {
+    "rebalance": "Monthly rebalance — re-rank and rotate",
+    "stop_loss": "Percentage-based per position"
+  },
+  "factors": [
+    {"name": "fundamental", "description": "Low P/E + positive earnings growth = value + quality", "weight": 0.33},
+    {"name": "sentiment_momentum", "description": "3-month price momentum as proxy for market sentiment", "weight": 0.33},
+    {"name": "technical", "description": "Price above 50-day MA + RSI between 30-70 (not overbought/oversold)", "weight": 0.33}
+  ],
+  "notes": "Since we cannot pull live fundamental data in backtest, we use price-derived proxies: 6-month return (value momentum), 3-month return (sentiment), and technical indicators (MA/RSI)."
+}

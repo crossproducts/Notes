@@ -1,0 +1,6 @@
+.env
+
+# Regenerable intermediates
+__pycache__/
+*.pyc
+cache/*.mp3

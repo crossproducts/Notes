@@ -1,0 +1,25 @@
+{
+  "name": "Congressional Trading Copycat",
+  "description": "Buy stocks that multiple members of Congress are purchasing, sell after a holding period.",
+  "instrument": "Various (top Congressional picks)",
+  "timeframe": "daily",
+  "source_video": "https://www.instagram.com/reel/DZ2tOK3PqJL/",
+  "setup": {
+    "type": "event_driven",
+    "description": "Track Congressional stock disclosures. When multiple members buy the same stock in the same week, enter a position."
+  },
+  "entry": {
+    "long": "Buy when 2+ Congress members purchase the same stock within a 7-day window",
+    "short": "None — long only strategy"
+  },
+  "exit": {
+    "hold_periods_days": [30, 60, 90],
+    "stop_loss": "Percentage-based (e.g. -10%)",
+    "take_profit": "Sell after holding period"
+  },
+  "filters": [
+    {"name": "member_count", "type": "threshold", "description": "Minimum number of Congress members buying"},
+    {"name": "institutional_overlap", "type": "confirmation", "description": "Cross-check with 13F filings for overlap"}
+  ],
+  "notes": "Congressional trades are disclosed with a delay (up to 45 days by law). Backtest simulates buying on disclosure date, not trade date. This tests whether the PUBLIC signal still has alpha after the reporting delay."
+}

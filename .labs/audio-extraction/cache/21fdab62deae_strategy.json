@@ -1,0 +1,54 @@
+{
+  "name": "AI Infrastructure Cycles Rotation",
+  "description": "Invest in sequential AI infrastructure cycles (chips → energy → nuclear/protons → cooling → robotics) based on Leopold Aschenbrenner's Situational Awareness thesis. Rotate into each cycle before the crowd.",
+  "source": "Leopold Aschenbrenner - Situational Awareness (June 2024)",
+  "source_video": "https://www.instagram.com/reel/DZ5MiKjMsbT/",
+  "thesis_pdf": "https://situational-awareness.ai/wp-content/uploads/2024/06/situationalawareness.pdf",
+  "instrument": "Various ETFs and stocks per cycle",
+  "timeframe": "daily",
+  "setup": {
+    "type": "sector_rotation",
+    "description": "AI growth requires infrastructure in waves. Each cycle becomes the bottleneck that must be solved before AI can scale further. Invest in the next bottleneck before it becomes consensus."
+  },
+  "cycles": {
+    "1_chips": {
+      "period": "2022-2024",
+      "thesis": "AI training requires massive GPU compute",
+      "tickers": ["NVDA", "AMD", "AVGO", "MRVL", "TSM"],
+      "etfs": ["SMH", "SOXX"]
+    },
+    "2_energy": {
+      "period": "2024-2026",
+      "thesis": "Datacenters need enormous power. Grid capacity is the bottleneck.",
+      "tickers": ["VST", "CEG", "NRG", "ETN", "PWR"],
+      "etfs": ["XLU", "ICLN"]
+    },
+    "3_nuclear_protons": {
+      "period": "2024-2027",
+      "thesis": "Nuclear is the only scalable clean baseload power for AI datacenters",
+      "tickers": ["CCJ", "LEU", "SMR", "OKLO", "UEC"],
+      "etfs": ["URA", "URNM"]
+    },
+    "4_cooling_infrastructure": {
+      "period": "2025-2027",
+      "thesis": "Datacenter cooling becomes critical as power density increases",
+      "tickers": ["VRT", "CARR", "JCI"],
+      "etfs": []
+    },
+    "5_robotics_physical_ai": {
+      "period": "2025-2028",
+      "thesis": "AI moves from digital to physical world — robotics, autonomous systems",
+      "tickers": ["ISRG", "ROK", "TER", "PLTR"],
+      "etfs": ["ROBO", "BOTZ"]
+    }
+  },
+  "entry": {
+    "long": "Buy cycle basket when thesis identifies it as next bottleneck",
+    "short": "None — long only"
+  },
+  "exit": {
+    "hold_until": "Cycle becomes consensus / crowded, then rotate to next",
+    "stop_loss": "Percentage-based per position"
+  },
+  "notes": "The key insight is TIMING — each cycle starts before the previous one peaks. Leopold was in energy/nuclear before the crowd moved past chips."
+}

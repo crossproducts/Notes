@@ -24,10 +24,10 @@ claude-auto-retry install
 claude /config
 /Enable Remote Control for all sessions # true
 ```
-or
+
 ```bash
 choco install psmux -y
-psmux new-session -s claude "claude /remote-control -c"
+psmux new-session -s claude "claude /rc"
 ```
 or
 ```bash

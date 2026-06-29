@@ -1,0 +1,39 @@
+# Strategy research queue
+# ------------------------
+# Drop video / Instagram / TikTok URLs here that you want researched & backtested.
+# Run `python run_queue.py` to process every source with status: pending.
+#
+# status:  pending | backtested | error | skipped
+# cache_key is filled in automatically after a successful run; use it in
+# notebooks/visualize.ipynb to inspect the result.
+
+sources:
+  - url: https://www.instagram.com/reel/DZ3-dJ-PiCm/
+    name: Multi-Factor AI Analyst (ValueCell-inspired)
+    status: backtested
+    cache_key: 0d87f719dc0c
+    tags: [equities, multi-factor]
+
+  - url: https://www.instagram.com/reel/DZ5MiKjMsbT/
+    name: AI Infrastructure Cycles Rotation
+    status: backtested
+    cache_key: 21fdab62deae
+    tags: [equities, rotation]
+
+  - url: https://www.instagram.com/reel/DZ2tOK3PqJL/
+    name: Congressional Trading Copycat
+    status: backtested
+    cache_key: 748f15d07e9c
+    tags: [equities, signals]
+
+  - url: https://www.instagram.com/reel/DZ6KTeTP-8o/
+    name: Bull vs Bear Debate Strategy (TowerIC-inspired)
+    status: backtested
+    cache_key: b9a107049e52
+    tags: [equities, sentiment]
+
+  # --- add new sources below as `pending` ---
+  # - url: https://www.instagram.com/reel/XXXXXXXX/
+  #   name: ""
+  #   status: pending
+  #   tags: []
