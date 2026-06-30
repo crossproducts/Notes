@@ -35,8 +35,11 @@ python converse.py        # talks to DEFAULT_RECIPIENT from .env
 - `/quit` or Ctrl-C to exit.
 - **Prerequisite:** enable IMAP in Gmail (Settings → Forwarding and POP/IMAP).
   The same App Password works for IMAP — no new credentials.
-- If replies don't appear, check the actual `From:` of the carrier's reply in
-  Gmail and confirm it matches `DEFAULT_RECIPIENT` (the poller filters on it).
+- Replies often arrive from a **different** gateway than you send to — e.g. you
+  send to `…@tmomail.net` but a Metro number replies from `+1…@mymetropcs.com`.
+  The poller handles this by matching on the bare phone **digits** (found in
+  every gateway form), scanning recent unseen mail client-side rather than
+  relying on Gmail's IMAP `FROM` search (which tokenizes and misses partials).
 
 ## Limits
 

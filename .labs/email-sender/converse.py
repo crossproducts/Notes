@@ -15,6 +15,7 @@ The same App Password works for IMAP — no new credentials.
 import email
 import imaplib
 import os
+import re
 import smtplib
 import sys
 import threading
@@ -35,6 +36,10 @@ POLL_SECONDS = 10
 GMAIL = os.getenv("GMAIL_ADDRESS")
 APP_PW = os.getenv("GMAIL_APP_PASSWORD")
 PARTNER = os.getenv("DEFAULT_RECIPIENT")
+# Replies can arrive from a DIFFERENT gateway than we send to (e.g. send to
+# ...@tmomail.net but a Metro number replies from +1...@mymetropcs.com). Match on
+# the bare phone digits, which appear in every gateway form of the address.
+PARTNER_DIGITS = re.sub(r"\D", "", (PARTNER or "").split("@")[0]) or (PARTNER or "")
 
 stop = threading.Event()
 
@@ -77,10 +82,17 @@ def reader():
     while not stop.is_set():
         try:
             imap.select("INBOX")
-            typ, data = imap.search(None, f'(UNSEEN FROM "{PARTNER}")')
-            for num in data[0].split():
-                typ, raw = imap.fetch(num, "(RFC822)")  # fetch marks it \Seen
-                m = email.message_from_bytes(raw[0][1])
+            # Gmail's IMAP search tokenizes addresses, so a partial FROM match is
+            # unreliable. Instead pull recent unseen and match digits client-side
+            # (catches any gateway form: tmomail.net, +1...@mymetropcs.com, etc).
+            typ, data = imap.search(None, "UNSEEN")
+            for num in data[0].split()[-25:]:
+                typ, raw = imap.fetch(num, "(BODY.PEEK[HEADER.FIELDS (FROM)])")
+                frm = raw[0][1].decode(errors="replace") if raw and raw[0] else ""
+                if PARTNER_DIGITS not in re.sub(r"\D", "", frm):
+                    continue
+                typ, full = imap.fetch(num, "(RFC822)")  # marks this one \Seen
+                m = email.message_from_bytes(full[0][1])
                 text = body_of(m)
                 if text:
                     print(f"\n[{PARTNER}] {text}\n> ", end="", flush=True)
