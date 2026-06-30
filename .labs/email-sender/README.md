@@ -41,6 +41,33 @@ python converse.py        # talks to DEFAULT_RECIPIENT from .env
   every gateway form), scanning recent unseen mail client-side rather than
   relying on Gmail's IMAP `FROM` search (which tokenizes and misses partials).
 
+## Local-model autoresponder
+
+`autoresponder.py` replies to whitelisted senders automatically, using a **local
+Ollama model** (nothing leaves your machine — no API keys). It's the conversation
+loop with the human swapped for a model.
+
+```bash
+cp whitelist.example.txt whitelist.txt    # add your numbers/emails
+ollama pull qwen2.5:3b                     # if not already pulled
+
+python autoresponder.py                    # DRY-RUN: prints proposed replies only
+python autoresponder.py --send             # actually replies to whitelisted senders
+python autoresponder.py --send --model qwen3:1.7b --once
+```
+
+Safety, by design:
+- **Dry-run by default** — nothing is sent (and your mailbox isn't marked read)
+  until you pass `--send`. Always preview first.
+- **Whitelist only** — `whitelist.txt` (gitignored) lists who gets a reply;
+  everyone else is ignored. Phone numbers match by digits, emails by address.
+- **Loop guard** — skips `no-reply`/`mailer-daemon`/`notification`-type senders
+  so it can't ping-pong with another autoresponder.
+- Replies go to the sender's **actual** address, so SMS gateway texts return to
+  the phone. Replies are capped to ~300 chars for SMS.
+
+Prereqs: IMAP enabled in Gmail; Ollama running (`ollama serve`) with the model pulled.
+
 ## Limits
 
 - **Gmail caps total message size at 25 MB.** Beyond that, share a Drive link.

@@ -1,0 +1,11 @@
+# Copy to whitelist.txt and add your senders. whitelist.txt is gitignored —
+# keep real numbers/emails out of the repo.
+#
+# ONLY senders listed here get an automated reply. One entry per line:
+#   - phone number: any format, matched by its digits (handles any SMS gateway
+#     form, e.g. tmomail.net or +1...@mymetropcs.com)
+#   - email address: matched case-insensitively
+# Lines starting with # and blank lines are ignored.
+
+5551234567
+# someone@example.com
