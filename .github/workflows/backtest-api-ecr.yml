@@ -1,0 +1,52 @@
+# Build & push strategy-studio backtest-api to ECR.
+#
+# Manual-trigger only for now (workflow_dispatch): the AWS side (ECR repo, OIDC
+# role) is created by .labs/strategy-studio/infra and is torn down between lab
+# sessions, so an on-push trigger would just fail red while AWS is down.
+#
+# One-time setup before first run:
+#   1. infra up (creates the ECR repo)
+#   2. Create an IAM OIDC role for GitHub Actions with ECR push permissions
+#      and set it as the AWS_ROLE_ARN repo secret. (OIDC > long-lived keys.)
+#   3. Set AWS_REGION repo variable (default us-east-1).
+# Then flip `on:` to include push paths when you want CI on every change.
+
+name: backtest-api → ECR
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+  #   paths: [".labs/strategy-studio/backtest-api/**"]
+
+permissions:
+  id-token: write   # OIDC federation
+  contents: read
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          REPO: strategy-studio/backtest-api
+        run: |
+          IMAGE="$REGISTRY/$REPO"
+          TAG="${GITHUB_SHA::12}"
+          docker build -t "$IMAGE:$TAG" -t "$IMAGE:latest" .labs/strategy-studio/backtest-api
+          docker push "$IMAGE:$TAG"
+          docker push "$IMAGE:latest"
+          echo "pushed $IMAGE:$TAG — update k8s/manifests/api/deployment.yaml image tag (or add ArgoCD Image Updater later)"

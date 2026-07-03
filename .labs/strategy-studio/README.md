@@ -101,6 +101,9 @@ and notifications.
 | Local-LLM analyst | `GET /analyze/{run_id}` — host Ollama (qwen2.5:3b) writes a plain-English summary; caveat: 3B models garble details, treat as a draft | ✅ |
 | Champion/challenger registry | MLflow-style: `GET /leaderboard`, `POST /champion/auto/{symbol}` (promotes only if the challenger beats the champion on the metric — default sharpe), `GET /champion/{symbol}` | ✅ |
 | GitOps-ish workflows | `workflows/` versioned in the repo; `sh workflows-sync.sh import\|export\|diff` syncs with n8n (convention, not reconciliation — n8n has no reconciler) | ✅ |
+| Nightly champion pipeline | `workflows/` n8n schedule (weekdays 6pm): `POST /nightly/{symbol}` sweeps built-ins → auto-promotes → `POST /notify` **texts you the result** (email-sender creds in `.env`) | ✅ |
+| Champions Grafana panel | current title-holder per symbol on the provisioned dashboard | ✅ |
+| CI → ECR | `.github/workflows/backtest-api-ecr.yml` (manual dispatch until AWS is stood up; OIDC, no long-lived keys) | ✅ |
 | Sentiment strategy | needs a sentiment data feed — still roadmap | ⬜ |
 
 Grafana is auto-provisioned: Postgres datasource + a "Strategy Studio" dashboard

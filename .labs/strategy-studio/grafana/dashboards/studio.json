@@ -37,10 +37,25 @@
       }
     },
     {
+      "id": 3,
+      "type": "table",
+      "title": "Champions (current title-holder per symbol)",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 12 },
+      "datasource": { "type": "postgres", "uid": "studiodb" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT c.symbol, r.strategy, r.sharpe, r.total_return_pct, r.spy_return_pct, r.max_drawdown_pct, r.trades, c.promoted, c.note, c.run_id FROM champions c JOIN runs r ON r.run_id = c.run_id ORDER BY c.symbol"
+        }
+      ],
+      "fieldConfig": { "defaults": {}, "overrides": [] }
+    },
+    {
       "id": 2,
       "type": "table",
       "title": "Runs (strategy vs buy-and-hold vs SPY)",
-      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 12 },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 18 },
       "datasource": { "type": "postgres", "uid": "studiodb" },
       "targets": [
         {

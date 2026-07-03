@@ -319,3 +319,54 @@ def get_champion(symbol: str):
     if len(df) == 0:
         raise HTTPException(404, f"no champion for {symbol}")
     return json.loads(df.to_json(orient="records", date_format="iso"))[0]
+
+
+# ---- nightly pipeline: sweep -> promote -> summary (n8n schedules this) ----
+
+class NotifyRequest(BaseModel):
+    text: str
+
+
+@app.post("/notify")
+def notify(req: NotifyRequest):
+    """Send a text via the Gmail SMTP -> carrier-gateway path (email-sender lab).
+    Env: GMAIL_ADDRESS, GMAIL_APP_PASSWORD, DEFAULT_RECIPIENT."""
+    import smtplib
+    from email.message import EmailMessage
+
+    gmail = os.getenv("GMAIL_ADDRESS")
+    app_pw = os.getenv("GMAIL_APP_PASSWORD")
+    to = os.getenv("DEFAULT_RECIPIENT")
+    if not (gmail and app_pw and to):
+        raise HTTPException(400, "set GMAIL_ADDRESS/GMAIL_APP_PASSWORD/DEFAULT_RECIPIENT in .env")
+    msg = EmailMessage()
+    msg["From"], msg["To"] = gmail, to
+    msg.set_content(req.text[:300])  # SMS-friendly
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
+        s.login(gmail, app_pw)
+        s.send_message(msg)
+    return {"sent_to": to, "chars": len(req.text[:300])}
+
+
+@app.post("/nightly/{symbol}")
+def nightly(symbol: str, start: str = "2020-01-01", metric: str = "sharpe"):
+    """One call n8n can schedule: backtest every built-in strategy (skipping
+    slow EDGAR ones), auto-promote, return an SMS-ready summary."""
+    results = []
+    for name in REGISTRY:
+        if name == "insider_form4":
+            continue  # EDGAR scan too slow/rate-limited for a sweep
+        try:
+            r = backtest(BacktestRequest(strategy=name, symbol=symbol, start=start))
+            results.append({"strategy": name, "run_id": r["run_id"],
+                            "sharpe": r["sharpe"], "return_pct": r["total_return_pct"]})
+        except HTTPException as e:
+            results.append({"strategy": name, "error": str(e.detail)})
+
+    promo = auto_promote(symbol, metric=metric)
+    champ = get_champion(symbol)
+    summary = (f"[studio] {symbol} nightly: {promo['result']}. "
+               f"Champion: {champ['strategy']} sharpe={champ['sharpe']} "
+               f"ret={champ['total_return_pct']}% dd={champ['max_drawdown_pct']}% "
+               f"(SPY {champ['spy_return_pct']}%)")
+    return {"symbol": symbol, "swept": results, "promotion": promo, "summary": summary}
