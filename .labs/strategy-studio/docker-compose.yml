@@ -1,0 +1,62 @@
+version: "3.8"
+
+# Strategy Studio — Phase 1+ stack
+#   n8n      drag-and-drop pipeline canvas (http://localhost:5678)
+#   postgres backtest results store
+#   grafana  interactive dashboards (http://localhost:3001, provisioned)
+#   api      backtest engine, FastAPI (http://localhost:8000/docs)
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - GENERIC_TIMEZONE=America/New_York
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=studio
+      - POSTGRES_PASSWORD=studio
+      - POSTGRES_DB=backtests
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"   # 5433 to avoid clashing with any local postgres
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    ports:
+      - "3001:3000"   # 3001: open-webui may take 3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - postgres
+
+  api:
+    build: ./backtest-api
+    ports:
+      - "8001:8000"   # 8001 on host: 8000 was already taken locally
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql://studio:studio@postgres:5432/backtests
+      - OLLAMA_URL=http://host.docker.internal:11434  # local qwen analyst
+      - OLLAMA_MODEL=qwen2.5:3b
+    volumes:
+      # video-pipeline strategies become studio strategies (read-only)
+      - ../audio-extraction/cache:/app/imported:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - postgres
+
+volumes:
+  n8n_data:
+  pg_data:
+  grafana_data:

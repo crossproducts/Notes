@@ -1,0 +1,15 @@
+apiVersion: 1
+
+datasources:
+  - name: StudioDB
+    uid: studiodb
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    user: studio
+    isDefault: true
+    jsonData:
+      database: backtests
+      sslmode: disable
+    secureJsonData:
+      password: studio

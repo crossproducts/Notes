@@ -1,0 +1,124 @@
+# Strategy Studio
+
+Drag-and-drop trading-strategy pipeline: compose strategies visually in **n8n**,
+backtest them against historical data, and explore results in **Grafana**
+dashboards. Graduates the video→backtest pipeline (`.labs/audio-extraction`)
+into an interactive platform.
+
+## Architecture
+
+```
+                 ┌────────────────────────────────────────────┐
+                 │              n8n  (drag & drop)             │
+                 │  strategy nodes → pipeline → schedule/run   │
+                 └──────┬─────────────────────────┬────────────┘
+                        │ HTTP                    │ chart image (QuickChart)
+                        ▼                         ▼
+            ┌───────────────────┐        report / SMS / email
+            │  backtest-api     │        (via .labs/email-sender)
+            │  (Python+FastAPI) │
+            │  vectorbt engine  │
+            └───┬───────────┬───┘
+                │           │ writes results
+     data      ▼           ▼
+  ┌─────────────────┐   ┌──────────┐        ┌─────────────┐
+  │ connectors      │   │ Postgres │ ◄───── │   Grafana   │
+  │ alpaca (stocks/ │   │ (trades, │  reads │ dashboards: │
+  │  options/crypto)│   │  equity  │        │ equity curve│
+  │ oanda (forex)   │   │  curves, │        │ drawdown    │
+  │ edgar (13F)     │   │  runs)   │        │ heatmaps    │
+  │ quiver (congress│   └──────────┘        └─────────────┘
+  └─────────────────┘
+```
+
+### Division of labor (research-backed)
+- **n8n** — orchestration + drag-and-drop composition. It does NOT do interactive
+  dashboards; it can render static chart images via its QuickChart node (fine for
+  pushing a result PNG to SMS/email/Telegram, not for exploration).
+- **Grafana** — the real visualization layer. Reads backtest results from
+  Postgres; interactive equity curves, drawdown, parameter heatmaps, run compare.
+- **backtest-api** — a small FastAPI service wrapping a proper engine
+  (**vectorbt**) so n8n nodes just POST `{strategy, params, symbol, range}` and
+  get a `run_id` back. Keeps the heavy lifting out of n8n.
+
+### How "drag & drop strategies" maps to n8n
+Each strategy = an **n8n sub-workflow** with a standard interface
+(in: symbol/timeframe/params → out: run_id/metrics). Composing a pipeline =
+dragging strategy nodes into a canvas, wiring them to data-source nodes and a
+"compare results" node. n8n handles scheduling (nightly re-runs), branching,
+and notifications.
+
+## Data connectors
+
+| Source | Assets | Notes |
+|--------|--------|-------|
+| **Alpaca** | US stocks, ETFs, options, crypto | Already have keys (audio-extraction lab). **No forex** — confirmed. |
+| **OANDA** | Forex | The standard developer-friendly forex API; free practice account. |
+| **SEC EDGAR** | 13F filings (whales) | **Free.** Quarterly institutional holdings → whale-copy strategies. |
+| **Quiver Quantitative** | Congress trades | Real API (paid tier). Free alternative: scrape House/Senate disclosure sites. |
+| **yfinance** | Daily equities fallback | Free, already used by generated backtests. |
+
+## Strategy catalog (initial)
+
+1. **Congress copycat** — follow reported House/Senate trades (data lags 30–45
+   days by law; the backtest must model that lag honestly).
+2. **Whale 13F copycat** — replicate top holdings/changes of chosen funds
+   (Berkshire, Renaissance…). Quarterly rebalance; also lagged (45 days).
+3. **Imported from videos** — every strategy already extracted by
+   `.labs/audio-extraction` (multi-factor, rotation, ORB…) wrapped as nodes.
+4. **Classic technicals** — momentum, mean-reversion, breakout; the baseline set.
+5. **Forex carry/trend** — via OANDA, to exercise the second connector.
+
+## Roadmap
+
+- **Phase 1 — core loop.** docker-compose up (n8n + Postgres + Grafana +
+  backtest-api). One strategy (momentum) runs end-to-end: n8n node → API →
+  results in Postgres → Grafana equity curve.
+- **Phase 2 — strategy catalog.** Wrap audio-extraction strategies + classic
+  technicals as sub-workflows; parameter grids; run-compare dashboard.
+- **Phase 3 — alt-data.** EDGAR 13F ingest (free) → whale copycat; congress
+  feed (Quiver or scraper) → congress copycat. Model the disclosure lag.
+- **Phase 4 — validation & alerts.** Walk-forward analysis (anti-overfitting),
+  benchmark vs buy-and-hold, and n8n pushes result summaries through
+  `.labs/email-sender` → **SMS to your phone** when a nightly run finishes.
+- **Phase 5 — MCP server.** Expose `run_backtest`, `list_strategies`,
+  `get_results` as MCP tools so Claude can drive the studio conversationally.
+- **Phase 6 — paper trading.** Graduate a validated strategy to Alpaca paper
+  API; n8n schedules live signal generation. (This is when Alpaca's own UI
+  finally becomes useful — real orders.)
+
+## Implemented features (beyond the initial ask)
+
+| Feature | Where | Status |
+|---------|-------|--------|
+| Walk-forward validation | `POST /walkforward` — rolling train/optimize → unseen test, stitched OOS return + stability verdict | ✅ |
+| Risk engine | `risk` block on `/backtest`: `position_size_pct`, `max_dd_stop_pct` circuit breaker (halts trading past the drawdown limit) | ✅ |
+| Regime filter | `regime_filter: true` — only trade when SPY > 200-day MA | ✅ |
+| Monte Carlo | `GET /montecarlo/{run_id}` — bootstrap the run's returns; p5/p50/p95 outcome + drawdown distribution | ✅ |
+| Benchmark node | every run auto-compared to same-symbol buy-and-hold AND SPY, stored + on the Grafana table | ✅ |
+| Insider-buying strategy | `insider_form4` — SEC Form 4 open-market purchases via free EDGAR API (first run per ticker is slow, then cached) | ✅ |
+| Video-pipeline import | audio-extraction strategies auto-discovered as `video:<key>` nodes (mounted read-only) | ✅ |
+| Local-LLM analyst | `GET /analyze/{run_id}` — host Ollama (qwen2.5:3b) writes a plain-English summary; caveat: 3B models garble details, treat as a draft | ✅ |
+| Sentiment strategy | needs a sentiment data feed — still roadmap | ⬜ |
+
+Grafana is auto-provisioned: Postgres datasource + a "Strategy Studio" dashboard
+(equity curve per run via `$run` dropdown, and a runs table with benchmark columns).
+
+## Decisions still open
+
+- Quiver API (paid, clean) vs scraping disclosures (free, brittle) for congress data
+- Postgres (Grafana-native, relational) vs InfluxDB/Timescale for results store
+- n8n licence note: self-hosted n8n is source-available (fair-code), free for
+  personal use — fine for a lab
+- Whether Phase 6 auto-trades paper or only generates signals
+
+## Quick start (Phase 1 scaffold)
+
+```bash
+cd .labs/strategy-studio
+cp .env.example .env      # add keys
+docker compose up -d
+# n8n     → http://localhost:5678
+# grafana → http://localhost:3001  (admin / admin on first login)
+# api     → http://localhost:8001/docs
+```

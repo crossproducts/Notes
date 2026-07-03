@@ -1,0 +1,55 @@
+{
+  "uid": "strategy-studio",
+  "title": "Strategy Studio",
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "time": { "from": "now-5y", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "run",
+        "label": "Run",
+        "type": "query",
+        "datasource": { "type": "postgres", "uid": "studiodb" },
+        "query": "SELECT run_id AS __value, strategy || ' ' || symbol || ' ' || run_id AS __text FROM runs ORDER BY created DESC LIMIT 100",
+        "refresh": 2,
+        "current": {}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Equity curve — $run",
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "postgres", "uid": "studiodb" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT ts AS \"time\", equity FROM equity_curve WHERE run_id = '$run' ORDER BY ts"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "currencyUSD", "custom": { "fillOpacity": 12 } },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Runs (strategy vs buy-and-hold vs SPY)",
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 12 },
+      "datasource": { "type": "postgres", "uid": "studiodb" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT created, run_id, strategy, symbol, total_return_pct, benchmark_return_pct, spy_return_pct, max_drawdown_pct, sharpe, trades, win_rate, regime_filter, halted FROM runs ORDER BY created DESC LIMIT 50"
+        }
+      ],
+      "fieldConfig": { "defaults": {}, "overrides": [] }
+    }
+  ]
+}
