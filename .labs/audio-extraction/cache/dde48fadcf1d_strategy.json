@@ -1,0 +1,28 @@
+{
+  "name": "Asian Range Breakout (S-tier from strategy tier-list)",
+  "description": "From a tier-list video ranking algorithmic strategies. The S-tier pick: markets cycle between consolidation and breakout; the Asian session forms a consolidated range, and the higher-volatility London session breaks it with strong moves and a high strike rate.",
+  "source_video": "https://www.instagram.com/reel/DXwfkKqxvtG/",
+  "instrument": "EURUSD (forex; strategy is session-based, needs a 24h market)",
+  "timeframe": "1h",
+  "setup": {
+    "type": "session_range_breakout",
+    "description": "Mark the Asian-session high/low (00:00-06:00 UTC). During the London window, go long on a break above the range high or short on a break below the range low, whichever triggers first."
+  },
+  "entry": {
+    "long": "First London-window bar whose high breaks the Asian range high",
+    "short": "First London-window bar whose low breaks the Asian range low"
+  },
+  "exit": {
+    "stop_loss": "Opposite side of the Asian range",
+    "take_profit": "risk_reward multiple of the range size",
+    "time_stop": "Close of day if neither hit"
+  },
+  "video_tier_list": {
+    "S": ["Asian range breakout"],
+    "A": ["Swing structure (trend-following, whipsaw-prone but big runners)"],
+    "B": ["ICT variations (silver bullet, inverse FVGs — statistical edge but not exceptional)", "Bollinger band squeeze breakout (new, promising, pending forward test)"],
+    "C": ["Stochastic crossovers (confluence only, not standalone)"],
+    "D": ["Harmonic patterns (20+ variations, none worked)", "Moving average crossover (filter only, garbage standalone)"]
+  },
+  "notes": "Interpreted directly by Claude (Opus) in-session — the pipeline's ANTHROPIC_API_KEY was unset. Bollinger squeeze (B-tier) implemented separately as a strategy-studio built-in with a walk-forward grid."
+}

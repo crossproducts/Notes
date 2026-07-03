@@ -43,6 +43,25 @@ def breakout(df, params):
     return _stateful(close > hi, close < lo)
 
 
+def bollinger_squeeze(df, params):
+    """Squeeze breakout (B-tier in the tier-list video): enter when price breaks
+    the upper band WHILE bandwidth is in its tightest quantile (volatility
+    compression -> expansion); exit on close below the mid band."""
+    n = int(params.get("bb_period", 20))
+    k = float(params.get("bb_std", 2.0))
+    sq_win = int(params.get("squeeze_window", 120))
+    sq_q = float(params.get("squeeze_q", 0.2))
+    close = df["Close"]
+    mid = close.rolling(n).mean()
+    sd = close.rolling(n).std()
+    upper = mid + k * sd
+    bw = (2 * k * sd) / mid
+    squeeze = bw <= bw.rolling(sq_win).quantile(sq_q)
+    entries = (close > upper) & squeeze.shift(1).fillna(False)
+    exits = close < mid
+    return _stateful(entries, exits)
+
+
 def insider_form4(df, params):
     """Long for hold_days after any insider open-market purchase (SEC Form 4).
     First run per ticker is slow (EDGAR scan), then cached."""
@@ -62,5 +81,7 @@ REGISTRY = {
                        "grid": {"oversold": [25, 30, 35], "exit_level": [50, 55, 60]}},
     "breakout": {"fn": breakout,
                  "grid": {"entry_days": [40, 55, 70], "exit_days": [15, 20, 30]}},
+    "bollinger_squeeze": {"fn": bollinger_squeeze,
+                          "grid": {"bb_period": [15, 20, 25], "squeeze_q": [0.15, 0.2, 0.3]}},
     "insider_form4": {"fn": insider_form4, "grid": {"hold_days": [30, 60, 90]}},
 }

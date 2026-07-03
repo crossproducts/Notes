@@ -74,7 +74,7 @@ def download_audio_via_browser(url: str, cache_key: str) -> str:
         ) from e
 
     audio_path = CACHE_DIR / f"{cache_key}.mp3"
-    media_urls: list[str] = []
+    media_urls: list[tuple[str, str]] = []  # (url, content-type)
 
     def is_media(u: str) -> bool:
         u = u.split("?")[0].lower()
@@ -97,7 +97,7 @@ def download_audio_via_browser(url: str, cache_key: str) -> str:
             u = resp.url
             ctype = (resp.headers or {}).get("content-type", "")
             if is_media(u) or ctype.startswith(("video/", "audio/")):
-                media_urls.append(u)
+                media_urls.append((u, ctype))
 
         page.on("response", on_response)
 
@@ -116,7 +116,7 @@ def download_audio_via_browser(url: str, cache_key: str) -> str:
             try:
                 src = page.eval_on_selector("video", "v => v.currentSrc || v.src")
                 if src:
-                    media_urls.append(src)
+                    media_urls.append((src, ""))
             except Exception:
                 pass
 
@@ -127,27 +127,49 @@ def download_audio_via_browser(url: str, cache_key: str) -> str:
     if not media_urls:
         raise RuntimeError("Browser fallback found no media URL on the page")
 
-    # Prefer progressive mp4 over HLS playlists — simpler for ffmpeg.
-    media_urls.sort(key=lambda u: 0 if ".mp4" in u.split("?")[0].lower() else 1)
-    media_url = media_urls[0]
-    print(f"  Captured media URL: {media_url.split('?')[0]}")
+    # Sites like Instagram serve DASH: SEPARATE video and audio tracks. Rank
+    # candidates audio-first (that's the track we actually want), dedupe, then
+    # try each until ffmpeg finds an audio stream.
+    import re as _re
 
-    print("  Extracting audio with ffmpeg...")
-    cmd = [
-        "ffmpeg", "-y",
-        "-headers", f"Referer: {referer}\r\n",
-        "-i", media_url,
-        "-vn",
-        "-acodec", "libmp3lame",
-        "-q:a", "0",
-        str(audio_path),
-    ]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0 or not audio_path.exists():
-        raise RuntimeError(f"ffmpeg failed on captured media: {result.stderr[-500:]}")
+    def rank(item):
+        u, ctype = item
+        path = u.split("?")[0].lower()
+        if ctype.startswith("audio/") or path.endswith(".m4a"):
+            return 0
+        if path.endswith(".mp4"):
+            return 1
+        return 2
 
-    print(f"  Audio saved: {audio_path.name}")
-    return str(audio_path)
+    seen, candidates = set(), []
+    for u, ctype in sorted(media_urls, key=rank):
+        # Strip byte-range fragment params so ffmpeg gets the WHOLE file.
+        clean = _re.sub(r"[&?](bytestart|byteend)=\d+", "", u)
+        if clean not in seen:
+            seen.add(clean)
+            candidates.append(clean)
+
+    last_err = ""
+    for media_url in candidates[:6]:
+        print(f"  Trying media URL: {media_url.split('?')[0]}")
+        cmd = [
+            "ffmpeg", "-y",
+            "-headers", f"Referer: {referer}\r\n",
+            "-user_agent",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+            "-i", media_url,
+            "-vn",
+            "-acodec", "libmp3lame",
+            "-q:a", "0",
+            str(audio_path),
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0 and audio_path.exists():
+            print(f"  Audio saved: {audio_path.name}")
+            return str(audio_path)
+        last_err = result.stderr[-300:]
+
+    raise RuntimeError(f"ffmpeg failed on all {len(candidates[:6])} captured URLs: {last_err}")
 
 
 def transcribe(audio_path: str, cache_key: str, model_size: str = "base") -> str:

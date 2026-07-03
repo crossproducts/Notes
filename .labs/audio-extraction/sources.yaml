@@ -32,6 +32,14 @@ sources:
     cache_key: b9a107049e52
     tags: [equities, sentiment]
 
+  - url: https://www.instagram.com/reel/DXwfkKqxvtG/
+    name: Asian Range Breakout (S-tier from strategy tier-list)
+    status: backtested
+    cache_key: dde48fadcf1d
+    tags: [forex, session-breakout, tier-list]
+    note: interpreted in-session by Claude (pipeline ANTHROPIC_API_KEY unset);
+      B-tier Bollinger squeeze added as strategy-studio builtin
+
   # --- add new sources below as `pending` ---
   # - url: https://www.instagram.com/reel/XXXXXXXX/
   #   name: ""
