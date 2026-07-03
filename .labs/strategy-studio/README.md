@@ -106,6 +106,36 @@ and notifications.
 Grafana is auto-provisioned: Postgres datasource + a "Strategy Studio" dashboard
 (equity curve per run via `$run` dropdown, and a runs table with benchmark columns).
 
+## Next features (planned)
+
+Ordered by value-per-effort:
+
+1. **Nightly champion pipeline (n8n)** — scheduled workflow: sweep strategies →
+   `/champion/auto` per symbol → QuickChart equity PNG → **SMS the result via
+   `.labs/email-sender`**. Ties three labs together; pure wiring, no new code.
+2. **Champions panel in Grafana** — add the `champions` table + "champion vs
+   challengers" comparison panel to the provisioned dashboard.
+3. **CI image build** — GitHub Actions: build/push `backtest-api` to ECR on
+   change; ArgoCD picks it up (closes the GitOps loop for code, not just config).
+4. **Congress copycat for real** — Quiver API key (or disclosure scraper) →
+   congress connector; the backtest MUST model the 30–45-day disclosure lag.
+5. **OANDA forex connector** — second broker, first non-equity asset class;
+   validates the connector abstraction.
+6. **MCP server (Phase 5)** — expose `run_backtest` / `leaderboard` /
+   `promote_champion` as MCP tools; drive the studio from Claude.
+7. **vectorbt engine upgrade** — swap the hand-rolled loop for vectorbt;
+   unlocks intraday backtests on the Alpaca 5-min data you already cache.
+8. **Portfolio mode** — allocate across N champions, correlation matrix panel,
+   portfolio-level risk engine (the real quant step).
+9. **Sentiment connector** — the remaining unimplemented strategy idea.
+10. **Paper trading (Phase 6)** — graduate a walk-forward-surviving champion to
+    Alpaca paper; n8n schedules live signals.
+
+## AWS deployment
+
+`infra/` (Terragrunt: VPC/EKS/ECR/RDS, tear-down discipline) + `k8s/` (ArgoCD
+app-of-apps). See `infra/README.md`. Local compose remains the daily driver.
+
 ## Decisions still open
 
 - Quiver API (paid, clean) vs scraping disclosures (free, brittle) for congress data

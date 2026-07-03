@@ -1,0 +1,22 @@
+# Root Application: points ArgoCD at k8s/argocd/apps/, which defines one
+# Application per component. Apply this ONE file; ArgoCD reconciles the rest.
+# NOTE: if the repo is private, register credentials first:
+#   argocd repo add git@github.com:crossproducts/Notes.git --ssh-private-key-path ~/.ssh/id_ed25519
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: strategy-studio
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/crossproducts/Notes.git
+    targetRevision: main
+    path: .labs/strategy-studio/k8s/argocd/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
