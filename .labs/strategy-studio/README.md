@@ -99,6 +99,8 @@ and notifications.
 | Insider-buying strategy | `insider_form4` — SEC Form 4 open-market purchases via free EDGAR API (first run per ticker is slow, then cached) | ✅ |
 | Video-pipeline import | audio-extraction strategies auto-discovered as `video:<key>` nodes (mounted read-only) | ✅ |
 | Local-LLM analyst | `GET /analyze/{run_id}` — host Ollama (qwen2.5:3b) writes a plain-English summary; caveat: 3B models garble details, treat as a draft | ✅ |
+| Champion/challenger registry | MLflow-style: `GET /leaderboard`, `POST /champion/auto/{symbol}` (promotes only if the challenger beats the champion on the metric — default sharpe), `GET /champion/{symbol}` | ✅ |
+| GitOps-ish workflows | `workflows/` versioned in the repo; `sh workflows-sync.sh import\|export\|diff` syncs with n8n (convention, not reconciliation — n8n has no reconciler) | ✅ |
 | Sentiment strategy | needs a sentiment data feed — still roadmap | ⬜ |
 
 Grafana is auto-provisioned: Postgres datasource + a "Strategy Studio" dashboard

@@ -16,6 +16,8 @@ services:
       - GENERIC_TIMEZONE=America/New_York
     volumes:
       - n8n_data:/home/node/.n8n
+      # GitOps-ish: workflow JSONs versioned in the repo, synced via workflows-sync.sh
+      - ./workflows:/workflows
 
   postgres:
     image: postgres:16-alpine

@@ -47,6 +47,12 @@ CREATE TABLE IF NOT EXISTS runs (
 CREATE TABLE IF NOT EXISTS equity_curve (
     run_id TEXT, ts TIMESTAMPTZ, equity DOUBLE PRECISION
 );
+CREATE TABLE IF NOT EXISTS champions (
+    symbol TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL,
+    promoted TIMESTAMPTZ DEFAULT now(),
+    note TEXT
+);
 """
 
 
@@ -236,3 +242,80 @@ def runs(limit: int = 20):
     df = pd.read_sql(text("SELECT * FROM runs ORDER BY created DESC LIMIT :n"),
                      db, params={"n": limit})
     return json.loads(df.to_json(orient="records", date_format="iso"))
+
+
+# ---- champion / challenger registry (MLflow-style, per symbol) ----
+
+@app.get("/leaderboard")
+def leaderboard(symbol: str = "SPY", metric: str = "sharpe", limit: int = 10):
+    """Challengers ranked by a metric; the reigning champion is flagged.
+    Rank on risk-adjusted metrics (sharpe) — raw return rewards luck."""
+    if metric not in ("sharpe", "total_return_pct", "max_drawdown_pct", "win_rate"):
+        raise HTTPException(400, "metric must be sharpe|total_return_pct|max_drawdown_pct|win_rate")
+    order = "ASC" if metric == "max_drawdown_pct" else "DESC"
+    df = pd.read_sql(text(
+        f"SELECT r.*, (c.run_id IS NOT NULL) AS is_champion FROM runs r "
+        f"LEFT JOIN champions c ON c.run_id = r.run_id AND c.symbol = r.symbol "
+        f"WHERE r.symbol = :s ORDER BY r.{metric} {order} NULLS LAST LIMIT :n"),
+        db, params={"s": symbol, "n": limit})
+    return json.loads(df.to_json(orient="records", date_format="iso"))
+
+
+@app.post("/champion/{run_id}")
+def promote(run_id: str, note: str = ""):
+    """Manually promote a run to champion for its symbol (dethrones the current one)."""
+    row = pd.read_sql(text("SELECT symbol FROM runs WHERE run_id=:r"), db, params={"r": run_id})
+    if len(row) == 0:
+        raise HTTPException(404, "run not found")
+    symbol = row.iloc[0]["symbol"]
+    with db.begin() as conn:
+        conn.execute(text(
+            "INSERT INTO champions (symbol, run_id, note) VALUES (:s,:r,:n) "
+            "ON CONFLICT (symbol) DO UPDATE SET run_id=:r, promoted=now(), note=:n"),
+            {"s": symbol, "r": run_id, "n": note})
+    return {"symbol": symbol, "champion": run_id, "note": note}
+
+
+@app.post("/champion/auto/{symbol}")
+def auto_promote(symbol: str, metric: str = "sharpe", min_trades: int = 5):
+    """Auto-promote the best run for a symbol IF it beats the current champion
+    on the metric. Returns what happened either way (champion defended or dethroned)."""
+    order = "ASC" if metric == "max_drawdown_pct" else "DESC"
+    best = pd.read_sql(text(
+        f"SELECT * FROM runs WHERE symbol=:s AND trades >= :t "
+        f"ORDER BY {metric} {order} NULLS LAST LIMIT 1"),
+        db, params={"s": symbol, "t": min_trades})
+    if len(best) == 0:
+        raise HTTPException(404, f"no runs for {symbol} with >= {min_trades} trades")
+    challenger = best.iloc[0]
+
+    cur = pd.read_sql(text(
+        "SELECT r.* FROM champions c JOIN runs r ON r.run_id = c.run_id WHERE c.symbol=:s"),
+        db, params={"s": symbol})
+    if len(cur) > 0:
+        champ = cur.iloc[0]
+        better = (challenger[metric] < champ[metric] if metric == "max_drawdown_pct"
+                  else challenger[metric] > champ[metric])
+        if not better or challenger["run_id"] == champ["run_id"]:
+            return {"symbol": symbol, "result": "champion defended",
+                    "champion": champ["run_id"], f"champion_{metric}": float(champ[metric]),
+                    "best_challenger": challenger["run_id"],
+                    f"challenger_{metric}": float(challenger[metric])}
+
+    with db.begin() as conn:
+        conn.execute(text(
+            "INSERT INTO champions (symbol, run_id, note) VALUES (:s,:r,:n) "
+            "ON CONFLICT (symbol) DO UPDATE SET run_id=:r, promoted=now(), note=:n"),
+            {"s": symbol, "r": challenger["run_id"], "n": f"auto-promoted on {metric}"})
+    return {"symbol": symbol, "result": "new champion", "champion": challenger["run_id"],
+            "strategy": challenger["strategy"], f"{metric}": float(challenger[metric])}
+
+
+@app.get("/champion/{symbol}")
+def get_champion(symbol: str):
+    df = pd.read_sql(text(
+        "SELECT c.promoted, c.note, r.* FROM champions c JOIN runs r ON r.run_id = c.run_id "
+        "WHERE c.symbol=:s"), db, params={"s": symbol})
+    if len(df) == 0:
+        raise HTTPException(404, f"no champion for {symbol}")
+    return json.loads(df.to_json(orient="records", date_format="iso"))[0]
