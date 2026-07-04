@@ -5,3 +5,5 @@ yfinance
 sqlalchemy
 psycopg2-binary
 alpaca-py   # paper trading (paper=True hardcoded in paper.py)
+apscheduler # in-process cron (replaced n8n): nightly champion + paper execute
+tzdata      # America/New_York in slim containers

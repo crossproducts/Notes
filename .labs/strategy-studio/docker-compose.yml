@@ -1,23 +1,9 @@
 # Strategy Studio — Phase 1+ stack
-#   n8n      drag-and-drop pipeline canvas (http://localhost:5678)
 #   postgres backtest results store
 #   grafana  interactive dashboards (http://localhost:3001, provisioned)
 #   api      backtest engine, FastAPI (http://localhost:8000/docs)
 
 services:
-  n8n:
-    restart: unless-stopped
-    image: n8nio/n8n:latest
-    ports:
-      - "5678:5678"
-    environment:
-      - N8N_DIAGNOSTICS_ENABLED=false
-      - GENERIC_TIMEZONE=America/New_York
-    volumes:
-      - n8n_data:/home/node/.n8n
-      # GitOps-ish: workflow JSONs versioned in the repo, synced via workflows-sync.sh
-      - ./workflows:/workflows
-
   postgres:
     restart: unless-stopped
     image: postgres:16-alpine

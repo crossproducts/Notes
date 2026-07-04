@@ -101,7 +101,8 @@ and notifications.
 | Local-LLM analyst | `GET /analyze/{run_id}` — host Ollama (qwen2.5:3b) writes a plain-English summary; caveat: 3B models garble details, treat as a draft | ✅ |
 | Champion/challenger registry | MLflow-style: `GET /leaderboard`, `POST /champion/auto/{symbol}` (promotes only if the challenger beats the champion on the metric — default sharpe), `GET /champion/{symbol}` | ✅ |
 | GitOps-ish workflows | `workflows/` versioned in the repo; `sh workflows-sync.sh import\|export\|diff` syncs with n8n (convention, not reconciliation — n8n has no reconciler) | ✅ |
-| Nightly champion pipeline | `workflows/` n8n schedule (weekdays 6pm): `POST /nightly/{symbol}` sweeps built-ins → auto-promotes → `POST /notify` **texts you the result** (email-sender creds in `.env`) | ✅ |
+| Nightly champion pipeline | in-API scheduler (weekdays 18:00 ET): sweeps built-ins per `STUDIO_SYMBOLS` → auto-promotes (**OOS-gated**) → **texts you the result**; failures SMS `[ERROR]` instead of dying silently; optional `HEALTHCHECK_URL` dead-man ping | ✅ |
+| Transaction costs | `cost_bps` on every backtest (default 5bps/side spread+slippage proxy); walk-forward inherits it — frictionless is opt-in, not the default | ✅ |
 | Champions Grafana panel | current title-holder per symbol on the provisioned dashboard | ✅ |
 | CI → ECR | `.github/workflows/backtest-api-ecr.yml` (manual dispatch until AWS is stood up; OIDC, no long-lived keys) | ✅ |
 | Paper trading (Phase 6) | `/paper/account`, `/paper/positions`, `/paper/execute/{symbol}` (reconciles the **champion's live signal** into the Alpaca paper account; `paper=True` hardcoded), `/paper/log` audit trail; pending-order guard prevents duplicate entries; n8n `Paper Trade — QQQ champion daily` cron (9:35 market days) + SMS | ✅ |
@@ -154,12 +155,11 @@ app-of-apps). See `infra/README.md`. Local compose remains the daily driver.
 cd .labs/strategy-studio
 cp .env.example .env      # add keys
 docker compose up -d
-# n8n     → http://localhost:5678  (admin@studio.local / Admin1234 — lab only)
 # grafana → http://localhost:3001  (admin / admin on first login)
-# api     → http://localhost:8001/docs
+# api     → http://localhost:8001/docs   (scheduler status: /scheduler)
 
-# Fresh n8n volume? Recreate the owner non-interactively:
-#   curl -X POST http://localhost:5678/rest/owner/setup -H "Content-Type: application/json" \
-#     -d '{"email":"admin@studio.local","firstName":"Studio","lastName":"Admin","password":"Admin1234"}'
-# then: sh workflows-sync.sh import
+# n8n was removed (2026-07): its only real duties — two cron schedules + SMS
+# chaining — moved into the API (backtest-api/scheduler.py). One less container,
+# no UI credentials, errors alert instead of failing silently. Paper trades run
+# weekdays 9:35, champion sweep 18:00 ET, automatically.
 ```

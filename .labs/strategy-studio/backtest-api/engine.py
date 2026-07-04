@@ -29,16 +29,23 @@ def regime_mask(index: pd.DatetimeIndex, start: str) -> pd.Series:
 def equity_from_signal(close: pd.Series, signal: pd.Series,
                        position_size_pct: float = 100.0,
                        max_dd_stop_pct: float | None = None,
+                       cost_bps: float = 5.0,
                        initial: float = 100_000.0):
-    """Risk engine: apply position sizing and a max-drawdown circuit breaker.
-    Signal is shifted by 1 bar here — no lookahead."""
+    """Risk engine: position sizing, max-drawdown circuit breaker, and
+    TRANSACTION COSTS — cost_bps charged per side (entry AND exit) as a
+    spread+slippage proxy. Frictionless backtests flatter high-turnover
+    strategies; costs default ON. Signal is shifted 1 bar — no lookahead."""
     sig = signal.shift(1).fillna(0).values
     rets = close.pct_change().fillna(0).values
     w = position_size_pct / 100.0
+    cost = cost_bps / 10_000.0 * w
 
     eq = np.empty(len(rets))
-    e, peak, halted = initial, initial, False
+    e, peak, halted, prev = initial, initial, False, 0.0
     for i in range(len(rets)):
+        if not halted and sig[i] != prev:   # position change = pay the spread
+            e *= (1 - cost)
+            prev = sig[i]
         if not halted and sig[i] > 0:
             e *= (1 + rets[i] * w)
         peak = max(peak, e)

@@ -48,6 +48,15 @@ sources:
     note: implemented as studio builtin vix_gold_filter; claim 'beats buy-and-hold'
       NOT reproduced (117% default / 155% walk-forward OOS vs QQQ 242%)
 
+  - url: https://www.instagram.com/reel/DaK_kWlOhl4/
+    name: TIPS ladder ("unethical but legal" part 57)
+    status: skipped
+    cache_key: e0d40983eb80
+    tags: [fixed-income, not-a-trading-strategy]
+    note: legitimate personal-finance move, but not a trading strategy — no
+      signals/entries/exits to backtest; hold-to-maturity ladder outside the
+      studio's scope. Claims reviewed in session (see transcript).
+
   # --- add new sources below as `pending` ---
   # - url: https://www.instagram.com/reel/XXXXXXXX/
   #   name: ""

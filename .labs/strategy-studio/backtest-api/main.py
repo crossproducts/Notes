@@ -68,6 +68,14 @@ def init_db():
         for stmt in DDL.strip().split(";"):
             if stmt.strip():
                 conn.execute(text(stmt))
+    import scheduler
+    scheduler.start()
+
+
+@app.get("/scheduler")
+def scheduler_status():
+    import scheduler
+    return scheduler.jobs_status()
 
 
 # ---- imported video-pipeline strategies (mounted from audio-extraction/cache) ----
@@ -118,6 +126,7 @@ class BacktestRequest(BaseModel):
     params: dict = {}
     risk: RiskParams = RiskParams()
     regime_filter: bool = False            # only trade when SPY > 200d MA
+    cost_bps: float = 5.0                  # per-side spread+slippage; 0 = frictionless fantasy
 
 
 class WalkforwardRequest(BaseModel):
@@ -191,7 +200,8 @@ def backtest(req: BacktestRequest):
     equity, halted = engine.equity_from_signal(
         df["Close"], signal,
         position_size_pct=req.risk.position_size_pct,
-        max_dd_stop_pct=req.risk.max_dd_stop_pct)
+        max_dd_stop_pct=req.risk.max_dd_stop_pct,
+        cost_bps=req.cost_bps)
 
     m = engine.metrics(equity, signal, df["Close"])
     bench = engine.benchmarks(req.symbol, df.index, req.start)
@@ -291,9 +301,12 @@ def promote(run_id: str, note: str = ""):
 
 
 @app.post("/champion/auto/{symbol}")
-def auto_promote(symbol: str, metric: str = "sharpe", min_trades: int = 5):
+def auto_promote(symbol: str, metric: str = "sharpe", min_trades: int = 5,
+                 validate: bool = True):
     """Auto-promote the best run for a symbol IF it beats the current champion
-    on the metric. Returns what happened either way (champion defended or dethroned)."""
+    on the metric. With validate=True (default), a NEW champion must also pass
+    a walk-forward gate: positive stitched out-of-sample return. Promoting on
+    in-sample metrics alone is institutionalized overfitting."""
     order = "ASC" if metric == "max_drawdown_pct" else "DESC"
     best = pd.read_sql(text(
         f"SELECT * FROM runs WHERE symbol=:s AND trades >= :t "
@@ -315,6 +328,19 @@ def auto_promote(symbol: str, metric: str = "sharpe", min_trades: int = 5):
                     "champion": champ["run_id"], f"champion_{metric}": float(champ[metric]),
                     "best_challenger": challenger["run_id"],
                     f"challenger_{metric}": float(challenger[metric])}
+
+    # OOS gate: a would-be champion must survive walk-forward before wearing the belt
+    if validate and challenger["strategy"] in REGISTRY:
+        try:
+            wf = analysis.walkforward(challenger["strategy"], symbol, "2018-01-01")
+            if wf["stitched_oos_return_pct"] <= 0:
+                return {"symbol": symbol, "result": "challenger failed OOS gate",
+                        "challenger": challenger["run_id"],
+                        "strategy": challenger["strategy"],
+                        "stitched_oos_return_pct": wf["stitched_oos_return_pct"],
+                        "note": "in-sample winner, out-of-sample loser — not promoted"}
+        except ValueError:
+            pass  # not enough data to validate; allow (small-history symbols)
 
     with db.begin() as conn:
         conn.execute(text(
