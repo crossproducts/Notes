@@ -104,6 +104,7 @@ and notifications.
 | Nightly champion pipeline | `workflows/` n8n schedule (weekdays 6pm): `POST /nightly/{symbol}` sweeps built-ins → auto-promotes → `POST /notify` **texts you the result** (email-sender creds in `.env`) | ✅ |
 | Champions Grafana panel | current title-holder per symbol on the provisioned dashboard | ✅ |
 | CI → ECR | `.github/workflows/backtest-api-ecr.yml` (manual dispatch until AWS is stood up; OIDC, no long-lived keys) | ✅ |
+| Paper trading (Phase 6) | `/paper/account`, `/paper/positions`, `/paper/execute/{symbol}` (reconciles the **champion's live signal** into the Alpaca paper account; `paper=True` hardcoded), `/paper/log` audit trail; pending-order guard prevents duplicate entries; n8n `Paper Trade — QQQ champion daily` cron (9:35 market days) + SMS | ✅ |
 | Sentiment strategy | needs a sentiment data feed — still roadmap | ⬜ |
 
 Grafana is auto-provisioned: Postgres datasource + a "Strategy Studio" dashboard

@@ -4,3 +4,4 @@ pandas
 yfinance
 sqlalchemy
 psycopg2-binary
+alpaca-py   # paper trading (paper=True hardcoded in paper.py)

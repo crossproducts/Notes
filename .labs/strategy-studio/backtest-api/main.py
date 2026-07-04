@@ -48,6 +48,11 @@ CREATE TABLE IF NOT EXISTS equity_curve (
     run_id TEXT, ts TIMESTAMPTZ, equity DOUBLE PRECISION
 );
 ALTER TABLE equity_curve ADD COLUMN IF NOT EXISTS series TEXT DEFAULT 'strategy';
+CREATE TABLE IF NOT EXISTS paper_actions (
+    ts TIMESTAMPTZ DEFAULT now(),
+    symbol TEXT, strategy TEXT, signal INT,
+    action TEXT, detail TEXT, equity DOUBLE PRECISION
+);
 CREATE TABLE IF NOT EXISTS champions (
     symbol TEXT PRIMARY KEY,
     run_id TEXT NOT NULL,
@@ -318,6 +323,90 @@ def auto_promote(symbol: str, metric: str = "sharpe", min_trades: int = 5):
             {"s": symbol, "r": challenger["run_id"], "n": f"auto-promoted on {metric}"})
     return {"symbol": symbol, "result": "new champion", "champion": challenger["run_id"],
             "strategy": challenger["strategy"], f"{metric}": float(challenger[metric])}
+
+
+# ---- Alpaca PAPER trading: automate the champion's signal ----
+
+@app.get("/paper/account")
+def paper_account():
+    import paper
+    try:
+        return paper.account_summary(paper.get_client())
+    except Exception as e:
+        raise HTTPException(502, f"Alpaca paper API: {e}")
+
+
+@app.get("/paper/positions")
+def paper_positions():
+    import paper
+    try:
+        client = paper.get_client()
+        return [{"symbol": p.symbol, "qty": float(p.qty),
+                 "market_value": float(p.market_value),
+                 "unrealized_pl": float(p.unrealized_pl)}
+                for p in client.get_all_positions()]
+    except Exception as e:
+        raise HTTPException(502, f"Alpaca paper API: {e}")
+
+
+@app.post("/paper/execute/{symbol}")
+def paper_execute(symbol: str, position_pct: float = 10.0):
+    """Automate the CHAMPION strategy for a symbol: recompute today's signal
+    and reconcile the paper position to match. Schedule via n8n on market days."""
+    import paper
+
+    champ = get_champion(symbol)  # 404s if no champion
+    strategy = champ["strategy"]
+    if strategy not in REGISTRY:
+        raise HTTPException(400,
+            f"champion '{strategy}' is not a builtin signal strategy; "
+            "promote a builtin champion for live execution")
+    params = champ.get("params") or {}
+    if isinstance(params, str):
+        params = json.loads(params)
+
+    # today's signal on fresh daily data
+    df = engine.fetch(symbol, "2022-01-01")
+    signal = int(REGISTRY[strategy]["fn"](df, {**params, "_symbol": symbol}).iloc[-1])
+
+    try:
+        client = paper.get_client()
+        acct = paper.account_summary(client)
+        qty = paper.position_qty(client, symbol)
+        pending = paper.pending_orders(client, symbol)
+
+        if pending > 0:
+            action, detail = "HOLD", f"{pending} pending order(s) — waiting for fill, no action"
+        elif signal == 1 and qty == 0:
+            oid = paper.buy_notional(client, symbol, acct["equity"] * position_pct / 100)
+            action, detail = "BUY", f"notional {position_pct}% of equity, order {oid}"
+        elif signal == 0 and qty > 0:
+            oid = paper.close_position(client, symbol)
+            action, detail = "SELL", f"closed {qty} shares, order {oid}"
+        else:
+            action, detail = "HOLD", f"signal={signal}, position={qty} — already aligned"
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(502, f"Alpaca paper API: {e}")
+
+    with db.begin() as conn:
+        conn.execute(text(
+            "INSERT INTO paper_actions (symbol, strategy, signal, action, detail, equity) "
+            "VALUES (:sym,:s,:sig,:a,:d,:e)"),
+            {"sym": symbol, "s": strategy, "sig": signal, "a": action,
+             "d": detail, "e": acct["equity"]})
+
+    return {"symbol": symbol, "champion_strategy": strategy, "signal_today": signal,
+            "action": action, "detail": detail, "account_equity": acct["equity"],
+            "paper": True}
+
+
+@app.get("/paper/log")
+def paper_log(limit: int = 30):
+    df = pd.read_sql(text("SELECT * FROM paper_actions ORDER BY ts DESC LIMIT :n"),
+                     db, params={"n": limit})
+    return json.loads(df.to_json(orient="records", date_format="iso"))
 
 
 @app.get("/champion/{symbol}")
