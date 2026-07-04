@@ -62,6 +62,16 @@ def bollinger_squeeze(df, params):
     return _stateful(entries, exits)
 
 
+def ma200_timing(df, params):
+    """The 200-day MA timing rule (Meb Faber): long the index when price is
+    above its 200-day moving average, flat when below. One parameter, decades
+    of literature — the classic 'cut the bear markets' risk-reduction overlay.
+    The claim to test: similar return to buy-and-hold with far lower drawdown."""
+    ma = int(params.get("ma_days", 200))
+    close = df["Close"]
+    return (close > close.rolling(ma).mean()).astype(int)
+
+
 def dual_momentum(df, params):
     """Momentum with a trend gate: long only when price is above N-days-ago
     AND above its long MA. The MA filter cuts the whipsaw longs that hurt raw
@@ -141,6 +151,7 @@ REGISTRY = {
                           "grid": {"bb_period": [15, 20, 25], "squeeze_q": [0.15, 0.2, 0.3]}},
     "vix_gold_filter": {"fn": vix_gold_filter,
                         "grid": {"vix_ma_days": [30, 50, 100], "mom_days": [10, 20, 40]}},
+    "ma200_timing": {"fn": ma200_timing, "grid": {"ma_days": [150, 200, 250]}},
     "dual_momentum": {"fn": dual_momentum,
                       "grid": {"lookback_days": [60, 90, 120], "trend_ma": [100, 150, 200]}},
     "macd": {"fn": macd, "grid": {"fast": [8, 12], "slow": [21, 26]}},

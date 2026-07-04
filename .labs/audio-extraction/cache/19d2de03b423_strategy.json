@@ -1,0 +1,21 @@
+{
+  "name": "200-day MA Timing (Meb Faber tactical rule)",
+  "description": "Long the main US index when price is above its 200-day moving average, out (to cash) when below. One parameter, ~century of history. Pitched as 'dilution of signal, cutting variance' — the classic risk-reduction overlay.",
+  "source_video": "https://www.instagram.com/reel/DaVNyD_KwRB/",
+  "instrument": "S&P 500 (^GSPC for history, SPY to trade)",
+  "timeframe": "daily",
+  "setup": {
+    "type": "moving_average_timing",
+    "description": "signal = close > SMA(200). Long when true, hold cash (earning risk-free) when false."
+  },
+  "entry": {"long": "price closes above the 200-day MA"},
+  "exit": {"cash": "price closes below the 200-day MA -> to T-bills"},
+  "implemented_as": "strategy-studio builtin 'ma200_timing' (grid: ma_days 150/200/250)",
+  "verdict": {
+    "claim": "beats the market with lower volatility over a 92-year test; not overfit",
+    "result_long_history_1960_2026": "MA200 +15,573% vs buy-and-hold +12,390%, max drawdown -22% vs ~-55% (2008). Claim HOLDS — higher return AND half the drawdown.",
+    "result_recent_bull_2020": "MA200 +114% vs buy-and-hold +152%. LAGS in bull markets (sits out dips, misses V-recoveries) — the caveat he omits.",
+    "honest_take": "Legitimately good risk-reduction overlay with real academic support; the low-overfitting claim is FAIR (one parameter, long history). Its edge is drawdown control + long-run compounding of cash yield when out — NOT beating bull markets. Depends on idle cash earning the risk-free rate.",
+    "engine_note": "This strategy exposed a real flaw: the engine earned 0% when out of market, badly under-crediting sit-in-cash strategies. Fixed — idle capital now accrues RISK_FREE_RATE, and Sharpe is now excess-of-risk-free. MA200's measured return jumped from +6,892% to +15,573% after the fix."
+  }
+}

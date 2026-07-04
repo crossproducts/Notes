@@ -68,6 +68,16 @@ sources:
       trend_ma. Red flag: literally advocates "over-optimizing" — the exact
       curve-fitting our walk-forward gate exists to reject.
 
+  - url: https://www.instagram.com/reel/DaVNyD_KwRB/
+    name: 200-day MA Timing (Meb Faber tactical rule)
+    status: backtested
+    cache_key: 19d2de03b423
+    tags: [equities, trend-timing, legit]
+    note: BEST of the batch — real strategy w/ academic support. Implemented as
+      builtin ma200_timing. Claim HOLDS long-history (+15573% vs buy-hold
+      +12390%, dd -22% vs -55%) but LAGS in bull markets (2020+ 114% vs 152%).
+      Forced a real engine fix (risk-free accrual on idle cash + excess Sharpe).
+
   # --- add new sources below as `pending` ---
   # - url: https://www.instagram.com/reel/XXXXXXXX/
   #   name: ""
