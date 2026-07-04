@@ -62,6 +62,43 @@ def bollinger_squeeze(df, params):
     return _stateful(entries, exits)
 
 
+def dual_momentum(df, params):
+    """Momentum with a trend gate: long only when price is above N-days-ago
+    AND above its long MA. The MA filter cuts the whipsaw longs that hurt raw
+    momentum's Sharpe in choppy/bear tape."""
+    lb = int(params.get("lookback_days", 90))
+    ma = int(params.get("trend_ma", 200))
+    close = df["Close"]
+    return ((close > close.shift(lb)) & (close > close.rolling(ma).mean())).astype(int)
+
+
+def macd(df, params):
+    """Long while the MACD line is above its signal line — a smoothed trend
+    read that flips less often than raw price-vs-price momentum."""
+    fast = int(params.get("fast", 12)); slow = int(params.get("slow", 26))
+    sigp = int(params.get("signal", 9))
+    close = df["Close"]
+    macd_line = close.ewm(span=fast).mean() - close.ewm(span=slow).mean()
+    return (macd_line > macd_line.ewm(span=sigp).mean()).astype(int)
+
+
+def trend_ma(df, params):
+    """Classic golden-cross: long while fast SMA > slow SMA. Fewest trades of
+    the bunch — low turnover means costs barely bite."""
+    fast = int(params.get("fast_ma", 50)); slow = int(params.get("slow_ma", 200))
+    close = df["Close"]
+    return (close.rolling(fast).mean() > close.rolling(slow).mean()).astype(int)
+
+
+def momentum_12_1(df, params):
+    """Academic 12-1 momentum: 12-month return skipping the most recent month
+    (the skip avoids short-term reversal). The version that actually survives
+    in the literature."""
+    long_lb = int(params.get("long_days", 252)); skip = int(params.get("skip_days", 21))
+    close = df["Close"]
+    return (close.shift(skip) > close.shift(long_lb)).astype(int)
+
+
 def vix_gold_filter(df, params):
     """From the 'beats NASDAQ buy-and-hold with VIX+gold correlations' video:
     stay long the symbol except in risk-off regimes — VIX above its moving
@@ -104,5 +141,12 @@ REGISTRY = {
                           "grid": {"bb_period": [15, 20, 25], "squeeze_q": [0.15, 0.2, 0.3]}},
     "vix_gold_filter": {"fn": vix_gold_filter,
                         "grid": {"vix_ma_days": [30, 50, 100], "mom_days": [10, 20, 40]}},
+    "dual_momentum": {"fn": dual_momentum,
+                      "grid": {"lookback_days": [60, 90, 120], "trend_ma": [100, 150, 200]}},
+    "macd": {"fn": macd, "grid": {"fast": [8, 12], "slow": [21, 26]}},
+    "trend_ma": {"fn": trend_ma,
+                 "grid": {"fast_ma": [20, 50], "slow_ma": [100, 150, 200]}},
+    "momentum_12_1": {"fn": momentum_12_1,
+                      "grid": {"long_days": [200, 252], "skip_days": [10, 21]}},
     "insider_form4": {"fn": insider_form4, "grid": {"hold_days": [30, 60, 90]}},
 }

@@ -276,7 +276,9 @@ def leaderboard(symbol: str = "SPY", metric: str = "sharpe", limit: int = 10):
     Rank on risk-adjusted metrics (sharpe) — raw return rewards luck."""
     if metric not in ("sharpe", "total_return_pct", "max_drawdown_pct", "win_rate"):
         raise HTTPException(400, "metric must be sharpe|total_return_pct|max_drawdown_pct|win_rate")
-    order = "ASC" if metric == "max_drawdown_pct" else "DESC"
+    # Every metric is "higher is better" — drawdown is stored NEGATIVE, so the
+    # shallowest (best) drawdown is the largest value. Always DESC.
+    order = "DESC"
     df = pd.read_sql(text(
         f"SELECT r.*, (c.run_id IS NOT NULL) AS is_champion FROM runs r "
         f"LEFT JOIN champions c ON c.run_id = r.run_id AND c.symbol = r.symbol "
@@ -307,10 +309,9 @@ def auto_promote(symbol: str, metric: str = "sharpe", min_trades: int = 5,
     on the metric. With validate=True (default), a NEW champion must also pass
     a walk-forward gate: positive stitched out-of-sample return. Promoting on
     in-sample metrics alone is institutionalized overfitting."""
-    order = "ASC" if metric == "max_drawdown_pct" else "DESC"
-    best = pd.read_sql(text(
+    best = pd.read_sql(text(   # all metrics higher-is-better (dd is negative)
         f"SELECT * FROM runs WHERE symbol=:s AND trades >= :t "
-        f"ORDER BY {metric} {order} NULLS LAST LIMIT 1"),
+        f"ORDER BY {metric} DESC NULLS LAST LIMIT 1"),
         db, params={"s": symbol, "t": min_trades})
     if len(best) == 0:
         raise HTTPException(404, f"no runs for {symbol} with >= {min_trades} trades")
@@ -321,8 +322,7 @@ def auto_promote(symbol: str, metric: str = "sharpe", min_trades: int = 5,
         db, params={"s": symbol})
     if len(cur) > 0:
         champ = cur.iloc[0]
-        better = (challenger[metric] < champ[metric] if metric == "max_drawdown_pct"
-                  else challenger[metric] > champ[metric])
+        better = challenger[metric] > champ[metric]  # higher-is-better (dd negative)
         if not better or challenger["run_id"] == champ["run_id"]:
             return {"symbol": symbol, "result": "champion defended",
                     "champion": champ["run_id"], f"champion_{metric}": float(champ[metric]),
