@@ -62,6 +62,25 @@ def bollinger_squeeze(df, params):
     return _stateful(entries, exits)
 
 
+def vix_gold_filter(df, params):
+    """From the 'beats NASDAQ buy-and-hold with VIX+gold correlations' video:
+    stay long the symbol except in risk-off regimes — VIX above its moving
+    average AND gold outperforming the symbol (flight-to-safety confirmation).
+    The claim to test: tracks buy-and-hold in bull runs, sidesteps drawdowns."""
+    import engine
+    vix_ma = int(params.get("vix_ma_days", 50))
+    mom = int(params.get("mom_days", 20))
+    early = (df.index[0] - pd.Timedelta(days=400)).strftime("%Y-%m-%d")
+
+    vix = engine.fetch("^VIX", early)["Close"].reindex(df.index).ffill()
+    gold = engine.fetch("GLD", early)["Close"].reindex(df.index).ffill()
+
+    vix_elevated = vix > vix.rolling(vix_ma).mean()
+    gold_leading = gold.pct_change(mom) > df["Close"].pct_change(mom)
+    risk_off = vix_elevated & gold_leading
+    return (~risk_off).astype(int)
+
+
 def insider_form4(df, params):
     """Long for hold_days after any insider open-market purchase (SEC Form 4).
     First run per ticker is slow (EDGAR scan), then cached."""
@@ -83,5 +102,7 @@ REGISTRY = {
                  "grid": {"entry_days": [40, 55, 70], "exit_days": [15, 20, 30]}},
     "bollinger_squeeze": {"fn": bollinger_squeeze,
                           "grid": {"bb_period": [15, 20, 25], "squeeze_q": [0.15, 0.2, 0.3]}},
+    "vix_gold_filter": {"fn": vix_gold_filter,
+                        "grid": {"vix_ma_days": [30, 50, 100], "mom_days": [10, 20, 40]}},
     "insider_form4": {"fn": insider_form4, "grid": {"hold_days": [30, 60, 90]}},
 }

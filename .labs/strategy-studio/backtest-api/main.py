@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS runs (
 CREATE TABLE IF NOT EXISTS equity_curve (
     run_id TEXT, ts TIMESTAMPTZ, equity DOUBLE PRECISION
 );
+ALTER TABLE equity_curve ADD COLUMN IF NOT EXISTS series TEXT DEFAULT 'strategy';
 CREATE TABLE IF NOT EXISTS champions (
     symbol TEXT PRIMARY KEY,
     run_id TEXT NOT NULL,
@@ -137,7 +138,7 @@ def strategies():
     }
 
 
-def _persist(run_id, req, m, bench, equity, halted=False):
+def _persist(run_id, req, m, bench, equity, halted=False, extra_curves: dict | None = None):
     with db.begin() as conn:
         conn.execute(text(
             "INSERT INTO runs (run_id, strategy, symbol, params, total_return_pct, "
@@ -149,8 +150,12 @@ def _persist(run_id, req, m, bench, equity, halted=False):
              "br": bench.get("benchmark_return_pct"), "spy": bench.get("spy_return_pct"),
              "dd": m["max_drawdown_pct"], "sh": m["sharpe"], "t": m["trades"],
              "w": m["win_rate"], "rf": getattr(req, "regime_filter", False), "h": halted})
-        rows = [{"r": run_id, "ts": ts.to_pydatetime(), "e": float(v)} for ts, v in equity.items()]
-        conn.execute(text("INSERT INTO equity_curve (run_id, ts, equity) VALUES (:r,:ts,:e)"), rows)
+        curves = {"strategy": equity, **(extra_curves or {})}
+        for series, curve in curves.items():
+            rows = [{"r": run_id, "ts": ts.to_pydatetime(), "e": float(v), "sr": series}
+                    for ts, v in curve.items()]
+            conn.execute(text(
+                "INSERT INTO equity_curve (run_id, ts, equity, series) VALUES (:r,:ts,:e,:sr)"), rows)
 
 
 @app.post("/backtest")
@@ -160,8 +165,10 @@ def backtest(req: BacktestRequest):
     imported = imported_strategies()
     if req.strategy in imported:
         equity, m = run_imported(imported[req.strategy], req.params)
-        bench = engine.benchmarks("SPY", equity.index, str(equity.index[0].date()))
-        _persist(run_id, req, m, bench, equity)
+        w_start = str(equity.index[0].date())
+        bench = engine.benchmarks("SPY", equity.index, w_start)
+        curves = engine.benchmark_curves("SPY", equity.index, w_start)
+        _persist(run_id, req, m, bench, equity, extra_curves=curves)
         return {"run_id": run_id, **m, **bench}
 
     if req.strategy not in REGISTRY:
@@ -183,7 +190,8 @@ def backtest(req: BacktestRequest):
 
     m = engine.metrics(equity, signal, df["Close"])
     bench = engine.benchmarks(req.symbol, df.index, req.start)
-    _persist(run_id, req, m, bench, equity, halted)
+    curves = engine.benchmark_curves(req.symbol, df.index, req.start)
+    _persist(run_id, req, m, bench, equity, halted, extra_curves=curves)
     return {"run_id": run_id, **m, **bench, "halted_by_risk_engine": halted}
 
 
@@ -200,8 +208,9 @@ def walkforward(req: WalkforwardRequest):
 
 @app.get("/montecarlo/{run_id}")
 def montecarlo(run_id: str, n_paths: int = 1000):
-    curve = pd.read_sql(text("SELECT ts, equity FROM equity_curve WHERE run_id=:r ORDER BY ts"),
-                        db, params={"r": run_id})
+    curve = pd.read_sql(text(
+        "SELECT ts, equity FROM equity_curve WHERE run_id=:r AND series='strategy' ORDER BY ts"),
+        db, params={"r": run_id})
     if len(curve) == 0:
         raise HTTPException(404, "run not found")
     equity = curve.set_index("ts")["equity"]

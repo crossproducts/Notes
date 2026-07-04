@@ -70,3 +70,15 @@ def benchmarks(symbol: str, index: pd.DatetimeIndex, start: str) -> dict:
         c = fetch(sym, start)["Close"].reindex(index).ffill().dropna()
         out[name] = round(float(c.iloc[-1] / c.iloc[0] - 1) * 100, 2) if len(c) > 1 else None
     return out
+
+
+def benchmark_curves(symbol: str, index: pd.DatetimeIndex, start: str,
+                     initial: float = 100_000.0) -> dict[str, pd.Series]:
+    """Buy-and-hold equity curves (same starting capital) for overlaying the
+    strategy's curve in Grafana: 'buyhold_<symbol>' and 'buyhold_SPY'."""
+    out = {}
+    for sym in dict.fromkeys([symbol, "SPY"]):  # dedupe, keep order
+        c = fetch(sym, start)["Close"].reindex(index).ffill().dropna()
+        if len(c) > 1:
+            out[f"buyhold_{sym}"] = c / c.iloc[0] * initial
+    return out

@@ -14,6 +14,17 @@
         "query": "SELECT run_id AS __value, strategy || ' ' || symbol || ' ' || run_id AS __text FROM runs ORDER BY created DESC LIMIT 100",
         "refresh": 2,
         "current": {}
+      },
+      {
+        "name": "compare",
+        "label": "Compare runs",
+        "type": "query",
+        "multi": true,
+        "includeAll": false,
+        "datasource": { "type": "postgres", "uid": "studiodb" },
+        "query": "SELECT run_id AS __value, strategy || ' ' || symbol || ' ' || run_id AS __text FROM runs ORDER BY created DESC LIMIT 100",
+        "refresh": 2,
+        "current": {}
       }
     ]
   },
@@ -21,18 +32,52 @@
     {
       "id": 1,
       "type": "timeseries",
-      "title": "Equity curve — $run",
+      "title": "Equity — $run vs buy-and-hold vs SPY",
       "gridPos": { "h": 12, "w": 24, "x": 0, "y": 0 },
       "datasource": { "type": "postgres", "uid": "studiodb" },
       "targets": [
         {
           "refId": "A",
           "format": "time_series",
-          "rawSql": "SELECT ts AS \"time\", equity FROM equity_curve WHERE run_id = '$run' ORDER BY ts"
+          "rawSql": "SELECT ts AS \"time\", equity, series AS metric FROM equity_curve WHERE run_id = '$run' ORDER BY ts"
         }
       ],
       "fieldConfig": {
-        "defaults": { "unit": "currencyUSD", "custom": { "fillOpacity": 12 } },
+        "defaults": { "unit": "currencyUSD", "custom": { "fillOpacity": 6 } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "strategy" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } },
+              { "id": "custom.lineWidth", "value": 2 }
+            ]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "buyhold_.*" },
+            "properties": [
+              { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [6, 4] } },
+              { "id": "custom.fillOpacity", "value": 0 }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Compare runs (rebased to 100)",
+      "description": "Pick runs in the 'Compare runs' dropdown; every curve is normalized to 100 at its start so different capital bases and dates overlay cleanly.",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 12 },
+      "datasource": { "type": "postgres", "uid": "studiodb" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT ec.ts AS \"time\", ec.equity / first_value(ec.equity) OVER (PARTITION BY ec.run_id ORDER BY ec.ts) * 100 AS equity, r.strategy || ' ' || r.symbol || ' (' || ec.run_id || ')' AS metric FROM equity_curve ec JOIN runs r ON r.run_id = ec.run_id WHERE ec.run_id IN (${compare:sqlstring}) AND ec.series = 'strategy' ORDER BY ec.ts"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "custom": { "fillOpacity": 0 } },
         "overrides": []
       }
     },
@@ -40,7 +85,7 @@
       "id": 3,
       "type": "table",
       "title": "Champions (current title-holder per symbol)",
-      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 12 },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 22 },
       "datasource": { "type": "postgres", "uid": "studiodb" },
       "targets": [
         {
@@ -55,7 +100,7 @@
       "id": 2,
       "type": "table",
       "title": "Runs (strategy vs buy-and-hold vs SPY)",
-      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 18 },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 28 },
       "datasource": { "type": "postgres", "uid": "studiodb" },
       "targets": [
         {

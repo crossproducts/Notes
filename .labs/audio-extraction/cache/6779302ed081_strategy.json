@@ -1,0 +1,15 @@
+{
+  "name": "VIX-Gold Risk Filter on NASDAQ",
+  "description": "Claims to beat NASDAQ buy-and-hold using only statistical correlations between VIX and gold — no indicators, no price action. Mimics buy-and-hold in bull markets but 'generates alpha through downturns' by sidestepping them.",
+  "source_video": "https://www.instagram.com/reel/DY4_ihjtdZb/",
+  "instrument": "QQQ (NASDAQ proxy)",
+  "timeframe": "daily",
+  "setup": {
+    "type": "risk_regime_filter",
+    "description": "Hold QQQ by default. Go flat when the regime is risk-off: VIX above its moving average AND gold outperforming QQQ over the momentum lookback (flight-to-safety confirmation from two independent stress signals)."
+  },
+  "entry": { "long": "Risk-on: VIX below its MA, or gold not leading equities" },
+  "exit": { "flat": "Risk-off: VIX elevated AND gold momentum > QQQ momentum" },
+  "params": { "vix_ma_days": 50, "mom_days": 20 },
+  "notes": "Video is specific about inputs (VIX + gold vs NASDAQ) but silent on exact rules; this is a faithful minimal interpretation. Implemented as strategy-studio BUILTIN 'vix_gold_filter' (not a video: cache module) so it gets walk-forward, the risk engine, and benchmark overlays — the right tooling to test a 'beats buy-and-hold' claim. Interpreted in-session by Claude (pipeline ANTHROPIC_API_KEY unset)."
+}

@@ -40,6 +40,14 @@ sources:
     note: interpreted in-session by Claude (pipeline ANTHROPIC_API_KEY unset);
       B-tier Bollinger squeeze added as strategy-studio builtin
 
+  - url: https://www.instagram.com/reel/DY4_ihjtdZb/
+    name: VIX-Gold Risk Filter on NASDAQ
+    status: backtested
+    cache_key: "6779302ed081"
+    tags: [equities, regime-filter, vix, gold]
+    note: implemented as studio builtin vix_gold_filter; claim 'beats buy-and-hold'
+      NOT reproduced (117% default / 155% walk-forward OOS vs QQQ 242%)
+
   # --- add new sources below as `pending` ---
   # - url: https://www.instagram.com/reel/XXXXXXXX/
   #   name: ""
