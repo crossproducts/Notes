@@ -445,6 +445,18 @@ def get_champion(symbol: str):
     return json.loads(df.to_json(orient="records", date_format="iso"))[0]
 
 
+@app.get("/monitor/{symbol}")
+def monitor_symbol(symbol: str, window_days: int = 63):
+    """Is this symbol's champion still behaving like its backtest? Compares a
+    recent trailing window to the strategy's baseline and flags decay."""
+    import monitor
+    champ = get_champion(symbol)
+    params = champ.get("params") or {}
+    if isinstance(params, str):
+        params = json.loads(params)
+    return monitor.monitor(champ["strategy"], symbol, params, window_days)
+
+
 # ---- nightly pipeline: sweep -> promote -> summary (n8n schedules this) ----
 
 class NotifyRequest(BaseModel):

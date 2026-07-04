@@ -16,6 +16,7 @@ Env: STUDIO_SCHEDULER=on|off (default on), STUDIO_SYMBOLS=SPY,QQQ,
      STUDIO_PAPER_SYMBOL=QQQ, HEALTHCHECK_URL (optional)
 """
 
+import json
 import os
 import urllib.request
 
@@ -71,6 +72,28 @@ def job_paper():
     _safe("paper", work)
 
 
+def job_monitor():
+    """Weekly decay check on every champion — SMS ONLY if something degraded,
+    so silence means healthy (no alert fatigue)."""
+    import main, monitor
+    def work():
+        decayed = []
+        for sym in SYMBOLS:
+            try:
+                champ = main.get_champion(sym)
+            except Exception:
+                continue
+            params = champ.get("params") or {}
+            if isinstance(params, str):
+                params = json.loads(params)
+            m = monitor.monitor(champ["strategy"], sym, params)
+            if m.get("verdict") == "DECAY":
+                decayed.append(f"{sym}/{m['strategy']}: {'; '.join(m['flags'])}")
+        if decayed:
+            main.notify(main.NotifyRequest(text=("[studio][DECAY] " + " | ".join(decayed))[:300]))
+    _safe("monitor", work)
+
+
 def start():
     global _scheduler
     if os.getenv("STUDIO_SCHEDULER", "on").lower() not in ("on", "true", "1"):
@@ -82,8 +105,10 @@ def start():
                        id="nightly_champion", name="Nightly champion sweep + SMS")
     _scheduler.add_job(job_paper, CronTrigger(day_of_week="mon-fri", hour=9, minute=35, timezone=tz),
                        id="paper_execute", name=f"Paper trade {PAPER_SYMBOL} champion + SMS")
+    _scheduler.add_job(job_monitor, CronTrigger(day_of_week="fri", hour=17, minute=0, timezone=tz),
+                       id="decay_monitor", name="Weekly champion decay check (SMS on decay only)")
     _scheduler.start()
-    print(f"[scheduler] started: nightly 18:00, paper 09:35 ({tz}); symbols={SYMBOLS}")
+    print(f"[scheduler] started: nightly 18:00, paper 09:35, monitor Fri 17:00 ({tz}); symbols={SYMBOLS}")
     return _scheduler
 
 
