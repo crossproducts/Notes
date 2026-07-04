@@ -153,7 +153,12 @@ app-of-apps). See `infra/README.md`. Local compose remains the daily driver.
 cd .labs/strategy-studio
 cp .env.example .env      # add keys
 docker compose up -d
-# n8n     → http://localhost:5678
+# n8n     → http://localhost:5678  (admin@studio.local / Admin1234 — lab only)
 # grafana → http://localhost:3001  (admin / admin on first login)
 # api     → http://localhost:8001/docs
+
+# Fresh n8n volume? Recreate the owner non-interactively:
+#   curl -X POST http://localhost:5678/rest/owner/setup -H "Content-Type: application/json" \
+#     -d '{"email":"admin@studio.local","firstName":"Studio","lastName":"Admin","password":"Admin1234"}'
+# then: sh workflows-sync.sh import
 ```
