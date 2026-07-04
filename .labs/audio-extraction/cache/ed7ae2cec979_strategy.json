@@ -1,0 +1,19 @@
+{
+  "name": "Triple Momentum (3/6/12-month multi-timeframe)",
+  "description": "Combine 3-, 6-, and 12-month price momentum; go long when enough of the lookbacks agree. Pitched as durable because it's grounded in an 'economic principle' (momentum) rather than a fast-decaying mathematical mispricing.",
+  "source_video": "https://www.instagram.com/reel/DaX3dRKN_Nw/",
+  "instrument": "US index / large-cap equities",
+  "timeframe": "daily",
+  "setup": {
+    "type": "multi_timeframe_momentum",
+    "description": "votes = count of {3mo, 6mo, 12mo} returns that are positive; long when votes >= min_agree (default 2 of 3)."
+  },
+  "implemented_as": "strategy-studio builtin 'triple_momentum' (grid: min_agree 2/3, p3 200/252)",
+  "verdict": {
+    "claim": "based on economic principles -> robust, slow to decay, ran 4 years",
+    "conceptual_take": "FAIR and actually a good insight — his point that economic-principle strategies (momentum, value) decay slower than pure-math arbitrage is sound. Momentum is one of the most durable documented anomalies.",
+    "robustness_test": "Walk-forward SPY: 'params reasonably stable', low param churn (4/13 windows) — genuinely NOT overfit. His durability claim holds.",
+    "performance_test": "But it does NOT beat plain single-lookback momentum: SPY excess-Sharpe 0.70 vs 0.88, QQQ 0.84 vs 0.96; OOS 80% vs 140%; deeper drawdowns. Diversifying across 3/6/12mo dilutes the signal more than it cuts noise on liquid indices.",
+    "honest_take": "Legit, robust, non-overfit strategy — added to the catalog — but currently loses to the momentum champion. Third genuine strategy of the reel batch; a good idea that just isn't the best available."
+  }
+}
