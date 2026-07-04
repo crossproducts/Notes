@@ -3,16 +3,29 @@
 paper=True is HARDCODED. This module can never touch a live account; changing
 that is a deliberate human decision, not a config flip.
 
-Flow (what /paper/execute/{symbol} does):
-  1. Look up the reigning champion for the symbol (champions table)
-  2. Recompute that strategy's signal on the latest daily data
-  3. Reconcile the paper position: signal 1 + flat -> buy (notional % of
-     equity); signal 0 + long -> close; otherwise hold
-  4. Log the action for audit (paper_actions table -> Grafana-able)
+Supports equities AND crypto (both live on Alpaca). Crypto quirks handled here:
+  - symbol format: strategies/yfinance use 'BTC-USD', Alpaca orders use 'BTC/USD'
+  - time-in-force: crypto rejects DAY, needs GTC
+  - crypto trades 24/7, so a paper order actually fills any time (equities queue)
+
+Flow (/paper/execute/{symbol}): look up the champion, recompute today's signal,
+reconcile the paper position (buy notional % / close / hold), log for audit.
 """
 
 import os
-from datetime import datetime
+
+
+def is_crypto(symbol: str) -> bool:
+    s = symbol.upper()
+    return s.endswith("-USD") or "/" in s
+
+
+def alpaca_symbol(symbol: str) -> str:
+    """yfinance 'BTC-USD' -> Alpaca order symbol 'BTC/USD'. Equities unchanged."""
+    if symbol.upper().endswith("-USD"):
+        return symbol.upper().replace("-USD", "/USD")
+    return symbol
+
 
 def get_client():
     from alpaca.trading.client import TradingClient
@@ -35,36 +48,43 @@ def account_summary(client) -> dict:
 
 
 def position_qty(client, symbol: str) -> float:
-    try:
-        p = client.get_open_position(symbol)
-        return float(p.qty)
-    except Exception:
-        return 0.0
+    # Alpaca crypto positions may key on 'BTC/USD' or 'BTCUSD' depending on version
+    for candidate in {alpaca_symbol(symbol), alpaca_symbol(symbol).replace("/", ""), symbol}:
+        try:
+            return float(client.get_open_position(candidate).qty)
+        except Exception:
+            continue
+    return 0.0
 
 
 def pending_orders(client, symbol: str) -> int:
-    """Open (queued/unfilled) orders for the symbol. Critical when the market is
-    closed: a queued BUY means no position YET — without this check the daily
-    run would happily stack duplicate orders."""
+    """Open (unfilled) orders — a queued BUY isn't a position yet; without this
+    check the daily run would stack duplicates while an order sits unfilled."""
     from alpaca.trading.requests import GetOrdersRequest
     from alpaca.trading.enums import QueryOrderStatus
     orders = client.get_orders(GetOrdersRequest(status=QueryOrderStatus.OPEN,
-                                                symbols=[symbol]))
+                                                symbols=[alpaca_symbol(symbol)]))
     return len(orders)
 
 
 def buy_notional(client, symbol: str, dollars: float):
     from alpaca.trading.requests import MarketOrderRequest
     from alpaca.trading.enums import OrderSide, TimeInForce
+    tif = TimeInForce.GTC if is_crypto(symbol) else TimeInForce.DAY  # crypto rejects DAY
     order = client.submit_order(MarketOrderRequest(
-        symbol=symbol,
+        symbol=alpaca_symbol(symbol),
         notional=round(dollars, 2),
         side=OrderSide.BUY,
-        time_in_force=TimeInForce.DAY,
+        time_in_force=tif,
     ))
     return str(order.id)
 
 
 def close_position(client, symbol: str):
-    order = client.close_position(symbol)
-    return str(getattr(order, "id", "closed"))
+    for candidate in [alpaca_symbol(symbol), alpaca_symbol(symbol).replace("/", "")]:
+        try:
+            order = client.close_position(candidate)
+            return str(getattr(order, "id", "closed"))
+        except Exception:
+            continue
+    return "close_failed"
