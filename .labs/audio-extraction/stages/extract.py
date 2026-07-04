@@ -82,7 +82,12 @@ def download_audio_via_browser(url: str, cache_key: str) -> str:
 
     print("  Launching headless browser...")
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        # no-user-gesture: allow UNMUTED autoplay — a muted DASH player may
+        # never request the audio track at all, leaving only video URLs to sniff
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--autoplay-policy=no-user-gesture-required"],
+        )
         context = browser.new_context(
             user_agent=(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -109,7 +114,15 @@ def download_audio_via_browser(url: str, cache_key: str) -> str:
             )
         except Exception:
             pass
-        page.wait_for_timeout(4_000)
+        page.wait_for_timeout(2_000)
+        # Unmute once playing — muted playback can skip audio-track requests
+        try:
+            page.evaluate(
+                "document.querySelectorAll('video').forEach(v => { v.muted = false; v.volume = 1.0; })"
+            )
+        except Exception:
+            pass
+        page.wait_for_timeout(5_000)
 
         # If the network sniff missed it, fall back to the <video src>.
         if not media_urls:
