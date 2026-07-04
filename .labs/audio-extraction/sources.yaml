@@ -57,6 +57,17 @@ sources:
       signals/entries/exits to backtest; hold-to-maturity ladder outside the
       studio's scope. Claims reviewed in session (see transcript).
 
+  - url: https://www.instagram.com/reel/DZhTSpeO0SB/
+    name: "'How I algo trade' funnel (OxfordStrat / fxstreamer)"
+    status: skipped
+    cache_key: 1bc3a41451db
+    tags: [marketing-funnel, no-strategy]
+    note: no tradeable strategy — a promo for a paid community + fxstreamer
+      no-code MT5 builder + "comment system" lead magnet. Only concrete rule
+      ("indicator 5 above indicator 20") is a generic MA cross = existing
+      trend_ma. Red flag: literally advocates "over-optimizing" — the exact
+      curve-fitting our walk-forward gate exists to reject.
+
   # --- add new sources below as `pending` ---
   # - url: https://www.instagram.com/reel/XXXXXXXX/
   #   name: ""
