@@ -16,3 +16,6 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+
+# Logs (e.g. claude-run.log from launch/retry loops)
+*.log
