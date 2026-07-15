@@ -6,6 +6,18 @@ This file is automatically read by Claude Code at the start of every session. It
 
 > Describe your project here: what it does, its architecture, key technologies.
 
+## Local Tools (`.labs/`)
+
+Standalone CLI projects, each with its own README, `.env`, and a Claude **skill**
+that loads on-demand when a task matches (see `.claude/skills/`):
+
+- **`.labs/email-sender/`** — sends real email via Gmail SMTP, two-way SMS through
+  carrier gateways, and a whitelist-only local-model autoresponder.
+  Skill: `email-sender`.
+- **`.labs/audio-extraction/`** — reel/video → strategy → backtest pipeline
+  (transcribe → interpret → generate → data → backtest → report).
+  Skill: `reel-backtest`.
+
 ## Repository Structure
 
 ```
