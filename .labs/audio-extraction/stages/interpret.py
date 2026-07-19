@@ -1,5 +1,6 @@
 """Stage 2: Interpret — use Claude API to parse transcript into a strategy config."""
 
+import base64
 import json
 import os
 from pathlib import Path
@@ -54,8 +55,14 @@ If certain fields are not mentioned in the transcript, use reasonable defaults a
 If the strategy is unclear or not a trading strategy, set name to "UNCLEAR" and explain in notes."""
 
 
-def run(transcript: str, caption: str, cache_key: str) -> dict:
-    """Parse transcript into a strategy config using Claude API."""
+def run(transcript: str, caption: str, cache_key: str, frames: list[str] | None = None) -> dict:
+    """Parse transcript into a strategy config using Claude API.
+
+    frames: optional list of JPEG file paths captured from the video. When
+    provided, the images are sent alongside the transcript so Claude can read
+    on-screen tickers, chart settings, and indicator values that the speaker
+    may not have mentioned aloud.
+    """
     import anthropic
 
     config_path = CACHE_DIR / f"{cache_key}_strategy.json"
@@ -65,25 +72,54 @@ def run(transcript: str, caption: str, cache_key: str) -> dict:
         return json.loads(config_path.read_text(encoding="utf-8"))
 
     print("\n[STAGE 2: INTERPRET]")
-    print("  Sending transcript to Claude for strategy extraction...")
+
+    frames = frames or []
+    frame_paths = [p for p in frames if Path(p).exists()][:10]
+
+    if frame_paths:
+        print(f"  Sending transcript + {len(frame_paths)} video frame(s) to Claude for strategy extraction...")
+    else:
+        print("  Sending transcript to Claude for strategy extraction...")
 
     client = anthropic.Anthropic()
 
-    user_message = f"""Here is the transcript from a trading strategy video:
+    text_block = {
+        "type": "text",
+        "text": (
+            f"Here is the transcript from a trading strategy video:\n\n"
+            f"TRANSCRIPT:\n{transcript}\n\n"
+            f"POST CAPTION:\n{caption}\n\n"
+            + (
+                f"The video frames below are attached. Use any on-screen tickers, "
+                f"chart patterns, indicator settings, and exact numbers visible in "
+                f"the frames to fill or override values in the config — the speaker "
+                f"often omits exact parameters that are clearly shown on screen.\n\n"
+                if frame_paths else ""
+            )
+            + "Extract the trading strategy into the structured JSON config."
+        ),
+    }
 
-TRANSCRIPT:
-{transcript}
+    content: list[dict] = [text_block]
 
-POST CAPTION:
-{caption}
-
-Extract the trading strategy into the structured JSON config."""
+    for frame_path in frame_paths:
+        image_data = base64.standard_b64encode(
+            Path(frame_path).read_bytes()
+        ).decode("utf-8")
+        content.append({
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/jpeg",
+                "data": image_data,
+            },
+        })
 
     response = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-6",
         max_tokens=2000,
         system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_message}],
+        messages=[{"role": "user", "content": content}],
     )
 
     response_text = response.content[0].text.strip()

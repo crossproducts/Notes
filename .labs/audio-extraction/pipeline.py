@@ -57,6 +57,7 @@ def run_pipeline(url: str, whisper_model: str = "base"):
         extraction["transcript"],
         extraction["caption"],
         extraction["cache_key"],
+        frames=extraction.get("frames"),
     )
 
     # Stage 3: Generate backtest code

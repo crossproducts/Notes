@@ -17,51 +17,88 @@ def url_to_cache_key(url: str) -> str:
     return hashlib.md5(clean.encode()).hexdigest()[:12]
 
 
-def download_audio(url: str, cache_key: str) -> str:
-    """Download video and extract audio as mp3. Returns path to audio file.
+def download_video(url: str, cache_key: str) -> tuple[str, str]:
+    """Download full video as mp4 and derive mp3 audio from it.
 
-    Tries yt-dlp first; falls back to a headless-browser capture for sources
-    yt-dlp can't crack (e.g. login-walled Instagram reels).
+    Returns (audio_path, video_path). video_path may be empty string if the
+    video download failed or was skipped (audio-only fallback).
+
+    Cache logic:
+    - If both mp3 and mp4 exist: cache hit, skip all downloads.
+    - If only mp3 exists (old cache entry): audio cache hit, frames will be
+      empty because there is no video file.
+    - If neither exists: download full video, then derive mp3 via ffmpeg.
     """
     audio_path = CACHE_DIR / f"{cache_key}.mp3"
+    video_path = CACHE_DIR / f"{cache_key}.mp4"
+
+    if audio_path.exists() and video_path.exists():
+        print(f"  [cache hit] Audio + video already downloaded: {audio_path.name}")
+        return str(audio_path), str(video_path)
 
     if audio_path.exists():
-        print(f"  [cache hit] Audio already downloaded: {audio_path.name}")
-        return str(audio_path)
+        # Old cache entry — only audio present; frames will be empty.
+        print(f"  [cache hit] Audio already downloaded (no video cache): {audio_path.name}")
+        print("  Warning: no video file found for this cache entry; frame capture skipped.")
+        return str(audio_path), ""
 
-    print("  Downloading video and extracting audio...")
+    print("  Downloading full video...")
     cmd = [
         "yt-dlp",
-        "--extract-audio",
-        "--audio-format", "mp3",
-        "--audio-quality", "0",
-        "-o", str(audio_path),
+        "-f", "mp4/bestvideo*+bestaudio/best",
+        "--remux-video", "mp4",
+        "--merge-output-format", "mp4",
+        "-o", str(video_path),
         url,
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"  yt-dlp failed ({result.stderr.strip().splitlines()[-1] if result.stderr.strip() else 'no stderr'})")
-        print("  Falling back to headless-browser capture...")
-        return download_audio_via_browser(url, cache_key)
 
-    # yt-dlp may produce a slightly different filename
-    if not audio_path.exists():
-        for f in CACHE_DIR.glob(f"{cache_key}*"):
-            if f.suffix in (".mp3", ".m4a", ".wav"):
-                audio_path = f
-                break
+    if result.returncode != 0 or not video_path.exists():
+        print(
+            f"  yt-dlp video download failed "
+            f"({result.stderr.strip().splitlines()[-1] if result.stderr.strip() else 'no stderr'})"
+        )
+        # yt-dlp may leave a partial file; a truncated mp4 must not become a
+        # permanent cache hit
+        video_path.unlink(missing_ok=True)
+        print("  Falling back to headless-browser capture (audio-only)...")
+        audio = download_audio_via_browser(url, cache_key, video_path=str(video_path))
+        return audio, str(video_path) if video_path.exists() else ""
 
-    if not audio_path.exists():
-        print("  yt-dlp produced no audio file; falling back to headless-browser capture...")
-        return download_audio_via_browser(url, cache_key)
+    print(f"  Video saved: {video_path.name}")
+
+    # Derive mp3 from the downloaded video via ffmpeg.
+    print("  Extracting audio from video...")
+    ffmpeg_cmd = [
+        "ffmpeg", "-y",
+        "-i", str(video_path),
+        "-vn",
+        "-acodec", "libmp3lame",
+        "-q:a", "0",
+        str(audio_path),
+    ]
+    r2 = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
+    if r2.returncode != 0 or not audio_path.exists():
+        print(f"  ffmpeg audio extraction failed: {r2.stderr[-300:]}")
+        raise RuntimeError("ffmpeg could not extract audio from downloaded video")
 
     print(f"  Audio saved: {audio_path.name}")
-    return str(audio_path)
+    return str(audio_path), str(video_path)
 
 
-def download_audio_via_browser(url: str, cache_key: str) -> str:
+# Keep the old name as an alias so any external callers won't break.
+def download_audio(url: str, cache_key: str) -> str:
+    """Backwards-compatible wrapper — returns only the audio path."""
+    audio_path, _ = download_video(url, cache_key)
+    return audio_path
+
+
+def download_audio_via_browser(url: str, cache_key: str, video_path: str = "") -> str:
     """Fallback: drive a headless browser to discover the media URL, then let
     ffmpeg fetch it and extract audio. Used when yt-dlp can't handle the source.
+
+    If video_path is given and an .mp4 candidate URL is discovered, attempts
+    to also save the full video stream for later frame extraction.
 
     Requires:  pip install playwright  &&  playwright install chromium
     """
@@ -155,12 +192,15 @@ def download_audio_via_browser(url: str, cache_key: str) -> str:
         return 2
 
     seen, candidates = set(), []
+    mp4_candidates = []
     for u, ctype in sorted(media_urls, key=rank):
         # Strip byte-range fragment params so ffmpeg gets the WHOLE file.
         clean = _re.sub(r"[&?](bytestart|byteend)=\d+", "", u)
         if clean not in seen:
             seen.add(clean)
             candidates.append(clean)
+            if clean.split("?")[0].lower().endswith(".mp4"):
+                mp4_candidates.append(clean)
 
     last_err = ""
     for media_url in candidates[:6]:
@@ -179,10 +219,193 @@ def download_audio_via_browser(url: str, cache_key: str) -> str:
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode == 0 and audio_path.exists():
             print(f"  Audio saved: {audio_path.name}")
+
+            # Opportunistically save video for frame extraction.
+            if video_path and mp4_candidates and not Path(video_path).exists():
+                _try_save_video(mp4_candidates[0], referer, video_path)
+
             return str(audio_path)
         last_err = result.stderr[-300:]
 
     raise RuntimeError(f"ffmpeg failed on all {len(candidates[:6])} captured URLs: {last_err}")
+
+
+def _try_save_video(media_url: str, referer: str, video_path: str) -> None:
+    """Best-effort: copy a video stream to disk for frame extraction.
+
+    Never raises — failure is silently swallowed so the audio flow continues.
+    """
+    print(f"  Attempting to save video stream for frame capture: {media_url.split('?')[0]}")
+    cmd = [
+        "ffmpeg", "-y",
+        "-headers", f"Referer: {referer}\r\n",
+        "-user_agent",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        "-i", media_url,
+        "-c", "copy",
+        video_path,
+    ]
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        if r.returncode == 0 and Path(video_path).exists():
+            print(f"  Video stream saved: {Path(video_path).name}")
+        else:
+            # ffmpeg leaves a partial file on failure; remove it or the cache
+            # treats the truncated mp4 as valid forever
+            Path(video_path).unlink(missing_ok=True)
+            print("  Warning: could not save video stream for frame capture (continuing audio-only)")
+    except Exception as exc:
+        Path(video_path).unlink(missing_ok=True)
+        print(f"  Warning: video save attempt raised {exc} (continuing audio-only)")
+
+
+def _get_video_duration(video_path: str) -> float:
+    """Use ffprobe to get video duration in seconds. Returns 0.0 on failure."""
+    cmd = [
+        "ffprobe",
+        "-v", "error",
+        "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+        video_path,
+    ]
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        if r.returncode == 0 and r.stdout.strip():
+            return float(r.stdout.strip())
+    except Exception:
+        pass
+    return 0.0
+
+
+def extract_frames(video_path: str, cache_key: str, max_frames: int = 10) -> list[str]:
+    """Extract representative frames from a video as JPEGs for vision analysis.
+
+    Strategy:
+    1. Try scene-change detection (threshold 0.3). If >= 3 frames are found,
+       keep an evenly-spaced subset capped at max_frames.
+    2. If scene detection yields fewer than 3 frames (static camera / talking
+       head), fall back to fixed-interval sampling using ffprobe for duration.
+
+    All frames are downscaled to max 1024 px wide. Results are cached in
+    cache/{cache_key}_frames/. Returns list of file paths (possibly empty).
+    """
+    if not video_path or not Path(video_path).exists():
+        return []
+
+    frames_dir = CACHE_DIR / f"{cache_key}_frames"
+
+    # Cache: reuse if non-empty.
+    if frames_dir.exists() and any(frames_dir.glob("*.jpg")):
+        existing = sorted(frames_dir.glob("*.jpg"))
+        print(f"  [cache hit] {len(existing)} frames already extracted: {frames_dir.name}/")
+        return [str(f) for f in existing]
+
+    frames_dir.mkdir(parents=True, exist_ok=True)
+    scene_dir = frames_dir / "_scene_tmp"
+    scene_dir.mkdir(parents=True, exist_ok=True)
+
+    print("  Extracting frames via scene-change detection...")
+    scene_pattern = str(scene_dir / "frame_%04d.jpg")
+    cmd_scene = [
+        "ffmpeg", "-y",
+        "-i", video_path,
+        "-vf", "select='gt(scene,0.3)',scale='min(1024,iw)':-2",
+        "-vsync", "vfr",
+        "-q:v", "2",
+        scene_pattern,
+    ]
+    subprocess.run(cmd_scene, capture_output=True, text=True)
+
+    scene_frames = sorted(scene_dir.glob("*.jpg"))
+
+    if len(scene_frames) >= 3:
+        # Keep evenly spaced subset, capped at max_frames.
+        selected = _evenly_spaced(scene_frames, max_frames)
+        print(f"  Scene detection found {len(scene_frames)} frames; keeping {len(selected)}")
+    else:
+        print(
+            f"  Scene detection found only {len(scene_frames)} frame(s); "
+            "falling back to fixed-interval sampling..."
+        )
+        selected = _fixed_interval_frames(video_path, frames_dir, cache_key, max_frames)
+        # Clean up sparse scene frames — fixed interval results go to frames_dir directly.
+        for f in scene_frames:
+            try:
+                f.unlink()
+            except Exception:
+                pass
+        try:
+            scene_dir.rmdir()
+        except Exception:
+            pass
+
+        return selected
+
+    # Move selected frames to frames_dir with clean names.
+    final_paths = []
+    for i, src in enumerate(selected):
+        dest = frames_dir / f"frame_{i:04d}.jpg"
+        src.rename(dest)
+        final_paths.append(str(dest))
+
+    # Remove leftover unselected scene frames.
+    for f in scene_dir.glob("*.jpg"):
+        try:
+            f.unlink()
+        except Exception:
+            pass
+    try:
+        scene_dir.rmdir()
+    except Exception:
+        pass
+
+    print(f"  Frames saved to {frames_dir.name}/ ({len(final_paths)} files)")
+    return final_paths
+
+
+def _evenly_spaced(items: list, n: int) -> list:
+    """Return up to n evenly-spaced items from a list."""
+    if len(items) <= n:
+        return list(items)
+    step = (len(items) - 1) / (n - 1)
+    return [items[round(i * step)] for i in range(n)]
+
+
+def _fixed_interval_frames(
+    video_path: str, frames_dir: Path, cache_key: str, max_frames: int
+) -> list[str]:
+    """Sample max_frames evenly-spaced frames from the video using timestamps."""
+    duration = _get_video_duration(video_path)
+    if duration <= 0:
+        print("  Warning: could not determine video duration; skipping frame extraction")
+        return []
+
+    # Generate timestamps evenly spaced across the video.
+    if max_frames == 1:
+        timestamps = [duration / 2]
+    else:
+        step = duration / (max_frames + 1)
+        timestamps = [step * (i + 1) for i in range(max_frames)]
+
+    print(f"  Sampling {len(timestamps)} frames from {duration:.1f}s video...")
+    paths = []
+    for i, ts in enumerate(timestamps):
+        out_path = frames_dir / f"frame_{i:04d}.jpg"
+        cmd = [
+            "ffmpeg", "-y",
+            "-ss", f"{ts:.3f}",
+            "-i", video_path,
+            "-vframes", "1",
+            "-vf", "scale='min(1024,iw)':-2",
+            "-q:v", "2",
+            str(out_path),
+        ]
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        if r.returncode == 0 and out_path.exists():
+            paths.append(str(out_path))
+
+    print(f"  Fixed-interval frames saved: {len(paths)}")
+    return paths
 
 
 def transcribe(audio_path: str, cache_key: str, model_size: str = "base") -> str:
@@ -237,8 +460,15 @@ def run(url: str, whisper_model: str = "base") -> dict:
     if caption:
         print(f"  Caption: {caption[:80]}...")
 
-    audio_path = download_audio(url, cache_key)
+    audio_path, video_path = download_video(url, cache_key)
     transcript = transcribe(audio_path, cache_key, whisper_model)
+
+    # Extract frames (empty list if no video file available).
+    frames = extract_frames(video_path, cache_key) if video_path else []
+    if frames:
+        print(f"  Captured {len(frames)} frame(s) for vision analysis")
+    else:
+        print("  No frames captured (audio-only mode)")
 
     return {
         "cache_key": cache_key,
@@ -246,4 +476,6 @@ def run(url: str, whisper_model: str = "base") -> dict:
         "caption": caption,
         "transcript": transcript,
         "audio_path": audio_path,
+        "video_path": video_path,
+        "frames": frames,
     }
