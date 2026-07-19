@@ -106,6 +106,8 @@ and notifications.
 | Champions Grafana panel | current title-holder per symbol on the provisioned dashboard | ✅ |
 | CI → ECR | `.github/workflows/backtest-api-ecr.yml` (manual dispatch until AWS is stood up; OIDC, no long-lived keys) | ✅ |
 | Paper trading (Phase 6) | `/paper/account`, `/paper/positions`, `/paper/execute/{symbol}` (reconciles the **champion's live signal** into the Alpaca paper account; `paper=True` hardcoded), `/paper/log` audit trail; pending-order guard prevents duplicate entries; n8n `Paper Trade — QQQ champion daily` cron (9:35 market days) + SMS | ✅ |
+| Video queue in the UI | paste a reel/TikTok/YouTube URL at `/ui` → Postgres queue → host-side `.labs/audio-extraction/studio_worker.py` runs the pipeline → strategy appears as `video:<cache_key>` | ✅ |
+| Diversifying strategies | `rotation_top_k` (cross-sectional dual momentum over an ETF universe) + `whale_13f` (13F copycat, default Berkshire; signals on FILING dates so the 45-day lag is honest) | ✅ |
 | Sentiment strategy | needs a sentiment data feed — still roadmap | ⬜ |
 
 Grafana is auto-provisioned: Postgres datasource + a "Strategy Studio" dashboard

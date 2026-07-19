@@ -26,7 +26,7 @@ from sqlalchemy import create_engine, text
 
 import analysis
 import engine
-from strategies import REGISTRY
+from strategies import REGISTRY, SLOW_STRATEGIES
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://studio:studio@localhost:5433/backtests")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://host.docker.internal:11434")
@@ -66,6 +66,14 @@ CREATE TABLE IF NOT EXISTS champions (
 CREATE TABLE IF NOT EXISTS risk_state (
     key TEXT PRIMARY KEY,
     value TEXT,
+    updated TIMESTAMPTZ DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS video_queue (
+    id TEXT PRIMARY KEY,
+    url TEXT NOT NULL,
+    status TEXT DEFAULT 'pending',
+    note TEXT, cache_key TEXT,
+    created TIMESTAMPTZ DEFAULT now(),
     updated TIMESTAMPTZ DEFAULT now()
 );
 """
@@ -853,8 +861,8 @@ def nightly(symbol: str, start: str = "2020-01-01", metric: str = "sharpe"):
     slow EDGAR ones), auto-promote, return an SMS-ready summary."""
     results = []
     for name in REGISTRY:
-        if name == "insider_form4":
-            continue  # EDGAR scan too slow/rate-limited for a sweep
+        if name in SLOW_STRATEGIES:
+            continue  # EDGAR scans too slow/rate-limited for a sweep
         try:
             r = backtest(BacktestRequest(strategy=name, symbol=symbol, start=start))
             results.append({"strategy": name, "run_id": r["run_id"],
@@ -869,3 +877,70 @@ def nightly(symbol: str, start: str = "2020-01-01", metric: str = "sharpe"):
                f"ret={champ['total_return_pct']}% dd={champ['max_drawdown_pct']}% "
                f"(SPY {champ['spy_return_pct']}%)")
     return {"symbol": symbol, "swept": results, "promotion": promo, "summary": summary}
+
+
+# ---- video queue: paste a reel/TikTok/YouTube URL in the UI; a HOST-side
+# worker (.labs/audio-extraction/studio_worker.py) claims it, runs the video
+# pipeline, and reports back. Finished strategies appear as video:<cache_key>
+# via the read-only /app/imported mount. ----
+
+class VideoRequest(BaseModel):
+    url: str
+
+
+class VideoComplete(BaseModel):
+    status: str            # done | error
+    cache_key: str = ""
+    note: str = ""
+
+
+@app.post("/videos")
+def video_queue_add(req: VideoRequest):
+    url = req.url.strip()
+    if not url.lower().startswith(("http://", "https://")) or len(url) > 2000:
+        raise HTTPException(400, "url must start with http(s):// and be under 2000 chars")
+    dup = pd.read_sql(text(
+        "SELECT id FROM video_queue WHERE url=:u AND status IN ('pending','processing')"),
+        db, params={"u": url})
+    if len(dup) > 0:
+        raise HTTPException(409, f"already queued (id {dup.iloc[0]['id']})")
+    vid = uuid.uuid4().hex[:12]
+    with db.begin() as conn:
+        conn.execute(text("INSERT INTO video_queue (id, url) VALUES (:i,:u)"),
+                     {"i": vid, "u": url})
+    return {"id": vid, "url": url, "status": "pending"}
+
+
+@app.get("/videos")
+def video_queue_list(limit: int = 50):
+    df = pd.read_sql(text("SELECT * FROM video_queue ORDER BY created DESC LIMIT :n"),
+                     db, params={"n": limit})
+    return json.loads(df.to_json(orient="records", date_format="iso"))
+
+
+@app.post("/videos/claim")
+def video_queue_claim():
+    """Atomically claim the oldest pending URL (SKIP LOCKED: two pollers can't
+    grab the same row). The host worker polls this."""
+    with db.begin() as conn:
+        row = conn.execute(text(
+            "UPDATE video_queue SET status='processing', updated=now() "
+            "WHERE id = (SELECT id FROM video_queue WHERE status='pending' "
+            "ORDER BY created LIMIT 1 FOR UPDATE SKIP LOCKED) RETURNING id, url")).fetchone()
+    if row is None:
+        return {"empty": True}
+    return {"id": row[0], "url": row[1]}
+
+
+@app.post("/videos/{video_id}/complete")
+def video_queue_complete(video_id: str, req: VideoComplete):
+    if req.status not in ("done", "error"):
+        raise HTTPException(400, "status must be done|error")
+    with db.begin() as conn:
+        r = conn.execute(text(
+            "UPDATE video_queue SET status=:s, cache_key=:c, note=:n, updated=now() "
+            "WHERE id=:i"),
+            {"s": req.status, "c": req.cache_key, "n": req.note[:500], "i": video_id})
+    if r.rowcount == 0:
+        raise HTTPException(404, "unknown video id")
+    return {"id": video_id, "status": req.status, "cache_key": req.cache_key}

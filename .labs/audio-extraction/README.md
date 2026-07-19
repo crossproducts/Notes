@@ -38,6 +38,10 @@ python run_queue.py            # process all pending sources
 python run_queue.py --dry-run  # preview without running
 ```
 
+**Studio-driven.** `python studio_worker.py` polls the Strategy Studio API for
+URLs pasted into its `/ui` "Analyze Video" box, runs the pipeline on each, and
+reports back; finished strategies show up in the studio as `video:<cache_key>`.
+
 On success each source gets a `cache_key` and flips to `backtested`.
 
 **One-off:**

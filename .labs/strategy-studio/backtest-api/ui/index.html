@@ -397,6 +397,29 @@
     </div>
   </div>
 
+  <!-- ANALYZE VIDEO -->
+  <div class="card">
+    <div class="card-header"><h2>Analyze Video</h2></div>
+    <div class="card-body">
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <input type="text" id="vid-url" placeholder="Paste a reel / TikTok / YouTube strategy-video URL"
+               style="flex:1; min-width:320px">
+        <button onclick="queueVideo()">Queue for analysis</button>
+      </div>
+      <div style="font-size:.72rem; color:var(--muted); margin-top:6px">
+        Processing runs on the host: <code>python .labs/audio-extraction/studio_worker.py</code>
+        &mdash; finished strategies appear in the strategy dropdown as <code>video:&lt;cache_key&gt;</code>.
+      </div>
+      <div id="vid-banner"></div>
+      <table style="margin-top:12px">
+        <thead><tr><th>Queued</th><th>URL</th><th>Status</th><th>Result</th></tr></thead>
+        <tbody id="vid-body">
+          <tr><td colspan="4" style="color:var(--muted)">No videos queued yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- RISK PANEL -->
   <div class="card">
     <div class="card-header">
@@ -1108,12 +1131,70 @@ async function executePortfolio() {
   }
 }
 
+// ---- analyze-video queue ----
+
+function videoBadge(s) {
+  var cls = {pending: 'hold', processing: 'champ', done: 'buy', error: 'sell'}[s] || 'hold';
+  return '<span class="badge ' + cls + '">' + escHtml((s || '?').toUpperCase()) + '</span>';
+}
+
+async function queueVideo() {
+  var input = document.getElementById('vid-url');
+  var banner = document.getElementById('vid-banner');
+  var url = input.value.trim();
+  if (!url) {
+    banner.innerHTML = '<div class="banner error">Paste a video URL first.</div>';
+    return;
+  }
+  try {
+    var r = await apiFetch('/videos', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url: url}),
+    });
+    banner.innerHTML = '<div class="banner success">Queued (' + escHtml(r.id) +
+      ') &mdash; make sure the host worker is running.</div>';
+    input.value = '';
+  } catch (e) {
+    var msg = e.message.indexOf('409') !== -1
+      ? 'That URL is already queued.'
+      : 'Queue failed: ' + escHtml(e.message);
+    banner.innerHTML = '<div class="banner error">' + msg + '</div>';
+  }
+  loadVideos();
+}
+
+async function loadVideos() {
+  var body = document.getElementById('vid-body');
+  try {
+    var rows = await apiFetch('/videos?limit=25');
+    if (!rows.length) {
+      body.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">No videos queued yet.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(function (r) {
+      var short = r.url.length > 60 ? r.url.slice(0, 57) + '…' : r.url;
+      var result = (r.status === 'done' && r.cache_key) ? 'video:' + escHtml(r.cache_key)
+                 : (r.status === 'error') ? escHtml(r.note || 'failed')
+                 : '&mdash;';
+      return '<tr><td>' + fmtTs(r.created) + '</td>' +
+             '<td title="' + escHtml(r.url) + '">' + escHtml(short) + '</td>' +
+             '<td>' + videoBadge(r.status) + '</td>' +
+             '<td>' + result + '</td></tr>';
+    }).join('');
+  } catch (e) {
+    body.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">Queue unavailable: ' +
+      escHtml(e.message) + '</td></tr>';
+  }
+}
+
 // ---- page init + polling ----
 
 function refreshAll() {
   loadHeader();
   loadPositions();
   loadLog();
+  loadVideos();
 }
 
 async function init() {
@@ -1124,6 +1205,7 @@ async function init() {
     loadLog(),
     loadStrategies(),
     loadRisk(),
+    loadVideos(),
   ]);
 }
 
