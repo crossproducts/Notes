@@ -28,3 +28,6 @@ desktop.ini
 # Python bytecode
 __pycache__/
 *.pyc
+
+# EDGAR response cache (runtime artifact)
+.edgar_cache/

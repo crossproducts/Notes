@@ -141,6 +141,67 @@ def vix_gold_filter(df, params):
     return (~risk_off).astype(int)
 
 
+def rotation_top_k(df, params):
+    """Cross-sectional rotation (relative strength): long THIS symbol only
+    while its trailing return ranks in the top-k of a diversified universe,
+    with an absolute filter requiring the return also be positive (Antonacci
+    dual momentum). A different MECHANISM than timing one chart — cross-asset
+    ranking — so its curve decorrelates from the single-symbol momentum family
+    that dominates this registry."""
+    import engine
+    universe = [s.strip().upper() for s in
+                str(params.get("universe", "SPY,QQQ,IWM,EFA,EEM,GLD,TLT")).split(",")
+                if s.strip()]
+    sym = str(params.get("_symbol", "SPY")).upper()
+    if sym not in universe:
+        universe.insert(0, sym)
+    lb = int(params.get("lookback_days", 90))
+    k = int(params.get("top_k", 3))
+    abs_filter = bool(params.get("abs_filter", True))
+
+    early = (df.index[0] - pd.Timedelta(days=400)).strftime("%Y-%m-%d")
+    closes = {}
+    for s in universe:
+        try:
+            c = engine.fetch(s, early)["Close"].reindex(df.index).ffill()
+            if c.notna().sum() > lb:
+                closes[s] = c
+        except Exception:
+            continue  # yfinance miss — drop from the universe, don't crash
+    if sym not in closes:
+        return pd.Series(0, index=df.index)
+
+    rets = pd.DataFrame(closes).pct_change(lb)
+    ranks = rets.rank(axis=1, ascending=False)
+    sig = ranks[sym] <= k
+    if abs_filter:
+        sig &= rets[sym] > 0
+    return sig.fillna(False).astype(int)
+
+
+def whale_13f(df, params):
+    """13F whale copycat: long while the chosen fund's most recent 13F-HR
+    lists the symbol among its holdings; flat once a filing drops it. Signals
+    change on FILING dates (not quarter-end), so the legal ~45-day disclosure
+    lag is modeled honestly — the backtest never knows more than the market
+    did. Default whale: Berkshire Hathaway. First run per fund/symbol is slow
+    (EDGAR scan), then disk-cached."""
+    symbol = params.get("_symbol", "AAPL")
+    cik = params.get("fund_cik", 1067983)  # Berkshire Hathaway
+    try:
+        periods = edgar.thirteenf_holding_periods(cik, symbol,
+                                                  int(params.get("max_filings", 12)))
+    except Exception as e:
+        print(f"[whale_13f] WARNING: EDGAR unavailable ({e}) — staying flat")
+        periods = []
+    state = pd.Series(np.nan, index=df.index)
+    for fdate, held in periods:  # ascending; later filings overwrite same-bar earlier ones
+        pos = df.index.searchsorted(pd.Timestamp(fdate))
+        if pos < len(df.index):
+            state.iloc[pos] = 1.0 if held else 0.0
+    return state.ffill().fillna(0).astype(int)
+
+
 def insider_form4(df, params):
     """Long for hold_days after any insider open-market purchase (SEC Form 4).
     First run per ticker is slow (EDGAR scan), then cached."""
@@ -153,6 +214,9 @@ def insider_form4(df, params):
         sig[(df.index >= ts) & (df.index <= ts + pd.Timedelta(days=hold))] = 1
     return sig
 
+
+# EDGAR-scanning strategies: too slow / rate-limited for nightly sweeps
+SLOW_STRATEGIES = {"insider_form4", "whale_13f"}
 
 REGISTRY = {
     "momentum": {"fn": momentum, "grid": {"lookback_days": [60, 90, 120, 180]}},
@@ -175,4 +239,7 @@ REGISTRY = {
     "momentum_12_1": {"fn": momentum_12_1,
                       "grid": {"long_days": [200, 252], "skip_days": [10, 21]}},
     "insider_form4": {"fn": insider_form4, "grid": {"hold_days": [30, 60, 90]}},
+    "rotation_top_k": {"fn": rotation_top_k,
+                       "grid": {"lookback_days": [60, 90, 120], "top_k": [2, 3]}},
+    "whale_13f": {"fn": whale_13f, "grid": {"max_filings": [8, 12]}},
 }
