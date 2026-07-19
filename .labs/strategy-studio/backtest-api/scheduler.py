@@ -66,9 +66,15 @@ def job_paper():
     import main
     def work():
         r = main.paper_execute(PAPER_SYMBOL)
-        main.notify(main.NotifyRequest(
-            text=f"[paper] {r['symbol']} {r['action']} ({r['champion_strategy']}, "
-                 f"signal {r['signal_today']}) equity ${r['account_equity']}"))
+        # notify on blocked/kill outcomes so they are never silent
+        if r.get("blocked"):
+            main.notify(main.NotifyRequest(
+                text=f"[paper][BLOCKED] {r['symbol']} {r['action']}: {r['detail']} "
+                     f"({r['champion_strategy']}, signal {r['signal_today']})"))
+        else:
+            main.notify(main.NotifyRequest(
+                text=f"[paper] {r['symbol']} {r['action']} ({r['champion_strategy']}, "
+                     f"signal {r['signal_today']}) equity ${r['account_equity']}"))
     _safe("paper", work)
 
 

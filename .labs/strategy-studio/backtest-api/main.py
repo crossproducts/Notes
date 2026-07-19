@@ -19,6 +19,8 @@ from pathlib import Path
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from sqlalchemy import create_engine, text
 
@@ -33,6 +35,8 @@ IMPORTED_DIR = Path(os.getenv("IMPORTED_DIR", "/app/imported"))
 
 db = create_engine(DATABASE_URL)
 app = FastAPI(title="Strategy Studio Backtest API")
+
+UI_DIR = Path(__file__).parent / "ui"
 
 DDL = """
 CREATE TABLE IF NOT EXISTS runs (
@@ -59,6 +63,11 @@ CREATE TABLE IF NOT EXISTS champions (
     promoted TIMESTAMPTZ DEFAULT now(),
     note TEXT
 );
+CREATE TABLE IF NOT EXISTS risk_state (
+    key TEXT PRIMARY KEY,
+    value TEXT,
+    updated TIMESTAMPTZ DEFAULT now()
+);
 """
 
 
@@ -70,6 +79,21 @@ def init_db():
                 conn.execute(text(stmt))
     import scheduler
     scheduler.start()
+
+
+# ---- operator dashboard (static single-page app) ----
+
+if UI_DIR.exists():
+    app.mount("/ui", StaticFiles(directory=str(UI_DIR), html=True), name="ui")
+
+
+@app.get("/ui", include_in_schema=False)
+def ui_index():
+    """Serve the operator dashboard."""
+    index = UI_DIR / "index.html"
+    if not index.exists():
+        raise HTTPException(404, "ui/ not present in this deployment")
+    return FileResponse(str(index))
 
 
 @app.get("/scheduler")
@@ -201,7 +225,8 @@ def backtest(req: BacktestRequest):
         df["Close"], signal,
         position_size_pct=req.risk.position_size_pct,
         max_dd_stop_pct=req.risk.max_dd_stop_pct,
-        cost_bps=req.cost_bps)
+        cost_bps=req.cost_bps,
+        open_=df.get("Open"))  # fill at next open — matches live 9:35 execution
 
     m = engine.metrics(equity, signal, df["Close"])
     bench = engine.benchmarks(req.symbol, df.index, req.start)
@@ -266,6 +291,25 @@ def runs(limit: int = 20):
     df = pd.read_sql(text("SELECT * FROM runs ORDER BY created DESC LIMIT :n"),
                      db, params={"n": limit})
     return json.loads(df.to_json(orient="records", date_format="iso"))
+
+
+@app.get("/equity/{run_id}")
+def equity_curves(run_id: str):
+    """Equity curves for a run, grouped by series as stored in the DB:
+    'strategy', 'buyhold_<SYMBOL>', 'buyhold_SPY', 'risk_free'.
+
+    Returns: {"series": {"strategy": [{"ts": ..., "equity": ...}, ...], ...}}
+    """
+    df = pd.read_sql(
+        text("SELECT ts, equity, series FROM equity_curve WHERE run_id=:r ORDER BY ts"),
+        db, params={"r": run_id})
+    if len(df) == 0:
+        raise HTTPException(404, f"run '{run_id}' not found")
+    df["ts"] = df["ts"].dt.strftime("%Y-%m-%dT%H:%M:%S")
+    out: dict = {}
+    for series, group in df.groupby("series"):
+        out[series] = group[["ts", "equity"]].to_dict(orient="records")
+    return {"series": out}
 
 
 # ---- champion / challenger registry (MLflow-style, per symbol) ----
@@ -395,17 +439,38 @@ def paper_execute(symbol: str, position_pct: float = 10.0):
     df = engine.fetch(symbol, "2022-01-01")
     signal = int(REGISTRY[strategy]["fn"](df, {**params, "_symbol": symbol}).iloc[-1])
 
+    import risk
+
     try:
         client = paper.get_client()
         acct = paper.account_summary(client)
         qty = paper.position_qty(client, symbol)
         pending = paper.pending_orders(client, symbol)
 
+        # Kill switch: full halt — nothing executes (BUY or SELL)
+        if risk.is_killed():
+            action = "BLOCKED"
+            detail = "kill switch engaged — full halt"
+            with db.begin() as conn:
+                conn.execute(text(
+                    "INSERT INTO paper_actions (symbol, strategy, signal, action, detail, equity) "
+                    "VALUES (:sym,:s,:sig,:a,:d,:e)"),
+                    {"sym": symbol, "s": strategy, "sig": signal, "a": action,
+                     "d": detail, "e": acct["equity"]})
+            return {"symbol": symbol, "champion_strategy": strategy, "signal_today": signal,
+                    "action": action, "detail": detail, "account_equity": acct["equity"],
+                    "paper": True, "blocked": True}
+
         if pending > 0:
             action, detail = "HOLD", f"{pending} pending order(s) — waiting for fill, no action"
         elif signal == 1 and qty == 0:
-            oid = paper.buy_notional(client, symbol, acct["equity"] * position_pct / 100)
-            action, detail = "BUY", f"notional {position_pct}% of equity, order {oid}"
+            buy_notional_dollars = acct["equity"] * position_pct / 100
+            ok, reason = risk.pre_trade_check(client, symbol, buy_notional_dollars)
+            if not ok:
+                action, detail = "BLOCKED", reason
+            else:
+                oid = paper.buy_notional(client, symbol, buy_notional_dollars)
+                action, detail = "BUY", f"notional {position_pct}% of equity, order {oid}"
         elif signal == 0 and qty > 0:
             oid = paper.close_position(client, symbol)
             action, detail = "SELL", f"closed {qty} shares, order {oid}"
@@ -425,7 +490,7 @@ def paper_execute(symbol: str, position_pct: float = 10.0):
 
     return {"symbol": symbol, "champion_strategy": strategy, "signal_today": signal,
             "action": action, "detail": detail, "account_equity": acct["equity"],
-            "paper": True}
+            "paper": True, "blocked": action == "BLOCKED"}
 
 
 @app.get("/paper/log")
@@ -433,6 +498,304 @@ def paper_log(limit: int = 30):
     df = pd.read_sql(text("SELECT * FROM paper_actions ORDER BY ts DESC LIMIT :n"),
                      db, params={"n": limit})
     return json.loads(df.to_json(orient="records", date_format="iso"))
+
+
+# ---- portfolio mode: allocate paper capital across ALL champions ----
+
+@app.get("/portfolio/analysis")
+def portfolio_analysis():
+    """Inverse-volatility weights + correlation matrix across all champions.
+    404 if fewer than 2 champions have sufficient overlapping equity-curve history."""
+    import portfolio
+    result = portfolio.analysis(db)
+    if result.get("_insufficient"):
+        raise HTTPException(404, result["reason"])
+    return result
+
+
+@app.post("/portfolio/execute")
+def portfolio_execute(deploy_pct: float = 50.0):
+    """For each champion with a computed weight, recompute today's signal and
+    reconcile the paper position.  deploy_pct (0-100) is the fraction of account
+    equity spread across the whole book (each symbol gets equity * deploy_pct/100 * weight).
+
+    Only builtin-REGISTRY strategies can generate signals; others are flagged and skipped.
+    Kill switch halts everything (same guard as /paper/execute).
+    Every action is logged to paper_actions (detail includes portfolio w=<weight>).
+    """
+    import portfolio as _portfolio
+    import paper
+    import risk
+
+    result = _portfolio.analysis(db)
+    if result.get("_insufficient"):
+        raise HTTPException(404, result["reason"])
+
+    champions = result["champions"]  # [{symbol, run_id, strategy, weight, ...}]
+
+    try:
+        client = paper.get_client()
+        acct = paper.account_summary(client)
+    except Exception as e:
+        raise HTTPException(502, f"Alpaca paper API: {e}")
+
+    equity = acct["equity"]
+
+    # Kill switch: full halt — log once and return
+    if risk.is_killed():
+        with db.begin() as conn:
+            conn.execute(text(
+                "INSERT INTO paper_actions (symbol, strategy, signal, action, detail, equity) "
+                "VALUES (:sym,:s,:sig,:a,:d,:e)"),
+                {"sym": None, "s": "portfolio", "sig": None, "a": "BLOCKED",
+                 "d": "kill switch engaged — full halt", "e": equity})
+        return {
+            "blocked": True,
+            "reason": "kill switch engaged — full halt",
+            "account_equity": equity,
+            "actions": [],
+            "weights_used": {},
+        }
+
+    actions = []
+    weights_used = {}
+
+    for champ in champions:
+        sym      = champ["symbol"]
+        strategy = champ["strategy"]
+        weight   = champ["weight"]
+        run_id   = champ["run_id"]
+        weights_used[sym] = weight
+
+        # Only builtin REGISTRY strategies can recompute signals
+        if strategy not in REGISTRY:
+            actions.append({
+                "symbol": sym, "strategy": strategy, "weight": weight,
+                "action": "SKIPPED",
+                "detail": f"non-builtin strategy '{strategy}' cannot generate a live signal",
+            })
+            with db.begin() as conn:
+                conn.execute(text(
+                    "INSERT INTO paper_actions (symbol, strategy, signal, action, detail, equity) "
+                    "VALUES (:sym,:s,:sig,:a,:d,:e)"),
+                    {"sym": sym, "s": strategy, "sig": None, "a": "SKIPPED",
+                     "d": f"portfolio w={weight:.4f} — non-builtin, no signal",
+                     "e": equity})
+            continue
+
+        # Load champion params
+        champ_row = pd.read_sql(
+            text("SELECT r.params FROM champions c JOIN runs r ON r.run_id = c.run_id "
+                 "WHERE c.symbol=:s"),
+            db, params={"s": sym})
+        params = {}
+        if len(champ_row) > 0:
+            raw = champ_row.iloc[0]["params"]
+            if isinstance(raw, str):
+                params = json.loads(raw)
+            elif isinstance(raw, dict):
+                params = raw
+
+        # Recompute today's signal
+        try:
+            df = engine.fetch(sym, "2022-01-01")
+            signal = int(REGISTRY[strategy]["fn"](df, {**params, "_symbol": sym}).iloc[-1])
+        except Exception as e:
+            actions.append({
+                "symbol": sym, "strategy": strategy, "weight": weight,
+                "action": "ERROR",
+                "detail": f"signal recompute failed: {e}",
+            })
+            with db.begin() as conn:
+                conn.execute(text(
+                    "INSERT INTO paper_actions (symbol, strategy, signal, action, detail, equity) "
+                    "VALUES (:sym,:s,:sig,:a,:d,:e)"),
+                    {"sym": sym, "s": strategy, "sig": None, "a": "ERROR",
+                     "d": f"portfolio w={weight:.4f} — signal error: {e}",
+                     "e": equity})
+            continue
+
+        # Reconcile position
+        try:
+            qty     = paper.position_qty(client, sym)
+            pending = paper.pending_orders(client, sym)
+
+            if pending > 0:
+                action = "HOLD"
+                detail = f"portfolio w={weight:.4f} — {pending} pending order(s), waiting for fill"
+            elif signal == 1 and qty == 0:
+                buy_notional = equity * deploy_pct / 100.0 * weight
+                ok, reason = risk.pre_trade_check(client, sym, buy_notional)
+                if not ok:
+                    action = "BLOCKED"
+                    detail = f"portfolio w={weight:.4f} — {reason}"
+                else:
+                    oid = paper.buy_notional(client, sym, buy_notional)
+                    action = "BUY"
+                    detail = f"portfolio w={weight:.4f} notional ${buy_notional:.0f} deploy_pct={deploy_pct}%, order {oid}"
+            elif signal == 0 and qty > 0:
+                oid = paper.close_position(client, sym)
+                action = "SELL"
+                detail = f"portfolio w={weight:.4f} — closed {qty} shares, order {oid}"
+            else:
+                action = "HOLD"
+                detail = f"portfolio w={weight:.4f} — signal={signal}, position={qty}, already aligned"
+
+        except Exception as e:
+            action = "ERROR"
+            detail = f"portfolio w={weight:.4f} — Alpaca error: {e}"
+
+        with db.begin() as conn:
+            conn.execute(text(
+                "INSERT INTO paper_actions (symbol, strategy, signal, action, detail, equity) "
+                "VALUES (:sym,:s,:sig,:a,:d,:e)"),
+                {"sym": sym, "s": strategy, "sig": signal, "a": action,
+                 "d": detail, "e": equity})
+
+        actions.append({
+            "symbol": sym, "strategy": strategy, "weight": weight,
+            "signal_today": signal, "action": action, "detail": detail,
+        })
+
+    return {
+        "blocked": False,
+        "deploy_pct": deploy_pct,
+        "account_equity": equity,
+        "weights_used": weights_used,
+        "actions": actions,
+    }
+
+
+# ---- live risk layer ----
+
+@app.get("/risk/status")
+def risk_status():
+    """Kill switch state, current limits, and live readings from Alpaca.
+    Degrades gracefully if Alpaca is unreachable."""
+    import risk
+    import paper
+    killed = risk.is_killed()
+    limits = {
+        "max_daily_loss_pct": risk.RISK_MAX_DAILY_LOSS_PCT,
+        "max_open_positions": risk.RISK_MAX_OPEN_POSITIONS,
+        "max_symbol_exposure_pct": risk.RISK_MAX_SYMBOL_EXPOSURE_PCT,
+    }
+    try:
+        client = paper.get_client()
+        readings = risk.live_readings(client)
+    except Exception as e:
+        readings = {"available": False, "error": str(e)}
+    return {"kill_switch": killed, "limits": limits, "readings": readings}
+
+
+@app.post("/risk/kill")
+def risk_kill(note: str = ""):
+    """Engage the kill switch — all paper execution halts until /risk/resume."""
+    import risk
+    risk.set_kill(True)
+    with db.begin() as conn:
+        conn.execute(text(
+            "INSERT INTO paper_actions (symbol, strategy, signal, action, detail, equity) "
+            "VALUES (:sym,:s,:sig,:a,:d,:e)"),
+            {"sym": None, "s": None, "sig": None, "a": "KILL",
+             "d": note or "kill switch engaged", "e": None})
+    return {"kill_switch": True, "note": note}
+
+
+@app.post("/risk/resume")
+def risk_resume(note: str = ""):
+    """Disengage the kill switch — paper execution resumes normal risk checks."""
+    import risk
+    risk.set_kill(False)
+    with db.begin() as conn:
+        conn.execute(text(
+            "INSERT INTO paper_actions (symbol, strategy, signal, action, detail, equity) "
+            "VALUES (:sym,:s,:sig,:a,:d,:e)"),
+            {"sym": None, "s": None, "sig": None, "a": "RESUME",
+             "d": note or "kill switch disengaged", "e": None})
+    return {"kill_switch": False, "note": note}
+
+
+@app.get("/risk/reconcile")
+def risk_reconcile():
+    """Compare actual Alpaca paper positions against the champions table.
+
+    Returns:
+      - orphan_positions: symbols held in Alpaca with no champion
+      - book_mismatches: champions whose recomputed signal disagrees with the held position
+    """
+    import paper
+    try:
+        client = paper.get_client()
+        positions = client.get_all_positions()
+    except Exception as e:
+        raise HTTPException(502, f"Alpaca paper API: {e}")
+
+    # load all champions
+    champs_df = pd.read_sql(text(
+        "SELECT c.symbol, c.run_id, r.strategy, r.params "
+        "FROM champions c JOIN runs r ON r.run_id = c.run_id"),
+        db)
+    champion_symbols = set(champs_df["symbol"].tolist())
+
+    # build a {symbol: qty} map from actual Alpaca positions, normalised to the
+    # champion/yfinance form. Alpaca crypto positions may key on 'BTC/USD' OR
+    # 'BTCUSD' (see paper.position_qty) — try both before declaring an orphan.
+    held = {}
+    for pos in positions:
+        raw = str(pos.symbol).upper()
+        candidates = {raw, raw.replace("/", "-")}
+        if raw.endswith("USD") and len(raw) > 3 and "/" not in raw and "-" not in raw:
+            candidates.add(raw[:-3] + "-USD")  # 'BTCUSD' -> 'BTC-USD'
+        sym = next((c for c in candidates if c in champion_symbols),
+                   raw.replace("/", "-"))
+        held[sym] = float(pos.qty)
+
+    # orphan positions: in Alpaca but no champion
+    orphans = [
+        {"symbol": sym, "qty": qty}
+        for sym, qty in held.items()
+        if sym not in champion_symbols
+    ]
+
+    # book mismatches: champion signal disagrees with held position
+    mismatches = []
+    for _, row in champs_df.iterrows():
+        sym = row["symbol"]
+        strategy = row["strategy"]
+        if strategy not in REGISTRY:
+            continue  # imported/video strategy — can't recompute signal here
+        params = row.get("params") or {}
+        if isinstance(params, str):
+            params = json.loads(params)
+        try:
+            df = engine.fetch(sym, "2022-01-01")
+            signal = int(REGISTRY[strategy]["fn"](df, {**params, "_symbol": sym}).iloc[-1])
+        except Exception as e:
+            mismatches.append({"symbol": sym, "strategy": strategy,
+                               "error": f"signal recompute failed: {e}"})
+            continue
+        qty = held.get(sym, 0.0)
+        holding = qty > 0
+        expected_holding = signal == 1
+        if holding != expected_holding:
+            mismatches.append({
+                "symbol": sym,
+                "strategy": strategy,
+                "signal_today": signal,
+                "qty_held": qty,
+                "verdict": "BOOK_MISMATCH",
+                "detail": (
+                    f"signal={signal} but {'holding' if holding else 'not holding'} {qty} shares"
+                ),
+            })
+
+    return {
+        "orphan_positions": orphans,
+        "book_mismatches": mismatches,
+        "held_symbols": list(held.keys()),
+        "champion_symbols": list(champion_symbols),
+    }
 
 
 @app.get("/champion/{symbol}")

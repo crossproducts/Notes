@@ -36,14 +36,14 @@ def walkforward(strategy: str, symbol: str, start: str,
         for params in _combos(spec["grid"]):
             p = {**params, "_symbol": symbol}
             sig = spec["fn"](train, p)
-            eq, _ = engine.equity_from_signal(train["Close"], sig)
+            eq, _ = engine.equity_from_signal(train["Close"], sig, open_=train.get("Open"))
             r = eq.iloc[-1] / eq.iloc[0] - 1
             if r > best_ret:
                 best_ret, best_params = r, params
 
         p = {**best_params, "_symbol": symbol}
         sig = spec["fn"](pd.concat([train, test]), p).loc[test.index]
-        eq, _ = engine.equity_from_signal(test["Close"], sig)
+        eq, _ = engine.equity_from_signal(test["Close"], sig, open_=test.get("Open"))
         oos_ret = eq.iloc[-1] / eq.iloc[0] - 1
         oos_factor *= (1 + oos_ret)
         windows.append({

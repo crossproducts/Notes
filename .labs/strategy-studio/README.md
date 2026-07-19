@@ -155,8 +155,9 @@ app-of-apps). See `infra/README.md`. Local compose remains the daily driver.
 cd .labs/strategy-studio
 cp .env.example .env      # add keys
 docker compose up -d
-# grafana → http://localhost:3001  (admin / admin on first login)
-# api     → http://localhost:8001/docs   (scheduler status: /scheduler)
+# operator dashboard → http://localhost:8001/ui   (Strategy Studio single-page app)
+# swagger/api docs   → http://localhost:8001/docs  (all endpoints)
+# grafana            → http://localhost:3001  (admin / admin on first login)
 
 # n8n was removed (2026-07): its only real duties — two cron schedules + SMS
 # chaining — moved into the API (backtest-api/scheduler.py). One less container,

@@ -36,28 +36,43 @@ def equity_from_signal(close: pd.Series, signal: pd.Series,
                        max_dd_stop_pct: float | None = None,
                        cost_bps: float = 5.0,
                        risk_free_rate: float | None = None,
-                       initial: float = 100_000.0):
+                       initial: float = 100_000.0,
+                       open_: pd.Series | None = None):
     """Risk engine: position sizing, max-drawdown circuit breaker, transaction
     COSTS (cost_bps/side), and RISK-FREE ACCRUAL on idle capital — cash out of
     the market (and the un-invested fraction) earns the risk-free rate, exactly
     as real trend-timing models park in T-bills. Without this, sit-in-cash
-    strategies are badly under-credited. Signal shifted 1 bar — no lookahead."""
+    strategies are badly under-credited. Signal shifted 1 bar — no lookahead.
+
+    With `open_` provided, position changes fill at the NEXT OPEN — matching
+    the live 9:35 execution — instead of the close the signal was computed on:
+    entry days earn open→close only, exit days ride the overnight gap into the
+    open. Without it, fills are close-to-close (the old, skewed assumption)."""
     rf = RISK_FREE_RATE if risk_free_rate is None else risk_free_rate
     rf_daily = (1 + rf) ** (1 / 252) - 1
     sig = signal.shift(1).fillna(0).values
     rets = close.pct_change().fillna(0).values
+    c = close.values
+    o = open_.reindex(close.index).values if open_ is not None else None
     w = position_size_pct / 100.0
     cost = cost_bps / 10_000.0 * w
 
     eq = np.empty(len(rets))
     e, peak, halted, prev = initial, initial, False, 0.0
     for i in range(len(rets)):
-        if not halted and sig[i] != prev:   # position change = pay the spread
+        changed = not halted and sig[i] != prev
+        if changed:                         # position change = pay the spread
             e *= (1 - cost)
             prev = sig[i]
         invested = w if (not halted and sig[i] > 0) else 0.0
-        # invested fraction earns the market; the rest earns risk-free
-        e *= (1 + rets[i] * invested + rf_daily * (1 - invested))
+        if o is not None and changed and i > 0 and o[i] > 0 and not np.isnan(o[i]):
+            if sig[i] > 0:  # entered at today's open: earn open→close intraday
+                e *= (1 + (c[i] / o[i] - 1) * invested + rf_daily * (1 - invested))
+            else:           # exited at today's open: old position rides the overnight gap
+                e *= (1 + (o[i] / c[i - 1] - 1) * w + rf_daily * (1 - w))
+        else:
+            # invested fraction earns the market; the rest earns risk-free
+            e *= (1 + rets[i] * invested + rf_daily * (1 - invested))
         peak = max(peak, e)
         if max_dd_stop_pct and (e - peak) / peak * 100 <= -abs(max_dd_stop_pct):
             halted = True  # circuit breaker: flat (earning rf) for the rest
