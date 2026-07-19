@@ -14,8 +14,17 @@ desktop.ini
 # Editor / IDE
 .vscode/
 .idea/
+
+# Obsidian (vault opened at repo root) — keep per-machine state out of git
+.obsidian/workspace*
+.obsidian/cache
+.obsidian/plugins/*/data.json
 *.swp
 *.swo
 
 # Logs (e.g. claude-run.log from launch/retry loops)
 *.log
+
+# Python bytecode
+__pycache__/
+*.pyc
