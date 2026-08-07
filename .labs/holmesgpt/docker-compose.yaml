@@ -1,0 +1,71 @@
+services:
+  holmes:
+    build: .
+    container_name: holmes
+    entrypoint: ["python", "server.py"]   # image default is the CLI
+    ports:
+      - "127.0.0.1:5050:5050"
+    environment:
+      # Fully local: Ollama on the Windows host, no API key needed
+      # - OLLAMA_API_BASE=http://host.docker.internal:11434
+      # - MODEL=ollama_chat/qwen3:8b
+      # Anthropic
+        - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+        - MODEL=anthropic/claude-sonnet-4-5
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # Host docker daemon — this is what the docker/core toolset investigates
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Holmes config (enables docker toolset, disables kubernetes)
+      - ./config:/root/.holmes
+
+  # Persistent chat frontend — Open WebUI with a Holmes pipe function installed
+  # via ./install-pipe.sh. The pipe calls holmes:5050/api/chat directly.
+  # Pipe source: pipe/holmes_pipe.py (lives in Open WebUI's DB, not on disk at runtime).
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "127.0.0.1:3000:8080"
+    environment:
+      - ENABLE_OPENAI_API=false        # no external OpenAI endpoint needed; pipe handles Holmes
+      - ENABLE_OLLAMA_API=false        # don't probe localhost:11434
+      - WEBUI_AUTH=false               # single-user local mode — no login needed
+      # Open WebUI stores config in its DB on first boot and ignores env
+      # changes afterwards — this makes env vars always win.
+      - ENABLE_PERSISTENT_CONFIG=false
+    volumes:
+      - openwebui-data:/app/backend/data
+    depends_on:
+      - holmes
+
+  # --- Deliberately broken workloads for Holmes to diagnose ---
+
+  # 1. Crashloop: dies on a missing env var, restarts forever
+  payment-api:
+    image: busybox:1.36
+    container_name: payment-api
+    command: >
+      sh -c "echo 'payment-api v2.3.1 starting...';
+             echo 'FATAL: required env var PAYMENT_GATEWAY_URL is not set' >&2;
+             exit 1"
+    restart: always
+
+  # 2. OOM kill: allocates past its 16 MB limit, exits 137
+  report-worker:
+    image: python:3.12-alpine
+    container_name: report-worker
+    command: >
+      python -c "print('report-worker: loading dataset into memory', flush=True);
+      x = bytearray(64 * 1024 * 1024)"
+    mem_limit: 16m
+    restart: always
+
+volumes:
+  openwebui-data:
+    # Named volume for Open WebUI's SQLite database (webui.db).
+    # To fully reset: docker compose down && docker volume rm holmesgpt_openwebui-data
+    # For per-session ephemeral mode see readme.md.
+    # NOTE: the Holmes pipe function is stored in webui.db — run ./install-pipe.sh
+    # after wiping this volume to re-install it.

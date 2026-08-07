@@ -1,0 +1,38 @@
+model: anthropic/claude-sonnet-4-5
+# model: ollama_chat/qwen3:8b
+
+toolsets:
+  # In server mode the docker/core toolset is excluded (tagged 'cli'), so we
+  # grant the bash toolset read-only docker commands instead.
+  bash:
+    enabled: true
+    config:
+      builtin_allowlist: extended
+      allow:
+        - "docker ps"
+        - "docker inspect"
+        - "docker logs"
+        - "docker images"
+        - "docker stats --no-stream"
+        - "docker top"
+        - "docker port"
+        - "docker diff"
+        - "docker events --since"
+        - "docker version"
+        - "docker info"
+        - "docker system df"
+        - "docker network ls"
+        - "docker network inspect"
+        - "docker volume ls"
+      deny:
+        - "docker run"
+        - "docker exec"
+        - "docker rm"
+        - "docker rmi"
+        - "docker stop"
+        - "docker kill"
+        - "docker restart"
+  kubernetes/core:
+    enabled: false
+  kubernetes/logs:
+    enabled: false
