@@ -3,4 +3,9 @@
 # Regenerable intermediates
 __pycache__/
 *.pyc
+
+# Downloaded media + captured frames. Transcripts, strategy configs and
+# generated backtests stay tracked — these are the heavy binaries behind them.
 cache/*.mp3
+cache/*.mp4
+cache/*_frames/

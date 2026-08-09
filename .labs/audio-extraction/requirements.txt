@@ -8,5 +8,5 @@ numpy
 jupyterlab
 ipywidgets
 playwright  # browser fallback for sources yt-dlp can't crack; run: playwright install chromium
-pyyaml      # strategy research queue (sources.yaml)
+ruamel.yaml # strategy research queue (sources.yaml) — round-trip, keeps comments
 matplotlib  # notebooks/visualize.ipynb
