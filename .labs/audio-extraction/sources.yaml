@@ -62,7 +62,8 @@ sources:
     status: skipped
     cache_key: 1bc3a41451db
     tags: [marketing-funnel, no-strategy]
-    note: no tradeable strategy — a promo for a paid community + fxstreamer
+    note: >-
+      no tradeable strategy — a promo for a paid community + fxstreamer
       no-code MT5 builder + "comment system" lead magnet. Only concrete rule
       ("indicator 5 above indicator 20") is a generic MA cross = existing
       trend_ma. Red flag: literally advocates "over-optimizing" — the exact
@@ -87,6 +88,17 @@ sources:
       principles decay slower' framing is sound. Implemented as builtin
       triple_momentum, BUT loses to single-lookback momentum (SPY excess-sharpe
       0.70 vs 0.88, OOS 80% vs 140%). Good idea, not the champion.
+
+  - url: https://www.instagram.com/reel/DbrE_m1pUUJ/
+    name: "Unreviewed — IG reel DbrE_m1pUUJ"
+    status: pending
+    tags: [unreviewed]
+    note: queued from a remote session whose network policy blocks instagram.com
+      (egress proxy 403 on CONNECT, yt-dlp and direct fetch alike), so nothing
+      about this reel has been transcribed, interpreted, or verified yet — the
+      name is a placeholder, not a claim about its contents. Run
+      `python run_queue.py` where Instagram is reachable; expected cache_key
+      d6ab0124904c.
 
   # --- add new sources below as `pending` ---
   # - url: https://www.instagram.com/reel/XXXXXXXX/

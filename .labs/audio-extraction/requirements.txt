@@ -1,5 +1,10 @@
 yt-dlp
 openai-whisper
+anthropic       # interpret + generate stages
+python-dotenv   # loads .env (ANTHROPIC_API_KEY, ALPACA_*)
+alpaca-py       # stages/data.py market bars
+pandas          # bars -> DataFrame through backtest/report
+numpy
 jupyterlab
 ipywidgets
 playwright  # browser fallback for sources yt-dlp can't crack; run: playwright install chromium
