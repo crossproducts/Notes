@@ -11,6 +11,7 @@
 | [AWS](AWS/) | 🟢 Active | EKS provisioned with Terraform + Terragrunt, GitOps on top |
 | [AI-Agent-Apps](AI-Agent-Apps/) | 🟢 Active | Agent frameworks, MCP, fine-tuning, GraphRAG |
 | [holmesgpt](holmesgpt/) | 🟢 Active | AI SRE agent diagnosing Docker containers (K8s later) |
+| [whisper-stt](whisper-stt/) | 🟢 Active | Mic → text for prompting; Whisper vs faster-whisper |
 | [Observability](Observability/) | 🔴 Pending | Prometheus / Loki / Tempo / Grafana / OpenTelemetry stack |
 | [Security](Security/) | 🔴 Pending | Image scanning + signing, SBOM, admission policy |
 | [FinOps](FinOps/) | 🔴 Pending | Cost dashboard, CUR pipeline, budget alerts |
