@@ -109,6 +109,8 @@ and notifications.
 | Video queue in the UI | paste a reel/TikTok/YouTube URL at `/ui` → Postgres queue → host-side `.labs/audio-extraction/studio_worker.py` runs the pipeline → strategy appears as `video:<cache_key>` | ✅ |
 | Diversifying strategies | `rotation_top_k` (cross-sectional dual momentum over an ETF universe) + `whale_13f` (13F copycat, default Berkshire; signals on FILING dates so the 45-day lag is honest) | ✅ |
 | Sentiment strategy | needs a sentiment data feed — still roadmap | ⬜ |
+| Options trading (Phase 7) | `backtest-api/options.py`: `/options/backtest` (covered_call, cash_secured_put, bull_call_spread — **Black-Scholes on realized vol, no historical options chain yet**, treat as directional like the Ollama analyst); live paper execution `/paper/options/covered_call/{symbol}` + `/paper/options/cash_secured_put/{symbol}` against Alpaca's real chain (`paper=True`, same guarantee as equities); `/paper/options/positions` | ✅ |
+| Local k8s deployment | `k8s/local/` — same stack on a local k3s cluster (see below), no AWS/ECR required | ✅ |
 
 Grafana is auto-provisioned: Postgres datasource + a "Strategy Studio" dashboard
 (equity curve per run via `$run` dropdown, and a runs table with benchmark columns).
@@ -138,10 +140,34 @@ Ordered by value-per-effort:
 10. **Paper trading (Phase 6)** — graduate a walk-forward-surviving champion to
     Alpaca paper; n8n schedules live signals.
 
+## Local Kubernetes deployment
+
+`k8s/local/` runs the same stack (Postgres + Grafana + backtest-api) on a local
+k3s cluster instead of docker-compose — same containers, no ECR/AWS needed.
+
+```bash
+curl -sfL https://get.k3s.io | sh -                 # once, needs sudo
+cd .labs/strategy-studio
+docker build -t strategy-studio/backtest-api:local backtest-api/
+docker save strategy-studio/backtest-api:local | sudo k3s ctr images import -
+cp k8s/local/01-secrets.example.yaml k8s/local/01-secrets.yaml   # add real keys, gitignored
+sh k8s/local/apply.sh
+kubectl -n strategy-studio port-forward svc/backtest-api 8001:8000   # http://localhost:8001/ui
+kubectl -n strategy-studio port-forward svc/grafana 3001:3000
+```
+
+The `imported` volume mount uses a `hostPath` to `../audio-extraction/cache`
+(k3s runs bare-metal on this box, not a VM, so that path just needs to exist
+on the host). Rebuild + re-`ctr images import` + `kubectl rollout restart
+deployment/backtest-api -n strategy-studio` after code changes — there's no
+in-cluster CI here, that's what `k8s/manifests/` + ArgoCD are for on AWS.
+
 ## AWS deployment
 
-`infra/` (Terragrunt: VPC/EKS/ECR/RDS, tear-down discipline) + `k8s/` (ArgoCD
-app-of-apps). See `infra/README.md`. Local compose remains the daily driver.
+`infra/` (Terragrunt: VPC/EKS/ECR/RDS, tear-down discipline) + `k8s/manifests`
++ `k8s/argocd` (app-of-apps, pulls from ECR). See `infra/README.md`. Local
+compose or local k8s remain the daily driver; AWS is for when this needs to
+run somewhere other than this machine.
 
 ## Decisions still open
 

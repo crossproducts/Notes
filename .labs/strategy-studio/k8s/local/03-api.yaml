@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backtest-api
+  namespace: strategy-studio
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: backtest-api }
+  template:
+    metadata:
+      labels: { app: backtest-api }
+    spec:
+      containers:
+        - name: api
+          # Built locally: docker build -t strategy-studio/backtest-api:local backtest-api/
+          #                docker save strategy-studio/backtest-api:local | k3s ctr images import -
+          image: strategy-studio/backtest-api:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - secretRef: { name: studio-secrets }
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: { name: studio-db, key: database_url }
+            - name: OLLAMA_URL
+              value: "http://192.168.1.158:11434"   # node's host IP; optional (local qwen analyst)
+            - name: IMPORTED_DIR
+              value: "/app/imported"
+          volumeMounts:
+            - name: imported
+              mountPath: /app/imported
+              readOnly: true
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits: { cpu: "1", memory: 1Gi }
+          readinessProbe:
+            httpGet: { path: /health, port: 8000 }
+            initialDelaySeconds: 5
+      volumes:
+        - name: imported
+          hostPath:
+            path: /home/nick/dev/Notes/.labs/audio-extraction/cache
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backtest-api
+  namespace: strategy-studio
+spec:
+  selector: { app: backtest-api }
+  ports:
+    - port: 8000
+      targetPort: 8000
+# reach it with: kubectl -n strategy-studio port-forward svc/backtest-api 8001:8000

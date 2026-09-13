@@ -169,6 +169,13 @@ class WalkforwardRequest(BaseModel):
     test_months: int = 6
 
 
+class OptionsBacktestRequest(BaseModel):
+    strategy: str = "covered_call"
+    symbol: str = "SPY"
+    start: str = "2020-01-01"
+    params: dict = {}
+
+
 # ---- endpoints ----
 
 @app.get("/health")
@@ -252,6 +259,40 @@ def walkforward(req: WalkforwardRequest):
                                     req.train_years, req.test_months)
     except ValueError as e:
         raise HTTPException(400, str(e))
+
+
+@app.get("/options/strategies")
+def options_strategies():
+    import options
+    return {"backtest": {k: {"grid": v["grid"]} for k, v in options.OPTIONS_REGISTRY.items()}}
+
+
+@app.post("/options/backtest")
+def options_backtest(req: OptionsBacktestRequest):
+    """Black-Scholes-approximated backtest (realized vol, no historical options
+    chain) for covered_call / cash_secured_put / bull_call_spread. See options.py
+    module docstring for what this approximates and what it doesn't."""
+    import options
+    if req.strategy not in options.OPTIONS_REGISTRY:
+        raise HTTPException(400, f"unknown options strategy '{req.strategy}'")
+
+    df = engine.fetch(req.symbol, req.start)
+    if len(df) < 60:
+        raise HTTPException(400, "not enough data")
+
+    try:
+        equity = options.OPTIONS_REGISTRY[req.strategy]["fn"](df, req.params)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+    dte = int(req.params.get("dte", 30))
+    m = options.options_metrics(equity, dte)
+    bench = engine.benchmarks(req.symbol, df.index, req.start)
+    curves = engine.benchmark_curves(req.symbol, df.index, req.start)
+    run_id = uuid.uuid4().hex[:12]
+    _persist(run_id, req, m, bench, equity, extra_curves=curves)
+    return {"run_id": run_id, **m, **bench,
+            "note": "Black-Scholes/realized-vol approximation — no historical options chain"}
 
 
 @app.get("/montecarlo/{run_id}")
@@ -506,6 +547,98 @@ def paper_log(limit: int = 30):
     df = pd.read_sql(text("SELECT * FROM paper_actions ORDER BY ts DESC LIMIT :n"),
                      db, params={"n": limit})
     return json.loads(df.to_json(orient="records", date_format="iso"))
+
+
+# ---- Alpaca PAPER options: covered calls / cash-secured puts against the live chain ----
+
+@app.get("/paper/options/positions")
+def paper_options_positions():
+    import options
+    try:
+        return options.option_positions(options.get_client())
+    except Exception as e:
+        raise HTTPException(502, f"Alpaca paper API: {e}")
+
+
+@app.post("/paper/options/covered_call/{symbol}")
+def paper_covered_call(symbol: str, dte: int = 30, otm_pct: float = 0.05):
+    """Sell 1 OTM call per 100 shares of `symbol` currently held in the paper
+    account. Requires >=100 shares — this doesn't buy shares for you."""
+    import options
+    import paper
+    import risk
+
+    if risk.is_killed():
+        raise HTTPException(423, "kill switch engaged — full halt")
+
+    try:
+        client = paper.get_client()
+        qty = paper.position_qty(client, symbol)
+        contracts = int(qty // 100)
+        if contracts < 1:
+            raise HTTPException(400, f"need >=100 shares of {symbol} to cover a call; "
+                                     f"currently holding {qty}")
+        spot = float(engine.fetch(symbol, "2024-01-01")["Close"].iloc[-1])
+        result = options.sell_covered_call(client, symbol, spot, dte, otm_pct)
+        acct = paper.account_summary(client)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(502, f"Alpaca paper API: {e}")
+
+    with db.begin() as conn:
+        conn.execute(text(
+            "INSERT INTO paper_actions (symbol, strategy, signal, action, detail, equity) "
+            "VALUES (:sym,:s,:sig,:a,:d,:e)"),
+            {"sym": symbol, "s": "covered_call", "sig": 1, "a": "SELL_CALL",
+             "d": f"{contracts}x {result['contract']} strike {result['strike']} "
+                  f"exp {result['expiration']}, order {result['order_id']}",
+             "e": acct["equity"]})
+
+    return {"symbol": symbol, "action": "SELL_CALL", "contracts": contracts, **result,
+            "account_equity": acct["equity"], "paper": True}
+
+
+@app.post("/paper/options/cash_secured_put/{symbol}")
+def paper_cash_secured_put(symbol: str, dte: int = 30, otm_pct: float = 0.05,
+                           contracts: int = 1):
+    """Sell `contracts` OTM puts on `symbol`. Caller is responsible for having
+    enough cash to cover assignment (strike * 100 * contracts) — this endpoint
+    checks buying power only, not a hard cash-secured reservation."""
+    import options
+    import paper
+    import risk
+
+    if risk.is_killed():
+        raise HTTPException(423, "kill switch engaged — full halt")
+
+    try:
+        client = paper.get_client()
+        spot = float(engine.fetch(symbol, "2024-01-01")["Close"].iloc[-1])
+        target_strike = spot * (1 - otm_pct)
+        required_cash = target_strike * 100 * contracts
+        acct = paper.account_summary(client)
+        if required_cash > acct["buying_power"]:
+            raise HTTPException(400, f"insufficient buying power: need ~${required_cash:,.0f} "
+                                     f"to secure {contracts} put(s), have ${acct['buying_power']:,.0f}")
+        result = options.sell_cash_secured_put(client, symbol, spot, dte, otm_pct)
+        acct = paper.account_summary(client)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(502, f"Alpaca paper API: {e}")
+
+    with db.begin() as conn:
+        conn.execute(text(
+            "INSERT INTO paper_actions (symbol, strategy, signal, action, detail, equity) "
+            "VALUES (:sym,:s,:sig,:a,:d,:e)"),
+            {"sym": symbol, "s": "cash_secured_put", "sig": -1, "a": "SELL_PUT",
+             "d": f"{contracts}x {result['contract']} strike {result['strike']} "
+                  f"exp {result['expiration']}, order {result['order_id']}",
+             "e": acct["equity"]})
+
+    return {"symbol": symbol, "action": "SELL_PUT", "contracts": contracts, **result,
+            "account_equity": acct["equity"], "paper": True}
 
 
 # ---- portfolio mode: allocate paper capital across ALL champions ----
