@@ -270,7 +270,8 @@ def options_strategies():
 @app.post("/options/backtest")
 def options_backtest(req: OptionsBacktestRequest):
     """Black-Scholes-approximated backtest (realized vol, no historical options
-    chain) for covered_call / cash_secured_put / bull_call_spread. See options.py
+    chain) for covered_call / cash_secured_put / wheel / bull_call_spread /
+    put_credit_spread. See options.py
     module docstring for what this approximates and what it doesn't."""
     import options
     if req.strategy not in options.OPTIONS_REGISTRY:

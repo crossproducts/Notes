@@ -1,14 +1,19 @@
 """Options overlays: Black-Scholes-approximated backtests + real Alpaca paper
 execution against the live chain.
 
-Two income strategies on top of an underlying's daily OHLC, plus a defined-risk
-directional spread:
+Income and defined-risk strategies on top of an underlying's daily OHLC:
   covered_call      — hold shares, sell an OTM call every `dte` days (upside
                        capped at strike, premium collected, full downside)
   cash_secured_put  — hold cash, sell an OTM put every `dte` days (obligated to
                        buy at strike if breached, premium collected)
+  wheel             — alternate the two: sell puts while in cash, get assigned
+                       into shares on a breach, sell calls on those shares,
+                       get called away back into cash, repeat
   bull_call_spread  — buy a near-the-money call + sell a further OTM call,
                        same expiry (defined max gain/loss; backtest-only for now)
+  put_credit_spread — sell a near-the-money put + buy a further OTM put, same
+                       expiry (defined max gain/loss, net CREDIT; capital-
+                       efficient premium selling; backtest-only for now)
 
 Backtest pricing: Black-Scholes with REALIZED volatility (trailing `vol_window`
 days) — there's no historical options chain wired up yet, so this estimates the
@@ -16,6 +21,30 @@ overlay's PAYOFF SHAPE (capped upside, premium income, downside profile), not
 exact historical fills. Real premiums will differ from implied vol, skew, and
 the actual bid/ask at the time. Treat results as directional, like the existing
 Ollama /analyze summaries — a draft, not ground truth.
+
+`iv_over_rv` (default 1.0, i.e. off) scales the realized-vol estimate up before
+pricing, as a stand-in for the volatility risk premium — equity-index implied
+vol has historically averaged ~1.1-1.3x subsequent realized vol, and that
+spread is most of the real edge in premium-selling strategies, which pure
+realized-vol pricing can't show at all. It's a blunt global multiplier, not a
+real IV surface (no skew, no term structure, no event vol) — treat it as a
+calibration knob, not ground truth.
+
+`iv_regime_aware=true` replaces the flat `iv_over_rv` scalar with a VIX-regime-
+conditional one: `iv_high_mult` (default 1.3) when VIX is above its trailing
+`iv_vix_ma_days`-day MA, `iv_low_mult` (default 1.0) otherwise. The volatility
+risk premium has historically widened right after a VIX spike and compressed
+in prolonged calm — the opposite of the naive "sell more premium when vol
+looks high" intuition — so this tracks the premium's actual behavior instead
+of assuming it's constant. Still a blunt regime split, not a real IV surface.
+
+`put_credit_spread` — sell a put at K1 (closer to spot), buy a further-OTM put
+at K2 < K1 for protection, same expiry: net CREDIT collected up front, max
+loss capped at (K1-K2) minus the credit. The capital-efficient way to sell
+premium on SPY/QQQ-sized underlyings — ties up (K1-K2)*100 per spread instead
+of the six-figure cash/shares a naked CSP or covered call needs, so it fits an
+account too small for the other three strategies. Backtest-only for now (needs
+Alpaca multi-leg/MLEG orders to execute live, same follow-up as bull_call_spread).
 
 Live paper execution (sell_option) hits Alpaca's real options chain and paper
 account — same paper=True guarantee as paper.py. Requires an options-enabled
@@ -53,20 +82,50 @@ def _trailing_vol(close: pd.Series, window: int) -> pd.Series:
 
 
 def _sigma_series(close: pd.Series, window: int) -> pd.Series:
+    """Base realized-vol estimate — no vol-risk-premium adjustment. See
+    _priced_sigma for the iv_over_rv / iv_regime_aware knobs applied on top."""
     sigma = _trailing_vol(close, window)
     default = float(sigma.dropna().median()) if sigma.notna().any() else 0.20
     return sigma.fillna(default)
 
 
+def _iv_multiplier_series(index: pd.DatetimeIndex, vix_ma_days: int = 50,
+                          low_mult: float = 1.0, high_mult: float = 1.3) -> pd.Series:
+    """VIX-regime-conditional vol-risk-premium multiplier: `high_mult` while
+    VIX is above its trailing `vix_ma_days`-day MA (elevated-vol regime, where
+    the VRP has historically widened), `low_mult` otherwise (calm regime,
+    where it's historically compressed toward/at 1x realized vol)."""
+    early = (index[0] - pd.Timedelta(days=400)).strftime("%Y-%m-%d")
+    vix = engine.fetch("^VIX", early)["Close"].reindex(index).ffill()
+    elevated = vix > vix.rolling(vix_ma_days).mean()
+    return elevated.map({True: high_mult, False: low_mult}).fillna(low_mult)
+
+
+def _priced_sigma(close: pd.Series, params: dict) -> pd.Series:
+    """The vol series actually used for option pricing: base realized vol,
+    scaled either by a flat `iv_over_rv` (default 1.0 = off) or, when
+    `iv_regime_aware` is true, by the VIX-conditional multiplier series."""
+    vol_window = int(params.get("vol_window", 30))
+    base = _sigma_series(close, vol_window)
+    if bool(params.get("iv_regime_aware", False)):
+        mult = _iv_multiplier_series(
+            close.index,
+            vix_ma_days=int(params.get("iv_vix_ma_days", 50)),
+            low_mult=float(params.get("iv_low_mult", 1.0)),
+            high_mult=float(params.get("iv_high_mult", 1.3)),
+        )
+        return base * mult
+    return base * float(params.get("iv_over_rv", 1.0))
+
+
 def covered_call_backtest(df: pd.DataFrame, params: dict) -> pd.Series:
     dte = int(params.get("dte", 30))
     otm_pct = float(params.get("otm_pct", 0.05))
-    vol_window = int(params.get("vol_window", 30))
     cost_bps = float(params.get("cost_bps", 5.0))
     initial = float(params.get("initial", 100_000.0))
 
     close = df["Close"]
-    sigma = _sigma_series(close, vol_window)
+    sigma = _priced_sigma(close, params)
     r = engine.RISK_FREE_RATE
     n = len(close)
 
@@ -88,12 +147,11 @@ def covered_call_backtest(df: pd.DataFrame, params: dict) -> pd.Series:
 def cash_secured_put_backtest(df: pd.DataFrame, params: dict) -> pd.Series:
     dte = int(params.get("dte", 30))
     otm_pct = float(params.get("otm_pct", 0.05))
-    vol_window = int(params.get("vol_window", 30))
     cost_bps = float(params.get("cost_bps", 5.0))
     initial = float(params.get("initial", 100_000.0))
 
     close = df["Close"]
-    sigma = _sigma_series(close, vol_window)
+    sigma = _priced_sigma(close, params)
     r = engine.RISK_FREE_RATE
     n = len(close)
 
@@ -119,14 +177,13 @@ def bull_call_spread_backtest(df: pd.DataFrame, params: dict) -> pd.Series:
     dte = int(params.get("dte", 30))
     otm_pct_long = float(params.get("otm_pct_long", 0.0))
     otm_pct_short = float(params.get("otm_pct_short", 0.08))
-    vol_window = int(params.get("vol_window", 30))
     cost_bps = float(params.get("cost_bps", 5.0))
     initial = float(params.get("initial", 100_000.0))
     if otm_pct_short <= otm_pct_long:
         raise ValueError("otm_pct_short must exceed otm_pct_long (K2 > K1)")
 
     close = df["Close"]
-    sigma = _sigma_series(close, vol_window)
+    sigma = _priced_sigma(close, params)
     r = engine.RISK_FREE_RATE
     n = len(close)
 
@@ -148,8 +205,107 @@ def bull_call_spread_backtest(df: pd.DataFrame, params: dict) -> pd.Series:
     return pd.Series(equity, index=close.index)
 
 
+def put_credit_spread_backtest(df: pd.DataFrame, params: dict) -> pd.Series:
+    """Defined-risk premium-selling spread: sell a put at K1 (closer to spot),
+    buy a further-OTM put at K2 < K1 for protection, same expiry — net CREDIT
+    collected, max loss capped at (K1-K2) minus the credit. See module
+    docstring for why this is the capital-efficient premium-selling structure
+    for a small account. Backtest-only — needs Alpaca MLEG orders to execute
+    live, same follow-up as bull_call_spread."""
+    dte = int(params.get("dte", 30))
+    otm_pct_short = float(params.get("otm_pct_short", 0.05))  # K1: put sold, closer to spot
+    otm_pct_long = float(params.get("otm_pct_long", 0.10))    # K2: put bought, further OTM
+    cost_bps = float(params.get("cost_bps", 5.0))
+    initial = float(params.get("initial", 100_000.0))
+    if otm_pct_long <= otm_pct_short:
+        raise ValueError("otm_pct_long must exceed otm_pct_short (K2 further OTM than K1)")
+
+    close = df["Close"]
+    sigma = _priced_sigma(close, params)
+    r = engine.RISK_FREE_RATE
+    n = len(close)
+
+    equity = np.empty(n)
+    e = initial
+    for pos in range(0, n, dte):
+        end = min(pos + dte, n) - 1
+        S0 = float(close.iloc[pos])
+        K1 = S0 * (1 - otm_pct_short)
+        K2 = S0 * (1 - otm_pct_long)
+        T = max(end - pos, 1) / 252.0
+        sig = float(sigma.iloc[pos])
+        net_credit = bs_price(S0, K1, T, r, sig, "put") - bs_price(S0, K2, T, r, sig, "put")
+        for j in range(pos, end + 1):
+            Sj = float(close.iloc[j])
+            spread_liability = min(max(K1 - Sj, 0.0), K1 - K2)
+            equity[j] = e * (S0 + net_credit - spread_liability) / S0
+        e = equity[end] * (1 - cost_bps / 10_000.0)  # roll cost
+    return pd.Series(equity, index=close.index)
+
+
+def wheel_backtest(df: pd.DataFrame, params: dict) -> pd.Series:
+    """The wheel: alternate cash-secured puts and covered calls on the same
+    underlying. Start in CASH, selling an OTM put every `dte` days. If the
+    close at expiry is below the put's strike, treat it as assigned (bought
+    at the strike) and roll into COVERED CALLS on those shares. If a covered
+    call's strike is breached at expiry, treat the shares as called away and
+    roll back into CASH. Repeat.
+
+    Same approximation as the other overlays: assignment is decided by the
+    close vs strike on the period's last bar, not a real chain, so intraperiod
+    gap risk isn't captured. `start_state` ("cash" or "shares") picks which
+    leg the wheel begins on."""
+    dte = int(params.get("dte", 30))
+    otm_pct = float(params.get("otm_pct", 0.05))
+    cost_bps = float(params.get("cost_bps", 5.0))
+    initial = float(params.get("initial", 100_000.0))
+    state = params.get("start_state", "cash")
+    if state not in ("cash", "shares"):
+        raise ValueError("start_state must be 'cash' or 'shares'")
+
+    close = df["Close"]
+    sigma = _priced_sigma(close, params)
+    r = engine.RISK_FREE_RATE
+    n = len(close)
+
+    equity = np.empty(n)
+    e = initial
+    assignments = 0
+    for pos in range(0, n, dte):
+        end = min(pos + dte, n) - 1
+        S0 = float(close.iloc[pos])
+        T = max(end - pos, 1) / 252.0
+        sig = float(sigma.iloc[pos])
+
+        if state == "cash":
+            K = S0 * (1 - otm_pct)
+            premium = bs_price(S0, K, T, r, sig, "put")
+            for j in range(pos, end + 1):
+                loss = max(K - float(close.iloc[j]), 0.0)
+                equity[j] = e * (S0 + premium - loss) / S0
+            assigned = float(close.iloc[end]) < K
+        else:  # shares
+            K = S0 * (1 + otm_pct)
+            premium = bs_price(S0, K, T, r, sig, "call")
+            for j in range(pos, end + 1):
+                capped = min(float(close.iloc[j]), K)
+                equity[j] = e * (capped + premium) / S0
+            assigned = float(close.iloc[end]) > K
+
+        e = equity[end] * (1 - cost_bps / 10_000.0)  # roll cost
+        if assigned:
+            assignments += 1
+            state = "shares" if state == "cash" else "cash"
+
+    result = pd.Series(equity, index=close.index)
+    result.attrs["assignments"] = assignments
+    return result
+
+
 def options_metrics(equity: pd.Series, dte: int) -> dict:
-    """Same shape as engine.metrics() so _persist() needs no changes."""
+    """Same shape as engine.metrics() so _persist() needs no changes — extra
+    keys (like `assignments`, when the backtest fn recorded one) are simply
+    ignored by _persist and pass through to the API response."""
     rf = engine.RISK_FREE_RATE
     rf_daily = (1 + rf) ** (1 / 252) - 1
     rets = equity.pct_change().fillna(0)
@@ -158,22 +314,34 @@ def options_metrics(equity: pd.Series, dte: int) -> dict:
     sharpe = float((rets.mean() - rf_daily) / rets.std() * np.sqrt(252)) if rets.std() > 0 else 0.0
     period_rets = equity.iloc[::dte].pct_change().dropna()
     win_rate = float((period_rets > 0).sum() / max(len(period_rets), 1) * 100)
-    return {
+    m = {
         "total_return_pct": round(float(equity.iloc[-1] / equity.iloc[0] - 1) * 100, 2),
         "max_drawdown_pct": round(max_dd, 2),
         "sharpe": round(sharpe, 2),
         "trades": max(int(np.ceil(len(equity) / dte)), 1),
         "win_rate": round(win_rate, 1),
     }
+    if "assignments" in equity.attrs:
+        m["assignments"] = equity.attrs["assignments"]
+    return m
 
 
 OPTIONS_REGISTRY = {
     "covered_call": {"fn": covered_call_backtest,
-                     "grid": {"otm_pct": [0.03, 0.05, 0.08], "dte": [21, 30, 45]}},
+                     "grid": {"otm_pct": [0.03, 0.05, 0.08], "dte": [21, 30, 45],
+                             "iv_over_rv": [1.0, 1.15, 1.3]}},
     "cash_secured_put": {"fn": cash_secured_put_backtest,
-                         "grid": {"otm_pct": [0.03, 0.05, 0.08], "dte": [21, 30, 45]}},
+                         "grid": {"otm_pct": [0.03, 0.05, 0.08], "dte": [21, 30, 45],
+                                 "iv_over_rv": [1.0, 1.15, 1.3]}},
+    "wheel": {"fn": wheel_backtest,
+             "grid": {"otm_pct": [0.03, 0.05, 0.08], "dte": [21, 30, 45],
+                     "iv_over_rv": [1.0, 1.15, 1.3]}},
     "bull_call_spread": {"fn": bull_call_spread_backtest,
-                         "grid": {"otm_pct_short": [0.05, 0.08, 0.1], "dte": [21, 30, 45]}},
+                         "grid": {"otm_pct_short": [0.05, 0.08, 0.1], "dte": [21, 30, 45],
+                                 "iv_over_rv": [1.0, 1.15, 1.3]}},
+    "put_credit_spread": {"fn": put_credit_spread_backtest,
+                          "grid": {"otm_pct_short": [0.03, 0.05, 0.08],
+                                  "otm_pct_long": [0.08, 0.10, 0.15], "dte": [21, 30, 45]}},
 }
 
 
