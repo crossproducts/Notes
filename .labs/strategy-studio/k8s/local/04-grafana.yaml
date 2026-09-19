@@ -28,6 +28,8 @@ spec:
       containers:
         - name: grafana
           image: grafana/grafana-oss:latest
+          env:
+            - { name: GF_PLUGINS_PREINSTALL_DISABLED, value: "true" }   # skip Loki/Pyroscope apps we don't use
           ports:
             - containerPort: 3000
           volumeMounts:
