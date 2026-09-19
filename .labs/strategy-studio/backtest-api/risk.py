@@ -124,6 +124,62 @@ def pre_trade_check(client, symbol: str, buy_notional_dollars: float) -> tuple[b
     return True, "ok"
 
 
+def options_pre_trade_check(client, symbol: str, leg: str, strike: float | None = None) -> tuple[bool, str]:
+    """Pre-trade checks before the wheel sells to open a new leg. Reuses the
+    kill-switch and daily-loss checks from pre_trade_check; skips the
+    equity-shaped max-open-positions/per-symbol-exposure checks, which don't
+    map to a single-symbol options wheel.
+
+    Args:
+        leg:    'cash' (about to sell a CASH-SECURED PUT — `strike` required,
+                used to size the buying-power check) or 'shares' (about to
+                sell a COVERED CALL — needs >=100 shares already held).
+
+    Also refuses if an option position already exists on this underlying —
+    the wheel should only ever have one leg open at a time per symbol.
+    """
+    if is_killed():
+        return False, "kill switch engaged"
+
+    acct = client.get_account()
+    equity = float(acct.equity)
+    last_equity = float(acct.last_equity)
+    if last_equity > 0:
+        daily_loss_pct = (last_equity - equity) / last_equity * 100.0
+        if daily_loss_pct >= RISK_MAX_DAILY_LOSS_PCT:
+            return False, (
+                f"daily loss {daily_loss_pct:.2f}% >= limit {RISK_MAX_DAILY_LOSS_PCT}%"
+            )
+
+    import options as _options
+    import paper as _paper
+
+    existing = [p for p in _options.option_positions(client)
+               if p["symbol"].startswith(symbol) and len(p["symbol"]) > len(symbol)
+               and p["symbol"][len(symbol)].isdigit()]
+    if existing:
+        return False, f"an option position already exists on {symbol}: {existing[0]['symbol']}"
+
+    if leg == "cash":
+        if strike is None:
+            return False, "strike required to size a cash-secured put check"
+        required_cash = strike * 100.0
+        buying_power = float(acct.buying_power)
+        if required_cash > buying_power:
+            return False, (
+                f"insufficient buying power: need ~${required_cash:,.0f} to secure the put, "
+                f"have ${buying_power:,.0f}"
+            )
+    elif leg == "shares":
+        shares = _paper.position_qty(client, symbol)
+        if shares < 100:
+            return False, f"need >=100 shares of {symbol} to cover a call, holding {shares}"
+    else:
+        return False, f"unknown leg '{leg}' (expected 'cash' or 'shares')"
+
+    return True, "ok"
+
+
 def live_readings(client) -> dict:
     """Return current risk readings; degrade gracefully if Alpaca is unreachable."""
     try:

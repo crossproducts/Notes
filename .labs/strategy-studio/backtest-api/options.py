@@ -381,6 +381,9 @@ def latest_quote(contract_symbol: str):
     from alpaca.data.requests import OptionLatestQuoteRequest
     data_client = OptionHistoricalDataClient(os.getenv("ALPACA_API_KEY"), os.getenv("ALPACA_SECRET_KEY"))
     quotes = data_client.get_option_latest_quote(OptionLatestQuoteRequest(symbol_or_symbols=contract_symbol))
+    if contract_symbol not in quotes:
+        raise RuntimeError(f"no live quote for {contract_symbol} — market may be closed, "
+                           "or Alpaca has no quote data for this contract")
     return quotes[contract_symbol]
 
 
@@ -425,3 +428,71 @@ def option_positions(client) -> list[dict]:
     return [{"symbol": p.symbol, "qty": float(p.qty), "market_value": float(p.market_value),
              "unrealized_pl": float(p.unrealized_pl)}
             for p in client.get_all_positions() if getattr(p, "asset_class", None) == "us_option"]
+
+
+def wheel_step(client, symbol: str, dte: int = 30, otm_pct: float = 0.05) -> dict:
+    """One live reconciliation/roll step of the wheel for `symbol`. Idempotent
+    — call it daily; it no-ops unless there's actually something to do. State
+    is persisted in Postgres via wheel_state so this picks up correctly across
+    restarts and scheduler ticks.
+
+    Never re-derives assignment from a price comparison — always asks Alpaca
+    what's actually in the account. A tracked contract that vanished from
+    positions is treated as "settled" (expired OTM, assigned, or exercised —
+    which one doesn't matter, since the new leg is inferred purely from
+    current share count, which handles early assignment for free).
+    """
+    import paper
+    import risk
+    import wheel_state
+
+    state = wheel_state.get_state(symbol)
+
+    # 1. An order was placed but not yet confirmed filled — check it, don't sell again.
+    if state["pending_order_id"]:
+        order = client.get_order_by_id(state["pending_order_id"])
+        status = str(getattr(order, "status", ""))
+        if "filled" in status.lower():
+            wheel_state.set_state(symbol, state["state"], contract_symbol=state["contract_symbol"],
+                                  pending_order_id=None, strike=state["strike"],
+                                  expiration=state["expiration"])
+            return {"symbol": symbol, "action": "CONFIRMED", "state": state["state"],
+                    "contract": state["contract_symbol"]}
+        if status.lower() in ("canceled", "expired", "rejected", "done_for_day"):
+            wheel_state.set_state(symbol, state["state"])  # clear contract/order fields, retry next step
+            return {"symbol": symbol, "action": "ORDER_FAILED", "detail": status,
+                    "note": "cleared — will retry sell-to-open on the next step"}
+        return {"symbol": symbol, "action": "PENDING", "detail": status,
+                "contract": state["contract_symbol"]}
+
+    # 2. A confirmed-open contract — has it settled (expired/assigned/exercised)?
+    if state["contract_symbol"]:
+        still_open = any(p["symbol"] == state["contract_symbol"] for p in option_positions(client))
+        if still_open:
+            return {"symbol": symbol, "action": "HOLD", "state": state["state"],
+                    "contract": state["contract_symbol"]}
+        shares = paper.position_qty(client, symbol)
+        new_leg = "shares" if shares >= 100 else "cash"
+        wheel_state.set_state(symbol, new_leg)
+        return {"symbol": symbol, "action": "SETTLED", "new_state": new_leg,
+                "detail": "contract left positions — inferred from live share count; "
+                          "will sell the next leg on the following step"}
+
+    # 3. Nothing open, nothing pending — sell the leg matching the current state.
+    spot = float(engine.fetch(symbol, "2024-01-01")["Close"].iloc[-1])
+    if state["state"] == "cash":
+        target_strike = spot * (1 - otm_pct)
+        ok, reason = risk.options_pre_trade_check(client, symbol, "cash", target_strike)
+        if not ok:
+            return {"symbol": symbol, "action": "BLOCKED", "detail": reason}
+        result = sell_cash_secured_put(client, symbol, spot, dte, otm_pct)
+    else:
+        ok, reason = risk.options_pre_trade_check(client, symbol, "shares")
+        if not ok:
+            return {"symbol": symbol, "action": "BLOCKED", "detail": reason}
+        result = sell_covered_call(client, symbol, spot, dte, otm_pct)
+
+    wheel_state.set_state(symbol, state["state"], contract_symbol=result["contract"],
+                          pending_order_id=result["order_id"], strike=result["strike"],
+                          expiration=result["expiration"])
+    return {"symbol": symbol, "action": "SELL_OPEN", "state": state["state"], **result}

@@ -68,6 +68,16 @@ CREATE TABLE IF NOT EXISTS risk_state (
     value TEXT,
     updated TIMESTAMPTZ DEFAULT now()
 );
+CREATE TABLE IF NOT EXISTS options_wheel_state (
+    symbol TEXT PRIMARY KEY,
+    state TEXT NOT NULL DEFAULT 'cash',
+    contract_symbol TEXT,
+    pending_order_id TEXT,
+    strike DOUBLE PRECISION,
+    expiration DATE,
+    opened TIMESTAMPTZ,
+    updated TIMESTAMPTZ DEFAULT now()
+);
 CREATE TABLE IF NOT EXISTS video_queue (
     id TEXT PRIMARY KEY,
     url TEXT NOT NULL,
@@ -541,6 +551,34 @@ def paper_execute(symbol: str, position_pct: float = 10.0):
     return {"symbol": symbol, "champion_strategy": strategy, "signal_today": signal,
             "action": action, "detail": detail, "account_equity": acct["equity"],
             "paper": True, "blocked": action == "BLOCKED"}
+
+
+@app.post("/paper/options/wheel/{symbol}/step")
+def paper_options_wheel_step(symbol: str, dte: int = 30, otm_pct: float = 0.05):
+    """One live reconciliation/roll step of the options wheel for `symbol` —
+    see options.wheel_step for the state machine. Idempotent; safe to call
+    repeatedly (e.g. manually, before trusting the scheduler with it)."""
+    import options
+    import paper
+
+    try:
+        client = options.get_client()
+        r = options.wheel_step(client, symbol, dte, otm_pct)
+        acct = paper.account_summary(client)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(502, f"Alpaca paper API: {e}")
+
+    with db.begin() as conn:
+        conn.execute(text(
+            "INSERT INTO paper_actions (symbol, strategy, signal, action, detail, equity) "
+            "VALUES (:sym,:s,:sig,:a,:d,:e)"),
+            {"sym": symbol, "s": "wheel", "sig": 0, "a": r["action"],
+             "d": json.dumps({k: v for k, v in r.items() if k not in ("symbol", "action")}),
+             "e": acct["equity"]})
+
+    return {**r, "account_equity": acct["equity"], "paper": True}
 
 
 @app.get("/paper/log")
