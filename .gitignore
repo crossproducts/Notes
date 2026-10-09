@@ -11,8 +11,9 @@
 Thumbs.db
 desktop.ini
 
-# Editor / IDE
-.vscode/
+# Editor / IDE — settings.json is shared (draw.io plugin wiring)
+.vscode/*
+!.vscode/settings.json
 .idea/
 
 # Obsidian (vault opened at repo root) — keep per-machine state out of git
@@ -31,3 +32,15 @@ __pycache__/
 
 # EDGAR response cache (runtime artifact)
 .edgar_cache/
+
+# Video-pipeline cache: media is large and fully regenerable from the URL in
+# sources.yaml. The RESEARCH OUTPUT (transcripts, interpreted strategies,
+# segments) is small and is deliberately kept under version control.
+.labs/audio-extraction/cache/*.mp3
+.labs/audio-extraction/cache/*.mp4
+.labs/audio-extraction/cache/*.wav
+.labs/audio-extraction/cache/*_frames/
+
+# Playwright persistent context for an authenticated Instagram session
+# (discover.py --ig-profile-dir). Contains live session cookies - never commit.
+.labs/audio-extraction/.ig-profile/
