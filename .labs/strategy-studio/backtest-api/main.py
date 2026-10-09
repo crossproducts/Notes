@@ -28,7 +28,7 @@ import analysis
 import engine
 from strategies import REGISTRY, SLOW_STRATEGIES
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://studio:studio@localhost:5433/backtests")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://studio:studio@localhost:5433/backtests")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://host.docker.internal:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
 IMPORTED_DIR = Path(os.getenv("IMPORTED_DIR", "/app/imported"))

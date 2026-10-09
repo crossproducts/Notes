@@ -215,6 +215,139 @@ def insider_form4(df, params):
     return sig
 
 
+# --- Efficiency-Ratio forecast gate (reel DeF5_5yPtDb) -----------------------
+# A meta-filter, not a strategy. A logistic regression predicts whether TOMORROW
+# is a clean directional session (high efficiency) or chop, from the 15
+# measurements named in the reel; the forecast gates a base strategy so the
+# predicted-chop days are skipped.
+#
+# No lookahead anywhere: the model is refit on an expanding window and only ever
+# scores the block that FOLLOWS its training data; feature standardisation, the
+# tercile label cut, and the gate threshold are all computed on training rows
+# only. During warm-up the gate passes through (gate=1) so the gated and base
+# curves are identical until the model exists — any later divergence is the gate.
+
+def _daily_efficiency(df):
+    """Intraday directional efficiency |C-O|/(H-L): 1.0 = clean one-way session.
+    A 1-day Kaufman ER is degenerate (always 1.0), so per-day efficiency has to
+    be the intraday form; multi-day features below use the real Kaufman ER."""
+    rng = (df["High"] - df["Low"]).replace(0, np.nan)
+    return ((df["Close"] - df["Open"]).abs() / rng).clip(0, 1)
+
+
+def _kaufman_er(close, n):
+    """|net move over n| / sum(|daily moves| over n)."""
+    net = (close - close.shift(n)).abs()
+    path = close.diff().abs().rolling(n).sum().replace(0, np.nan)
+    return (net / path).clip(0, 1)
+
+
+def _eff_features(df):
+    """The 15 measurements shown in the reel, in its own two groupings."""
+    close = df["Close"]
+    eff = _daily_efficiency(df)
+    ret = close.pct_change()
+    vol20 = ret.rolling(20).std()
+    chop = (eff < 0.3).astype(float)
+    streak = chop.groupby((chop == 0).cumsum()).cumsum()   # chop days in a row
+    ma50 = close.rolling(50).mean()
+    vr = (close.pct_change(5).rolling(60).var() /
+          (5 * ret.rolling(60).var())).replace([np.inf, -np.inf], np.nan)
+    hi10, lo10 = close.rolling(10).max().shift(1), close.rolling(10).min().shift(1)
+    fb = (((df["High"] > hi10) & (close < hi10)) |
+          ((df["Low"] < lo10) & (close > lo10))).astype(float)
+
+    return pd.DataFrame({
+        # "what the market just did"
+        "realised_vol_20": vol20,
+        "eff_today": eff,
+        "er_20": _kaufman_er(close, 20),
+        "variance_ratio": vr,
+        "false_breakout_rate": fb.rolling(20).mean(),
+        "dist_from_ma50": (close - ma50) / ma50,
+        # "what it's been doing lately"
+        "chop_streak": streak,
+        "er_5": _kaufman_er(close, 5),
+        "er_10": _kaufman_er(close, 10),
+        "eff_mean_20": eff.rolling(20).mean(),
+        "eff_lag1": eff.shift(1),
+        "eff_lag2": eff.shift(2),
+        "vol_change": vol20 / vol20.shift(20) - 1,
+        "chop_share_5": chop.rolling(5).mean(),
+        "chop_share_10": chop.rolling(10).mean(),
+    }), eff
+
+
+def _fit_logistic(X, y, l2=1.0, iters=60):
+    """Ridge-penalised logistic regression by Newton/IRLS. numpy only — the API
+    image has no sklearn and this is 15 features on a few thousand rows."""
+    n, k = X.shape
+    Xb = np.hstack([np.ones((n, 1)), X])
+    w = np.zeros(k + 1)
+    reg = np.eye(k + 1) * l2
+    reg[0, 0] = 0.0                      # never penalise the intercept
+    for _ in range(iters):
+        p = 1.0 / (1.0 + np.exp(-np.clip(Xb @ w, -30, 30)))
+        W = np.clip(p * (1 - p), 1e-6, None)
+        grad = Xb.T @ (y - p) - reg @ w
+        H = (Xb.T * W) @ Xb + reg
+        try:
+            step = np.linalg.solve(H, grad)
+        except np.linalg.LinAlgError:
+            break
+        w = w + step
+        if np.max(np.abs(step)) < 1e-8:
+            break
+    return w
+
+
+def _logistic_p(w, X):
+    Xb = np.hstack([np.ones((X.shape[0], 1)), X])
+    return 1.0 / (1.0 + np.exp(-np.clip(Xb @ w, -30, 30)))
+
+
+def efficiency_gate(df, params):
+    base_name = str(params.get("base", "momentum"))
+    gate_q = float(params.get("gate_q", 0.33))        # skip this bottom fraction
+    min_train = int(params.get("min_train_days", 756))
+    refit_days = int(params.get("refit_days", 252))
+
+    if base_name == "efficiency_gate" or base_name not in REGISTRY:
+        base_name = "momentum"
+    base_params = {k: v for k, v in params.items()
+                   if k not in ("base", "gate_q", "min_train_days", "refit_days")}
+    base_sig = REGISTRY[base_name]["fn"](df, base_params).astype(int)
+
+    feats, eff = _eff_features(df)
+    X = feats.to_numpy(dtype=float)
+    y_eff = eff.shift(-1).to_numpy(dtype=float)       # tomorrow's efficiency
+    ok = np.isfinite(X).all(axis=1) & np.isfinite(y_eff)
+
+    n = len(df)
+    gate = np.ones(n, dtype=int)                      # warm-up = pass-through
+    idx = np.arange(n)
+
+    start = min_train
+    while start < n:
+        end = min(start + refit_days, n)
+        tr = ok & (idx < start)                       # strictly the past
+        te = ok & (idx >= start) & (idx < end)
+        if tr.sum() >= 250 and te.any():
+            Xtr = X[tr]
+            mu, sd = Xtr.mean(0), Xtr.std(0)
+            sd[sd == 0] = 1.0
+            Ztr = (Xtr - mu) / sd
+            label = (y_eff[tr] >= np.quantile(y_eff[tr], 2 / 3)).astype(float)
+            w = _fit_logistic(Ztr, label)
+            cut = np.quantile(_logistic_p(w, Ztr), gate_q)
+            gate[idx[te]] = (_logistic_p(w, (X[te] - mu) / sd) >= cut).astype(int)
+        elif te.any():
+            gate[idx[te]] = 1
+        start = end
+
+    return pd.Series(base_sig.to_numpy() * gate, index=df.index)
+
+
 # EDGAR-scanning strategies: too slow / rate-limited for nightly sweeps
 SLOW_STRATEGIES = {"insider_form4", "whale_13f"}
 
@@ -242,4 +375,7 @@ REGISTRY = {
     "rotation_top_k": {"fn": rotation_top_k,
                        "grid": {"lookback_days": [60, 90, 120], "top_k": [2, 3]}},
     "whale_13f": {"fn": whale_13f, "grid": {"max_filings": [8, 12]}},
+    "efficiency_gate": {"fn": efficiency_gate,
+                        "grid": {"gate_q": [0.2, 0.33, 0.5],
+                                 "lookback_days": [60, 90, 120]}},
 }

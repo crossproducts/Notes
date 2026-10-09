@@ -35,12 +35,14 @@ services:
       - "8001:8000"   # 8001 on host: 8000 was already taken locally
     env_file: .env
     environment:
-      - DATABASE_URL=postgresql://studio:studio@postgres:5432/backtests
+      - DATABASE_URL=postgresql+psycopg2://studio:studio@postgres:5432/backtests
       - OLLAMA_URL=http://host.docker.internal:11434  # local qwen analyst
       - OLLAMA_MODEL=qwen2.5:3b
     volumes:
       # video-pipeline strategies become studio strategies (read-only)
       - ../audio-extraction/cache:/app/imported:ro
+      # ad-hoc research/falsification scripts (see research/README.md)
+      - ./research:/app/research:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
