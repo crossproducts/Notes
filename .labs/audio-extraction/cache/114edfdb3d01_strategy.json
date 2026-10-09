@@ -1,0 +1,65 @@
+{
+  "name": "Efficiency-Ratio Forecast Gate (ML meta-filter)",
+  "description": "Not a standalone strategy — a meta-filter. A logistic regression predicts whether TOMORROW will be a clean directional session (high efficiency ratio) or a chop session, using 15 measurements of how price has been moving. The forecast gates an existing strategy: skip the low-efficiency days entirely.",
+  "source_video": "https://www.instagram.com/reel/DeF5_5yPtDb/",
+  "interpreted_by": "claude in-session (pipeline ANTHROPIC_API_KEY unset)",
+  "instrument": "any — applied here to SPY daily",
+  "timeframe": "daily",
+  "setup": {
+    "type": "ml_regime_gate",
+    "description": "Predict next-day efficiency ratio with logistic regression over 15 price-movement features. Rank days by predicted efficiency; trade only the days predicted to be clean/directional."
+  },
+  "target": {
+    "definition": "Next session's directional efficiency = |Close - Open| / (High - Low).",
+    "label": "1 if next-day efficiency lands in the top tercile of the TRAINING distribution, else 0",
+    "note": "A single-day Kaufman ER is degenerate (always 1.0), so the per-day efficiency must be the intraday |C-O|/(H-L) form. Multi-day features use the standard Kaufman ER = |net change over n| / sum(|daily changes| over n)."
+  },
+  "features": [
+    {"name": "realised_vol_20", "reel_weight": -0.204, "group": "what the market just did"},
+    {"name": "eff_today", "reel_weight": -0.198, "group": "what the market just did"},
+    {"name": "er_20", "reel_weight": -0.036, "group": "what the market just did"},
+    {"name": "variance_ratio", "reel_weight": -0.101, "group": "what the market just did"},
+    {"name": "false_breakout_rate", "reel_weight": 0.182, "group": "what the market just did"},
+    {"name": "dist_from_ma50", "reel_weight": -0.198, "group": "what the market just did"},
+    {"name": "chop_streak", "reel_weight": 0.065, "group": "what it's been doing lately"},
+    {"name": "er_5", "reel_weight": 0.044, "group": "what it's been doing lately"},
+    {"name": "er_10", "reel_weight": 0.013, "group": "what it's been doing lately"},
+    {"name": "eff_mean_20", "reel_weight": -0.024, "group": "what it's been doing lately"},
+    {"name": "eff_lag1", "reel_weight": -0.200, "group": "what it's been doing lately"},
+    {"name": "eff_lag2", "reel_weight": -0.135, "group": "what it's been doing lately"},
+    {"name": "vol_change", "reel_weight": -0.119, "group": "what it's been doing lately"},
+    {"name": "chop_share_5", "reel_weight": 0.009, "group": "what it's been doing lately"},
+    {"name": "chop_share_10", "reel_weight": 0.098, "group": "what it's been doing lately"}
+  ],
+  "entry": {
+    "long": "base strategy signal AND predicted P(high efficiency) above the gate threshold"
+  },
+  "exit": {
+    "rule": "base strategy exit, OR the gate closing (predicted chop day)"
+  },
+  "claims_from_video": {
+    "trades_analysed": 829,
+    "tercile_split": {
+      "low":    {"trades": 254, "expectancy_per_trade": 154, "profit_factor": 1.175, "win_rate_pct": 57.1, "max_dd_pct": 18.3},
+      "medium": {"trades": 257, "expectancy_per_trade": 281, "profit_factor": 1.349, "win_rate_pct": 59.5, "max_dd_pct": 17.3},
+      "high":   {"trades": 318, "expectancy_per_trade": 454, "profit_factor": 1.593, "win_rate_pct": 63.2, "max_dd_pct": 12.6}
+    },
+    "gate_applied": {
+      "without": {"expectancy_per_trade": 308, "profit_factor": 1.379, "win_rate_pct": 60.2, "max_dd_usd": 28259, "return_over_dd": 9.05, "sharpe": 1.42},
+      "with":    {"expectancy_per_trade": 377, "profit_factor": 1.481, "win_rate_pct": 60.6},
+      "deltas":  {"expectancy_pct": 22.1, "profit_factor_pct": 7.4}
+    },
+    "held_out": "claimed to hold on 2 years the model never saw"
+  },
+  "falsifiable_claims": [
+    "Predicted efficiency sorts next-day outcomes monotonically (low < medium < high) on expectancy and profit factor.",
+    "Gating out the low-predicted-efficiency tercile improves risk-adjusted return of the base strategy.",
+    "The improvement survives out-of-sample walk-forward, not just the fitted period."
+  ],
+  "honest_gaps": [
+    "The reel never names the base strategy. 829 trades over the sample implies a far higher-frequency system than a daily SPY rule; we test the gate on the studio's reigning SPY champion (momentum), which trades far less often.",
+    "Reel weights are shown but we refit the model ourselves on training data only — using his published weights would be fitting to his sample, not ours.",
+    "Dollar expectancy is not comparable across strategies; we compare sharpe / return / drawdown instead."
+  ],
+  "notes": "Model is refit on an expanding window with a strictly out-of-sample prediction block, so no future information enters the gate. Features are standardised on training-window statistics only."
+}

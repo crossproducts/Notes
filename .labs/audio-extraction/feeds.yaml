@@ -1,0 +1,57 @@
+# Research intake feeds (agent-reach `rss` channel)
+# -------------------------------------------------
+# `python discover.py` pulls these, keeps items whose title/summary match
+# `keywords`, and routes them:
+#
+#   YouTube links  -> sources.yaml   as status: pending   (the video queue)
+#   everything else -> Trading/Strategy Ideas.md inbox     (triage by hand)
+#
+# That split matches the existing architecture: sources.yaml is for videos the
+# pipeline can transcribe and backtest; Strategy Ideas is the inbox for
+# everything that still needs a human decision.
+#
+# Dry-run by default -- nothing is written until you pass --write.
+
+keywords:
+  - backtest
+  - trading strategy
+  - momentum
+  - mean reversion
+  - factor
+  - quant
+  - systematic
+  - algorithmic
+  - volatility
+  - regime
+  - walk-forward
+  - sharpe
+
+feeds:
+  - name: Alpha Architect
+    url: https://alphaarchitect.com/feed/
+    note: practitioner-facing quant research, usually with the paper attached
+
+  - name: Quantocracy
+    url: https://quantocracy.com/feed/
+    note: aggregator of quant blog posts -- high volume, filter hard
+
+  - name: arXiv q-fin.TR (trading & microstructure)
+    url: http://export.arxiv.org/rss/q-fin.TR
+    note: academic; most is untradeable, occasionally a real edge
+
+  - name: arXiv q-fin.PM (portfolio management)
+    url: http://export.arxiv.org/rss/q-fin.PM
+
+# Instagram profiles to scan for new reels (`discover.py --profiles`).
+#
+# LIMIT: logged out, Instagram shows only the ~6 most recent posts before the
+# login wall. For the full back-catalogue you need an authenticated session --
+# see README (`--ig-profile-dir`, a Playwright persistent context you log into
+# once by hand). yt-dlp cannot enumerate IG profiles at all right now.
+instagram_profiles:
+  - name: quantpapers
+    url: https://www.instagram.com/quantpapers/
+    note: >-
+      "The most interesting quant finance papers, simplified by actual quants."
+      High signal - accurate paper explainers, not funnels. But expect most to
+      be ENGINE-GAP rather than directly backtestable (see 13233f413fe3).

@@ -62,7 +62,8 @@ sources:
     status: skipped
     cache_key: 1bc3a41451db
     tags: [marketing-funnel, no-strategy]
-    note: no tradeable strategy — a promo for a paid community + fxstreamer
+    note: >-
+      no tradeable strategy — a promo for a paid community + fxstreamer
       no-code MT5 builder + "comment system" lead magnet. Only concrete rule
       ("indicator 5 above indicator 20") is a generic MA cross = existing
       trend_ma. Red flag: literally advocates "over-optimizing" — the exact
@@ -87,6 +88,151 @@ sources:
       principles decay slower' framing is sound. Implemented as builtin
       triple_momentum, BUT loses to single-lookback momentum (SPY excess-sharpe
       0.70 vs 0.88, OOS 80% vs 140%). Good idea, not the champion.
+
+  - url: https://www.instagram.com/reel/DeF5_5yPtDb/
+    name: Efficiency-Ratio Forecast Gate (ML meta-filter)
+    status: backtested
+    cache_key: 114edfdb3d01
+    tags: [equities, ml, regime-filter, meta-filter, falsified]
+    note: >-
+      FAILS on daily equity indices. A logistic regression over 15
+      price-movement features predicts next-day efficiency (|C-O|/(H-L)) and
+      gates a base strategy. Rebuilt and tested strictly OOS (expanding-window
+      refit, train-only standardisation + tercile cuts). Model has almost no
+      skill - OOS AUC 0.519 SPY / 0.538 QQQ, and accuracy is BELOW the
+      majority-class baseline on both. The reel's monotonic low/med/high table
+      does not reproduce: next-day return by predicted bucket is 5.76/6.69/5.71
+      bps on SPY, and profit factor DECREASES with predicted efficiency.
+      Gating hurt 10/10 strategy-instrument combinations (SPY+QQQ x momentum,
+      mean_reversion, breakout, trend_ma, macd) - e.g. SPY momentum sharpe
+      0.39 -> 0.05, return 270% -> 98%. Mechanism of harm is clear - a daily
+      on/off gate shreds held positions into churn (trend_ma switches 15 ->
+      643) and pays costs on every interruption. Caveat - his base strategy is
+      unnamed with 829 trades, so likely intraday; untested there.
+
+  - url: https://www.instagram.com/reel/DeQZfklR58T/
+    name: "Grok 6-bot 'AI trading desk' (comment-GROK funnel)"
+    status: skipped
+    cache_key: 21ea6aeb17c5
+    tags: [marketing-funnel, no-strategy, ai-agents, llm]
+    note: >-
+      No tradeable strategy - a lead magnet. Pitch is six Grok bots in a group
+      chat as a "trading desk" (scanner / news / entry-exit / skeptic / +2),
+      running 24-7, with a "comment GROK and I'll send the breakdown" CTA. Zero
+      rules: no instrument, no timeframe, no entry or exit condition, no
+      parameters, nothing the pipeline can turn into a backtest. Frames are
+      cartoon agent blobs, not data. Claimed returns are the tell - $87 to
+      $8,000 (92x) and $90 to $14,000 (155x) with no period, no drawdown, no
+      trade count. Same category as the OxfordStrat funnel (1bc3a41451db).
+      The ONE reusable idea is the adversarial "skeptic" agent that argues
+      against each trade - but that is the bull-vs-bear debate pattern we
+      already extracted and backtested (b9a107049e52), so it is not new here.
+
+  - url: https://www.instagram.com/reel/DeChNonMdOQ/
+    name: Deep Learning Statistical Arbitrage (Stanford paper explainer)
+    status: skipped
+    cache_key: 13233f413fe3
+    tags: [equities, stat-arb, market-neutral, ml, legit, engine-gap]
+    note: >-
+      BEST-SOURCED reel in the queue, and skipped for ENGINE reasons, not
+      quality. Accurate 3-min explainer of Guijarro-Ordonez, Pelger & Zanotti,
+      "Deep Learning Statistical Arbitrage" (arXiv 2106.04028, 68pp) - I pulled
+      the paper and every claim checks out. Method: residual portfolios from
+      IPCA latent factors, 30-day lookback, CNN (local trend/reversal filters)
+      + 1-layer transformer (4 attention heads), trained DIRECTLY on a Sharpe
+      objective rather than return prediction. OOS Jan-2002..Dec-2016.
+      Gross Sharpe 4.16 (frame 8) vs ~2 Fourier+FFN vs ~1 OU+threshold.
+      THE NUMBER THAT MATTERS - paper Section III.J, net of 5bps/transaction +
+      1bp short-holding: "Sharpe ratios are lower and range from 0.94 to 1.24".
+      Our SPY champion is 1.17, i.e. INSIDE that band. The 4x headline is a
+      pre-cost number and the creator says so on camera, to his credit.
+      Not implementable as-is - our engine is long-only single-symbol
+      fn(df,params)->0/1; this needs market-neutral long/short over ~550 names.
+      Real value would be DIVERSIFICATION (uncorrelated to our long-only book),
+      not higher standalone Sharpe. See Strategy Ideas for the engine-work note.
+
+  - url: https://www.instagram.com/reel/DeF6WMaB-NX/
+    name: "Overnight vs Intraday return decomposition (Knuteson)"
+    status: backtested
+    cache_key: 523a7fb765bc
+    tags: [equities, overnight-effect, anomaly, legit, cost-killed]
+    note: >-
+      BACKTESTED - real anomaly, killed by costs. Claim: holding only
+      overnight (close->open) captures all the return; intraday (open->close)
+      loses it. Verified on our own daily OHLC, no new data needed.
+      DECOMPOSITION IS EXACT - (overnight x intraday) reproduces buy&hold to
+      the dollar on MU/SPY/QQQ, so the method is sound.
+      GROSS it is spectacular: MU overnight +7,738,122% vs buy&hold +4,154%,
+      intraday -100%. SPY overnight sharpe 0.75 vs buy&hold 0.45.
+      AT OUR 5bps/side IT IS CATASTROPHIC: the overnight leg round-trips EVERY
+      session (~25%/yr friction). SPY -99% total, sharpe -1.42. QQQ -96%,
+      sharpe -0.80. Only MU survives (sharpe 0.54) and only because its
+      overnight drift is enormous.
+      At 1bp/side (institutional execution we do not have) SPY +130% sharpe
+      0.27 - still BELOW buy&hold's 0.45. QQQ 0.58 beats buy&hold 0.41.
+      VERDICT: do not trade. Textbook demonstration of why costs default ON.
+      Closes the 'Overnight/close-to-open effects' item in Strategy Ideas.
+
+
+  - url: https://www.instagram.com/reel/DeIthn8RIXw/
+    name: "Pelosi / congressional copy-trading (2026 study)"
+    status: skipped
+    cache_key: 1c239c08245c
+    tags: [equities, signals, duplicate, debunked]
+    note: >-
+      DUPLICATE of 748f15d07e9c (Congressional Trading Copycat), already
+      backtested. Reel's own analysis agrees with the skeptical read: 35
+      purchases, +33% avg (+15.6% vs market) but "this result does not pass"
+      significance; >half the buys were in the 10 largest companies (which rose
+      27.6% anyway) and two Nvidia trades (+186%, +122%) did most of the work.
+      That is beta and a tiny sample, not alpha. 45-day disclosure lag means
+      the move is largely gone before you can copy. No new work needed.
+
+
+  - url: https://www.instagram.com/reel/DeLCpE5tGB5/
+    name: "Sharpe ratio explainer (no strategy)"
+    status: skipped
+    cache_key: 3e5f7d1b083d
+    tags: [education, no-strategy]
+    note: >-
+      Not a strategy - a conceptual explainer of the Sharpe ratio. Nothing
+      to backtest. Decent framing worth stealing for docs: at sharpe 0.5 you
+      lose money roughly 1 year in 3; at 2.0, roughly 1 year in 40. Useful for
+      calibrating expectations in Go-Live Checklist.
+
+
+  - url: https://www.instagram.com/reel/DeN77ozRMBF/
+    name: "Bitcoin 4-year halving cycle"
+    status: skipped
+    cache_key: 29532173b85d
+    tags: [crypto, out-of-universe, untestable, n=3]
+    note: >-
+      Untestable and out of universe. n=3 halvings is not a sample - you
+      cannot validate a 4-year cycle on three observations, whatever the
+      p-value on the day-selection test says. The reel is honest about the
+      curve-fitting: the rainbow chart was REDRAWN after price fell out of it
+      in 2022, and off-schedule crashes (Apr 2013, -70%) get omitted. Also we
+      trade Alpaca equities; no crypto in the universe.
+
+
+  - url: https://www.instagram.com/reel/DeQiyXQRNzd/
+    name: "Heston intraday periodicity (half-hour momentum)"
+    status: skipped
+    cache_key: 701ea111c21e
+    tags: [equities, intraday, cross-sectional, legit, engine-gap]
+    note: >-
+      LEGIT but blocked on the engine - highest-value engine-gap item after
+      the stat-arb reel. This is Heston, Korajczyk & Sadka, "Intraday Patterns
+      in the Cross-section of Stock Returns" (Journal of Finance): 1700+ NYSE
+      names, 5 years, half-hour bins. Today's top-decile half-hour beats the
+      bottom decile AT THE SAME HALF-HOUR tomorrow, persisting ~40 trading
+      days; reverses at other times of day; strongest in the first and last
+      half hour. Mechanism is institutional order-slicing on a daily clock.
+      BLOCKED: needs intraday (30-min) bars across a wide cross-section plus a
+      cross-sectional ranking engine. We are daily, single-symbol, long-only.
+      Alpaca does supply minute bars, so the DATA is reachable; the ENGINE is
+      not. See Trading/Engine Backlog.md.
+
 
   # --- add new sources below as `pending` ---
   # - url: https://www.instagram.com/reel/XXXXXXXX/

@@ -7,6 +7,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from . import reach
+
 CACHE_DIR = Path(__file__).parent.parent / "cache"
 
 
@@ -187,9 +189,18 @@ def download_audio_via_browser(url: str, cache_key: str, video_path: str = "") -
         path = u.split("?")[0].lower()
         if ctype.startswith("audio/") or path.endswith(".m4a"):
             return 0
+        # Instagram serves its DASH *audio* track as content-type video/mp4 with
+        # /m78/ in the path, and the video-only tracks as /m367/. Without this
+        # they all rank equal, so a reel with many video tracks exhausts the
+        # 6-candidate budget on streams that contain no audio at all and the
+        # extract fails with "Output file #0 does not contain any stream".
+        if "/m78/" in path:
+            return 0
+        if "/m367/" in path:
+            return 2
         if path.endswith(".mp4"):
             return 1
-        return 2
+        return 3
 
     seen, candidates = set(), []
     mp4_candidates = []
@@ -199,7 +210,12 @@ def download_audio_via_browser(url: str, cache_key: str, video_path: str = "") -
         if clean not in seen:
             seen.add(clean)
             candidates.append(clean)
-            if clean.split("?")[0].lower().endswith(".mp4"):
+            # Only real VIDEO tracks are frame-capture candidates. Instagram's
+            # audio track also ends in .mp4, so without excluding /m78/ we save
+            # the audio stream as the "video" and frame extraction silently
+            # yields 0 frames from an mp4 that has no video stream at all.
+            path = clean.split("?")[0].lower()
+            if path.endswith(".mp4") and "/m78/" not in path:
                 mp4_candidates.append(clean)
 
     last_err = ""
@@ -460,8 +476,24 @@ def run(url: str, whisper_model: str = "base") -> dict:
     if caption:
         print(f"  Caption: {caption[:80]}...")
 
-    audio_path, video_path = download_video(url, cache_key)
-    transcript = transcribe(audio_path, cache_key, whisper_model)
+    # Fast path: YouTube publishes its own captions, so for YT sources we can
+    # skip the audio download AND the Whisper pass -- seconds instead of
+    # minutes. Falls through to the normal path when there are no captions.
+    # This is NOT a fallback for Instagram: that channel drives the same yt-dlp
+    # that is already login-walled there. See stages/reach.py.
+    transcript = None
+    if reach.is_youtube(url):
+        transcript = reach.youtube_transcript(url, cache_key)
+        if transcript:
+            print(f"  Transcript via agent-reach captions ({len(transcript)} chars) "
+                  f"- skipped download + Whisper")
+
+    if transcript:
+        # Still fetch the video for frame capture; audio is no longer needed.
+        _, video_path = download_video(url, cache_key)
+    else:
+        audio_path, video_path = download_video(url, cache_key)
+        transcript = transcribe(audio_path, cache_key, whisper_model)
 
     # Extract frames (empty list if no video file available).
     frames = extract_frames(video_path, cache_key) if video_path else []
