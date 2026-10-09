@@ -39,6 +39,43 @@ python pipeline.py "https://www.instagram.com/reel/..."   # positional URL
 python pipeline.py "https://..." small                    # optional Whisper model (2nd positional arg)
 ```
 
+## Research intake (agent-reach)
+
+Sources no longer have to be pasted by hand.
+
+```bash
+python discover.py              # DRY RUN - what it would queue
+python discover.py --write      # append it
+```
+
+Pulls the RSS feeds in `feeds.yaml`, keyword-filters, and routes:
+YouTube links -> `sources.yaml` as `pending`; everything else ->
+`Trading/Strategy Ideas.md` for triage. Dry-run by default.
+
+**YouTube fast path:** for YouTube URLs the extract stage now pulls the
+publisher's own captions via agent-reach and skips the audio download *and*
+Whisper entirely. Falls back to download+Whisper when captions are missing.
+
+**agent-reach is NOT an Instagram fallback** - its youtube channel drives the
+same yt-dlp that is already login-walled there. Instagram still needs the
+Playwright+ffmpeg path.
+
+One-time setup (needs Python >=3.11; the pipeline is on 3.10, so it is called
+through the CLI):
+
+```bash
+py -3.14 -m pip install agent-reach
+py -3.14 -m agent_reach install rss youtube
+py -3.14 -m agent_reach doctor
+```
+
+## Extraction fallback chain
+
+`yt-dlp` -> `playwright` (sniffs DASH media URLs off the page) -> `ffmpeg`
+(fetches them, demuxes audio, cuts frames) -> `whisper` (local transcript).
+Two gotchas documented in the lab README: strip `bytestart`/`byteend` from
+sniffed URLs, and rank Instagram's `/m78/` (audio) above `/m367/` (video-only).
+
 ## Inspect a result
 Backtest viz lives in `notebooks/visualize.ipynb` — set `CACHE_KEY` to the value
 from `sources.yaml`, run all cells (equity curve, drawdown, PnL dist,

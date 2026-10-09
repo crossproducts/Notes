@@ -53,3 +53,19 @@ the model pulled.
   `whitelist.txt` (gitignored); don't broaden it without being asked.
 - Gmail caps total message size at **25 MB**; carrier gateways mangle media —
   send video to real inboxes, not `…@tmomail.net`-style addresses.
+
+## Voice notes (MMS)
+
+`send_voice.py` speaks text and delivers it as a playable voice note on the
+phone - same gateway trick, but an attachment makes it an MMS, and iOS plays
+`.m4a` inline.
+
+```bash
+python send_voice.py --text "Backtest finished. The gate failed, 0 for 10."
+python send_voice.py --text "hi" --keep out.m4a --dry-run
+```
+
+AAC-LC mono @ 24 kHz, ~4 KB/sec, so ~2-3 minutes fits an MMS. Over budget it
+steps the bitrate down then refuses rather than letting the carrier mangle it.
+Engines: `--engine piper` / `sapi` are fully local; `edge` (default) is neural
+but **sends the text to a Microsoft endpoint**.

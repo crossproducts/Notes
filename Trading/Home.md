@@ -15,6 +15,7 @@
 - [[Paper Trading Journal]] — weekly review ritual; the evidence file for going live
 - [[Go-Live Checklist]] — the gates between paper and real money
 - [[Decisions]] — why things are the way they are
+- [[Engine Backlog]] — capabilities the studio lacks (not strategies)
 
 ## Research loop
 - [[Strategy Ideas]] — inbox: reels, papers, hunches → `sources.yaml` → backtest
