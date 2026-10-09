@@ -1,0 +1,8 @@
+{
+  "hediet.vscode-drawio.plugins": [
+    { "file": "${workspaceFolder}/Architecture/Diagrams/drawio-plugins/notes-arch.js" }
+  ],
+  "hediet.vscode-drawio.theme": "min",
+  "hediet.vscode-drawio.codeLinkActivated": false,
+  "hediet.vscode-drawio.resizeImages": null
+}

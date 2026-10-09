@@ -22,6 +22,10 @@ directly by GitHub.
 One diagram per file, Mermaid fenced block, with a short paragraph explaining what it
 shows and the key decisions.
 
+For diagrams where the layout itself carries meaning (zones, nesting, topology),
+use draw.io instead and save as `.drawio.svg` so GitHub renders it inline. A custom
+shape palette for this repo is documented in [drawio-plugin.md](drawio-plugin.md).
+
 ## See also
 
 - [Reference-Architectures](../Reference-Architectures/)
