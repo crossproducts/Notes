@@ -41,6 +41,33 @@ python converse.py        # talks to DEFAULT_RECIPIENT from .env
   every gateway form), scanning recent unseen mail client-side rather than
   relying on Gmail's IMAP `FROM` search (which tokenizes and misses partials).
 
+## Voice notes (MMS)
+
+`send_voice.py` speaks text and delivers it as a **playable voice note** on the
+phone. Same bridge as the texts: an email WITH an attachment, addressed at the
+carrier gateway, becomes an MMS — and iOS Messages plays `.m4a` inline, so it
+arrives tappable rather than as a file to open.
+
+```bash
+python send_voice.py --text "Backtest finished. The gate failed, 0 for 10."
+python send_voice.py --text-file note.txt --voice en-US-AvaNeural --rate "+10%"
+python send_voice.py --text "hi" --keep out.m4a --dry-run   # build, don't send
+```
+
+- **Format:** AAC-LC mono @ 24 kHz in an MP4/`.m4a` container — the smallest
+  thing iOS plays natively. ~4 KB/sec, so ~11 s ≈ 61 KB.
+- **Budget:** carrier MMS ceilings are small (~300 KB–1 MB) and vary. Default
+  budget is 900 KB (`MMS_BUDGET_BYTES`); oversized notes step down the bitrate
+  ladder and are **refused** rather than silently mangled by the carrier.
+  Practical ceiling is roughly **2–3 minutes** per note.
+- **Engines:** `edge-tts` (neural, free, no API key) by default — note this
+  **sends the text to a Microsoft endpoint** to synthesise, so don't use it for
+  anything sensitive. `--engine sapi` is fully offline (Windows System.Speech)
+  and sounds robotic. edge falls back to sapi automatically if offline.
+- **Longer than a few minutes?** Send to a real inbox instead
+  (`send_email.py --attach note.m4a`) — 25 MB there, and iOS Mail plays m4a
+  inline too.
+
 ## Local-model autoresponder
 
 `autoresponder.py` replies to whitelisted senders automatically, using a **local
