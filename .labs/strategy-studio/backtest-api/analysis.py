@@ -84,3 +84,84 @@ def montecarlo(equity: pd.Series, n_paths: int = 1000) -> dict:
         "max_drawdown_pct": {"p5": pct(dds, 5), "p50": pct(dds, 50), "p95": pct(dds, 95)},
         "prob_negative_pct": round(float((finals < 0).mean() * 100), 1),
     }
+
+
+# --- E6: regime-robust champion scoring --------------------------------------
+# A champion picked from one 6.5-year window is an artifact of that window.
+# Measured 2020+, `momentum` scores sharpe 0.95 and ranks #1; measured 2000+ it
+# scores 0.23 and ranks #9, below buy-and-hold. Rank on the WORST window a
+# strategy has been measured in, not the luckiest one.
+
+# Windows must span >= 2 bear markets between them.
+#   2000 -> dot-com, GFC, COVID, 2022      2007 -> GFC, COVID, 2022
+#   2020 -> 2022 only (kept for continuity with the old single-window view)
+ROBUST_WINDOWS = ["2000-01-01", "2007-01-01", "2020-01-01"]
+
+# Auxiliary-data inception. Before these dates the strategy reindex+ffills a
+# series that does not exist yet -> NaN -> comparison False -> permanently long.
+# It silently becomes buy-and-hold and scores beautifully. Do not score it there.
+DATA_FLOOR = {"vix_gold_filter": "2005-01-01", "rotation_top_k": "2005-01-01"}
+
+
+def _window_sharpe(strategy: str, symbol: str, start: str, cost_bps: float):
+    df = engine.fetch(symbol, start)
+    if len(df) < 300:
+        return None
+    sig = REGISTRY[strategy]["fn"](df, {"_symbol": symbol})
+    eq, _ = engine.equity_from_signal(df["Close"], sig, cost_bps=cost_bps,
+                                      open_=df.get("Open"))
+    m = engine.metrics(eq, sig, df["Close"])
+    c = df["Close"]
+    yrs = len(df) / 252
+    bh_ann = (c.iloc[-1] / c.iloc[0]) ** (1 / yrs) - 1
+    bh_vol = c.pct_change().dropna().std() * np.sqrt(252)
+    bh_sharpe = (bh_ann - engine.RISK_FREE_RATE) / bh_vol if bh_vol else float("nan")
+    return {"sharpe": m["sharpe"], "buyhold_sharpe": round(float(bh_sharpe), 2),
+            "beats_buyhold": bool(m["sharpe"] > bh_sharpe),
+            "max_drawdown_pct": m["max_drawdown_pct"],
+            "switches": int((sig.diff().abs() > 0).sum())}
+
+
+def robust_score(strategy: str, symbol: str, cost_bps: float = 5.0) -> dict:
+    """Score a strategy across regimes. `robust_sharpe` is the WORST window.
+
+    Also reports whether it clears buy-and-hold in EVERY window -- the bar that
+    separates a real timing rule from one that only looked good in a bull run.
+    """
+    floor = DATA_FLOOR.get(strategy)
+    per = {}
+    for w in ROBUST_WINDOWS:
+        if floor and floor > w:
+            per[w] = {"skipped": f"aux data starts {floor}"}
+            continue
+        try:
+            r = _window_sharpe(strategy, symbol, w, cost_bps)
+            if r:
+                per[w] = r
+        except Exception as e:
+            per[w] = {"error": type(e).__name__}
+
+    scored = [v for v in per.values() if "sharpe" in v]
+    if not scored:
+        return {"strategy": strategy, "robust_sharpe": None, "windows": per,
+                "note": "not scoreable on any window"}
+    sharpes = [v["sharpe"] for v in scored]
+    return {
+        "strategy": strategy,
+        "robust_sharpe": round(min(sharpes), 2),       # worst regime
+        "best_sharpe": round(max(sharpes), 2),
+        "spread": round(max(sharpes) - min(sharpes), 2),
+        "beats_buyhold_all_windows": all(v["beats_buyhold"] for v in scored),
+        "windows_scored": len(scored),
+        "windows": per,
+    }
+
+
+def rank_robust(symbol: str, cost_bps: float = 5.0, exclude: set | None = None):
+    """Every builtin ranked by worst-window sharpe."""
+    exclude = exclude or set()
+    out = [robust_score(n, symbol, cost_bps)
+           for n in REGISTRY if n not in exclude]
+    out = [o for o in out if o.get("robust_sharpe") is not None]
+    out.sort(key=lambda o: -o["robust_sharpe"])
+    return out

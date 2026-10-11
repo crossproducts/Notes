@@ -325,7 +325,14 @@ def equity_curves(run_id: str):
 @app.get("/leaderboard")
 def leaderboard(symbol: str = "SPY", metric: str = "sharpe", limit: int = 10):
     """Challengers ranked by a metric; the reigning champion is flagged.
-    Rank on risk-adjusted metrics (sharpe) — raw return rewards luck."""
+    Rank on risk-adjusted metrics (sharpe) — raw return rewards luck.
+
+    NOTE: this is a per-RUN view, and each run's sharpe is specific to the
+    window it was back-tested over. A 2020-start run of a strategy will outrank
+    its own full-cycle run. The champion is NOT selected from this ordering any
+    more — see /champion/evaluate/{symbol}, which scores each STRATEGY across
+    regimes and ranks on its worst window (E6). Expect the champion to sit
+    below single-window runs here; that is the point."""
     if metric not in ("sharpe", "total_return_pct", "max_drawdown_pct", "win_rate"):
         raise HTTPException(400, "metric must be sharpe|total_return_pct|max_drawdown_pct|win_rate")
     # Every metric is "higher is better" — drawdown is stored NEGATIVE, so the
@@ -354,27 +361,74 @@ def promote(run_id: str, note: str = ""):
     return {"symbol": symbol, "champion": run_id, "note": note}
 
 
+@app.get("/champion/evaluate/{symbol}")
+def champion_evaluate(symbol: str, cost_bps: float = 5.0):
+    """Rank every builtin by WORST-window sharpe across regimes (E6).
+
+    The old ranking used a single window's sharpe, which made the champion an
+    artifact of its measurement period. This scores each strategy over windows
+    spanning >=2 bear markets and ranks on the worst one.
+    """
+    rows = analysis.rank_robust(symbol, cost_bps, exclude=SLOW_STRATEGIES)
+    return {"symbol": symbol, "windows": analysis.ROBUST_WINDOWS,
+            "ranked": [{k: v for k, v in r.items() if k != "windows"} for r in rows],
+            "detail": {r["strategy"]: r["windows"] for r in rows}}
+
+
 @app.post("/champion/auto/{symbol}")
 def auto_promote(symbol: str, metric: str = "sharpe", min_trades: int = 5,
-                 validate: bool = True):
+                 validate: bool = True, robust: bool = True):
     """Auto-promote the best run for a symbol IF it beats the current champion
     on the metric. With validate=True (default), a NEW champion must also pass
     a walk-forward gate: positive stitched out-of-sample return. Promoting on
     in-sample metrics alone is institutionalized overfitting."""
-    best = pd.read_sql(text(   # all metrics higher-is-better (dd is negative)
-        f"SELECT * FROM runs WHERE symbol=:s AND trades >= :t "
-        f"ORDER BY {metric} DESC NULLS LAST LIMIT 1"),
-        db, params={"s": symbol, "t": min_trades})
-    if len(best) == 0:
-        raise HTTPException(404, f"no runs for {symbol} with >= {min_trades} trades")
-    challenger = best.iloc[0]
+    # E6: rank by WORST-window sharpe across regimes, not one window's metric.
+    # Measured 2020+ `momentum` ranks #1 (0.95); measured 2000+ it ranks #9
+    # (0.23), below buy-and-hold. Single-window selection picks the strategy
+    # that best fits the sample you happened to choose.
+    if robust:
+        ranked = analysis.rank_robust(symbol, exclude=SLOW_STRATEGIES)
+        ranked = [r for r in ranked if r["beats_buyhold_all_windows"]]
+        if not ranked:
+            raise HTTPException(404, "no strategy beats buy-and-hold in every window")
+        winner = ranked[0]["strategy"]
+        # Pick the LONGEST-HISTORY run of the winning strategy, not the
+        # highest-sharpe one. Ordering by sharpe here would re-introduce the
+        # exact single-window bias at the run level: a 2020-start run of the
+        # same strategy scores 0.73 where its full-cycle run scores 0.44, and
+        # the champion row would then advertise the flattering number.
+        best = pd.read_sql(text(
+            "SELECT r.* FROM runs r "
+            "JOIN (SELECT run_id, MIN(ts) AS first_ts FROM equity_curve "
+            "      GROUP BY run_id) e ON e.run_id = r.run_id "
+            "WHERE r.symbol=:s AND r.strategy=:g AND r.trades >= :t "
+            "ORDER BY e.first_ts ASC, r.sharpe DESC LIMIT 1"),
+            db, params={"s": symbol, "g": winner, "t": min_trades})
+        if len(best) == 0:
+            raise HTTPException(404, f"'{winner}' wins on robustness but has no "
+                                     f"stored run for {symbol}; back-test it first")
+        challenger = best.iloc[0]
+        challenger_robust = ranked[0]
+    else:
+        best = pd.read_sql(text(   # all metrics higher-is-better (dd is negative)
+            f"SELECT * FROM runs WHERE symbol=:s AND trades >= :t "
+            f"ORDER BY {metric} DESC NULLS LAST LIMIT 1"),
+            db, params={"s": symbol, "t": min_trades})
+        if len(best) == 0:
+            raise HTTPException(404, f"no runs for {symbol} with >= {min_trades} trades")
+        challenger = best.iloc[0]
+        challenger_robust = None
 
     cur = pd.read_sql(text(
         "SELECT r.* FROM champions c JOIN runs r ON r.run_id = c.run_id WHERE c.symbol=:s"),
         db, params={"s": symbol})
     if len(cur) > 0:
         champ = cur.iloc[0]
-        better = challenger[metric] > champ[metric]  # higher-is-better (dd negative)
+        if challenger_robust:
+            champ_robust = analysis.robust_score(champ["strategy"], symbol)
+            better = (challenger_robust["robust_sharpe"] or -9) > (champ_robust["robust_sharpe"] or -9)
+        else:
+            better = challenger[metric] > champ[metric]  # higher-is-better (dd negative)
         if not better or challenger["run_id"] == champ["run_id"]:
             return {"symbol": symbol, "result": "champion defended",
                     "champion": champ["run_id"], f"champion_{metric}": float(champ[metric]),
@@ -384,7 +438,8 @@ def auto_promote(symbol: str, metric: str = "sharpe", min_trades: int = 5,
     # OOS gate: a would-be champion must survive walk-forward before wearing the belt
     if validate and challenger["strategy"] in REGISTRY:
         try:
-            wf = analysis.walkforward(challenger["strategy"], symbol, "2018-01-01")
+            wf = analysis.walkforward(challenger["strategy"], symbol,
+                                      analysis.ROBUST_WINDOWS[0])
             if wf["stitched_oos_return_pct"] <= 0:
                 return {"symbol": symbol, "result": "challenger failed OOS gate",
                         "challenger": challenger["run_id"],

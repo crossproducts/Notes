@@ -16,6 +16,63 @@ def _stateful(entries: pd.Series, exits: pd.Series) -> pd.Series:
     return state.ffill().fillna(0)
 
 
+def turnaround_tuesday(df, params):
+    """Monday close below its 25-day SMA -> hold Tuesday only. Long only.
+
+    From reel Ddw5W-VRfE7 (italian_founder), strategy #2, stated for US30.
+    The engine shifts signals by one bar, so flagging MONDAY puts the position
+    on during TUESDAY and flat again on Wednesday -- exactly the stated rule,
+    with no lookahead.
+
+    The source specifies "no stop, no target", which is why there is no exit
+    parameter here: the exit is the calendar.
+    """
+    sma_days = int(params.get("sma_days", 25))
+    close = df["Close"]
+    sma = close.rolling(sma_days).mean()
+    is_monday = pd.Series(df.index.dayofweek == 0, index=df.index)
+    return (is_monday & (close < sma)).astype(int)
+
+
+
+def halloween(df, params):
+    """Long Nov-Apr, flat (earning risk-free) May-Oct. Two trades a year.
+
+    Bouman & Jacobsen (2002) and Zhang & Jacobsen (2021, "everywhere and all
+    the time") document this across 37 countries; the 2021 out-of-sample window
+    (1998-2017) still beat buy-and-hold in 30 of 37, and the effect survives
+    transaction costs -- which matters here, because cost is what killed the
+    last three candidates we tested.
+
+    Two properties make it worth a slot in THIS registry specifically:
+      - ~2 trades/year, so the 5bps/side that destroyed the overnight effect
+        (-99%) and turnaround_tuesday (95% of edge) is a rounding error.
+      - the signal is the CALENDAR, not price, so it is structurally
+        uncorrelated with the momentum/trend family that dominates the book.
+    """
+    start_m = int(params.get("start_month", 11))   # November
+    end_m = int(params.get("end_month", 4))        # through April
+    m = pd.Series(df.index.month, index=df.index)
+    if start_m > end_m:                            # wraps the year end
+        inseason = (m >= start_m) | (m <= end_m)
+    else:
+        inseason = (m >= start_m) & (m <= end_m)
+    return inseason.astype(int)
+
+
+def halloween_trend(df, params):
+    """Halloween seasonality AND price above its long MA.
+
+    The pure calendar rule holds you through Nov-Apr bear legs regardless. This
+    gates it on trend so the seasonal window is only taken when the tape agrees
+    -- still low turnover, but it can sidestep a seasonal window that is
+    falling apart (2008-09 being the obvious case).
+    """
+    ma = int(params.get("ma_days", 200))
+    close = df["Close"]
+    return (halloween(df, params) & (close > close.rolling(ma).mean())).astype(int)
+
+
 def momentum(df, params):
     lb = int(params.get("lookback_days", 90))
     close = df["Close"]
@@ -375,6 +432,12 @@ REGISTRY = {
     "rotation_top_k": {"fn": rotation_top_k,
                        "grid": {"lookback_days": [60, 90, 120], "top_k": [2, 3]}},
     "whale_13f": {"fn": whale_13f, "grid": {"max_filings": [8, 12]}},
+    "halloween": {"fn": halloween,
+                  "grid": {"start_month": [10, 11], "end_month": [4, 5]}},
+    "halloween_trend": {"fn": halloween_trend,
+                        "grid": {"ma_days": [100, 200], "start_month": [10, 11]}},
+    "turnaround_tuesday": {"fn": turnaround_tuesday,
+                            "grid": {"sma_days": [15, 25, 50]}},
     "efficiency_gate": {"fn": efficiency_gate,
                         "grid": {"gate_q": [0.2, 0.33, 0.5],
                                  "lookback_days": [60, 90, 120]}},
