@@ -1,0 +1,28 @@
+services:
+  floci:
+    image: floci/floci:latest
+    container_name: floci
+    ports:
+      - "127.0.0.1:4566:4566"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - SERVICES=eks,ec2,iam,sts,s3
+      - DEBUG=1
+    restart: unless-stopped
+
+  # Visual dashboard: browse emulated resources at http://localhost:4500
+  floci-ui:
+    image: floci/floci-ui:latest
+    container_name: floci-ui
+    ports:
+      - "127.0.0.1:4500:4500"
+    environment:
+      - FLOCI_ENDPOINT=http://floci:4566
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - PORT=4500
+    depends_on:
+      - floci
+    restart: unless-stopped

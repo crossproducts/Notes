@@ -9,6 +9,7 @@ Cloud labs that provision real AWS infrastructure as code.
 | Lab | What it shows |
 |---|---|
 | [eks-terraform](eks-terraform/) | EKS cluster via Terraform modules + Terragrunt live envs, with ArgoCD bootstrapped on top |
+| [floci-eks](floci-eks/) | Same Terragrunt pattern validated locally & free against Floci (real k3s behind a mocked AWS API) + floci-ui dashboard |
 
 ## Ideas to add
 
