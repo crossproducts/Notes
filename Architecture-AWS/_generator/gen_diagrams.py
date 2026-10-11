@@ -163,8 +163,8 @@ def render_svg(d):
 
     o.append(
         f'<text x="{PAD_X}" y="26" font-family="Segoe UI,Helvetica,Arial,sans-serif" '
-        f'font-size="15" font-weight="600" fill="#1A1A1A">{esc(d.key.upper())} &#183; '
-        f'{esc(s["title"])}</text>'
+        f'font-size="15" font-weight="600" fill="#1A1A1A">'
+        f'{esc(s.get("key_label", d.key.upper()))} &#183; {esc(s["title"])}</text>'
     )
 
     for z in d.zones:

@@ -3,6 +3,12 @@
 Actually *sends* email (unlike the draft-only Gmail connector), with optional
 attachments — video, images, docs.
 
+Its main consumer is the Strategy Studio: see
+[`trading-pipeline.drawio.svg`](../../Architecture/Diagrams/trading-pipeline.drawio.svg) for where this lab
+sits in that path (zone 6 — the SMTP → carrier-gateway hop that turns a
+backtest result into a text, or a voice note when `send_voice.py` attaches
+an `.m4a`).
+
 ## Setup
 
 1. Enable **2-Step Verification** on your Google account.

@@ -5,6 +5,48 @@ and the pipeline transcribes it, interprets the strategy, generates backtest
 code, fetches market data, runs the backtest + parameter optimization, and
 reports performance.
 
+## Architecture
+
+The pipeline spans three labs. This is the whole path a video takes — from the
+feed that surfaces it, through ffmpeg and Whisper, to the text message telling
+you what the champion did with it:
+
+![Trading research pipeline](../../Architecture/Diagrams/trading-pipeline.drawio.svg)
+
+GitHub renders that file as an image, and the *same file* opens **editable** in
+the draw.io VS Code extension — the mxGraph XML lives in the SVG's root
+`content` attribute. It is generated, so edit the spec and rebuild rather than
+hand-editing the SVG:
+
+```bash
+python Architecture/Diagrams/build_diagrams.py
+```
+
+That one command writes both
+[`trading-pipeline.drawio.svg`](../../Architecture/Diagrams/trading-pipeline.drawio.svg)
+(embedded above, and editable) and
+[`trading-pipeline.png`](../../Architecture/Diagrams/trading-pipeline.png)
+(2652x3124, for chat, decks and anywhere SVG will not render), so the two
+cannot drift apart.
+
+**Reading it.** Colour is type, not vendor: blue = entry/edge, green = compute,
+amber = data at rest, purple = async/event, teal = AI, grey = ops, red =
+security, white = off-box. The six dashed boxes are the six stages; the legend
+at the foot maps line style to call type.
+
+The three seams the diagram exists to show:
+
+| Seam | Why it is there |
+|---|---|
+| **host ↔ container** | Whisper, yt-dlp, Playwright and ffmpeg are heavy host-side deps, so `studio_worker.py` runs the pipeline **on the host** and reports back to the API in Docker. `cache/` is mounted into the container, which is how a finished strategy shows up as `video:<cache_key>` |
+| **Python 3.10 ↔ 3.11+** | agent-reach requires ≥ 3.11, the pipeline runs on 3.10. So it is driven through its CLI (`py -3.14 -m agent_reach`), never imported — see `stages/reach.py` |
+| **studio ↔ email-sender** | The studio does not import the lab. `POST /notify` reimplements the Gmail SMTP → carrier-gateway hop in ~15 lines so the container carries no dependency on host code. `send_voice.py` is that same bridge with an `.m4a` attached, which is what makes the carrier upgrade it to MMS |
+
+Left off the diagram to keep the lines readable: `paper.py` writes its order log
+to the same Postgres, `risk.py` persists the kill switch there too, and the
+scheduler pings healthchecks.io after a clean nightly so that *silence* gets
+noticed rather than assumed healthy.
+
 ## Layout
 
 ```

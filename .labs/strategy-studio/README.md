@@ -7,6 +7,12 @@ into an interactive platform.
 
 ## Architecture
 
+> **Cross-lab view:** [`trading-pipeline.drawio.svg`](../../Architecture/Diagrams/trading-pipeline.drawio.svg) draws the whole
+> path — intake, extraction, backtest, champion promotion, live loop and the
+> text/voice notifications — across this lab, `audio-extraction` and
+> `email-sender`. Note the ASCII below predates the move off n8n: the two
+> workflows are now in-process APScheduler cron jobs (`scheduler.py`).
+
 ```
                  ┌────────────────────────────────────────────┐
                  │              n8n  (drag & drop)             │
