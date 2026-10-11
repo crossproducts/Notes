@@ -234,6 +234,198 @@ sources:
       not. See Trading/Engine Backlog.md.
 
 
+  - url: https://www.instagram.com/reel/Dd19_TdxWzT/
+    name: "7x-leverage crypto bot ('comment video' funnel)"
+    status: skipped
+    cache_key: ee7c67be7f79
+    tags: [crypto, leverage, marketing-funnel, no-strategy, survivorship]
+    note: >-
+      No strategy, and the arithmetic indicts it. Pitch: a crypto bot that took
+      "a couple hundred dollars" to $8.5k, "up 128%", on 7X LEVERAGE, during a
+      period he himself cites as ETH +50% in a couple of weeks.
+      DO THE MATH: 7x on a +50% move is ~+350% from simply holding. He reports
+      +128%. His bot UNDERPERFORMED levered beta by ~222 points - the gain is
+      leverage times a bull move, and the "strategy" subtracted from it.
+      7x also means liquidation at a ~14.3% adverse move before fees/funding;
+      ETH does that in days.
+      He admits the tells himself: "a bunch of other ones come in and out"
+      (survivorship - we are seeing the survivor) and "obviously we got lucky".
+      Ends on "comment video and I can send it" - the product is the funnel.
+      Zero rules: no entry, no exit, no sizing, no instrument set, no period.
+      Nothing to backtest.
+
+  - url: https://www.instagram.com/reel/DeNlba5Rgaq/
+    name: "Prediction-market whale copying (prediction_alpha referral funnel)"
+    status: skipped
+    cache_key: 541e7e379edf
+    tags: [prediction-markets, copy-trading, referral-funnel, no-strategy,
+           survivorship, unbacktestable]
+    note: >-
+      Referral funnel, and STRUCTURALLY UNBACKTESTABLE even in good faith.
+      Account prediction_alpha, caption "COPY THESE STEPS TO EARN $$".
+      Pitch: sign up to Kalshi with beta code "statdev", read the Polymarket
+      leaderboard view-only, filter whales (>=100 trades/month, >=$100k
+      profit), copy their live positions back onto Kalshi.
+      THE CODE IS THE PRODUCT. He says "there's nothing here to sell" while
+      pushing an access code, and then admits "this is part of the strategy to
+      use their money" - the signup credit ($55 -> now "two grand") IS the
+      claimed edge. That is affiliate monetisation, not a strategy.
+      WHY IT CANNOT BE BACKTESTED: the selection rule is "whoever is top of the
+      leaderboard TODAY". That can only be applied with hindsight - there is no
+      point-in-time leaderboard history, so any test selects the people who
+      already won. Pure survivorship, by construction.
+      ALSO BROKEN IN EXECUTION: observe on Polymarket, execute on Kalshi -
+      different venues, different order books. The price has moved before you
+      can act and you eat the cross-venue spread. Same failure as the
+      congressional copy-trade (1c239c08245c), which our own research found
+      fails significance - but with a worse venue mismatch.
+      "$2 million in one month" is n=1, unverified, no capital base, no
+      drawdown. Leaderboard filters select recent luck: over ~100 binary
+      contracts you cannot separate skill from variance.
+      NOTE: frame 6 shows Polymarket's US geo-restriction modal with the
+      caption "change your browser" over it. He frames this as view-only
+      access, but it is at best ambiguous coaching around a jurisdictional
+      block. Flagging as fact, not advice.
+      Out of universe regardless: binary event contracts, not OHLC equities;
+      nothing in the engine represents them.
+
+  - url: https://www.instagram.com/reel/Ddw5W-VRfE7/
+    name: "4 session/calendar strategies with full rules (italian_founder)"
+    status: backtested
+    cache_key: 4d60390c75fa
+    tags: [forex, equities, session-breakout, calendar-effect, legit,
+           cost-killed, engine-gap]
+    note: >-
+      BEST-SPECIFIED source in the queue - four strategies with EVERY rule, in
+      the caption (the audio is 5s of noise; Whisper hallucinated on it, so the
+      caption is the content). The creator also publishes a methodology
+      checklist that matches our own gates: costs both ways, count every
+      version you tried, "under 100 trades is a hypothesis not a result",
+      bars to explore / ticks to validate. He labels it "backtest results, not
+      recommendations" and flags that two have no stop.
+      #2 TURNAROUND TUESDAY (US30) - IMPLEMENTED as builtin turnaround_tuesday
+      and tested. Monday close < 25d SMA -> hold Tuesday only, long, no stop.
+      It is a REAL effect and robust: walk-forward 16/17 positive OOS windows
+      on both DIA and QQQ, stitched OOS +98% / +134%, "params reasonably
+      stable", and the sma_days sweep is a PLATEAU (10-25 all work, 30+ decay)
+      not a fitted spike. Works across DIA/SPY/QQQ/IWM.
+      AND IT IS STILL WORTHLESS NET OF COSTS. In market only 6.3% of the time
+      (346 days of 5,477, ~16 Tuesdays/yr). Gross 5.96%/yr, sharpe 0.30.
+      At 5bps/side: 4.29%/yr, sharpe 0.04 - against a risk-free rate of
+      4.20%/yr. That is 0.09pp/yr of excess. Costs eat 1.67pp of the 1.76pp
+      gross excess, i.e. ~95% of the edge, over just 16 round trips a year.
+      Applying the creator's OWN cost rule kills his own strategy #2.
+      #3 DAILY LONG BIAS (US Tech 100, buy 01:05 close 23:50) - that window is
+      ~23h of a near-24h CFD session, so it is approximately buy-and-hold with
+      a ~1h gap excluded. Not a strategy, an exposure.
+      #1 USDJPY morning range breakout - ENGINE GAP (intraday forex). Also
+      overlaps dde48fadcf1d (Asian Range Breakout) already in the queue.
+      #4 OPENING RANGE BREAKOUT (5-min bars, ATR stop, 2R target) - ENGINE GAP,
+      same blocker as Heston (E2): needs intraday bars. The most interesting of
+      the four BECAUSE it has a stop and a target, unlike #2 and #3.
+
+  - url: https://www.instagram.com/reel/DdRvRupArAd/
+    name: "'Build a trading bot in 12 seconds' (paste-a-paper-into-AI)"
+    status: skipped
+    cache_key: ee7146a7bd67
+    tags: [no-strategy, survivorship, p-hacking, meta]
+    note: >-
+      No strategy - a method, and the method is p-hacking. "Go to this website
+      where people publish their actual strategies from colleges and firms,
+      pick one, copy the entire paper, paste it into the AI."
+      THE CONFESSION IS IN THE SCRIPT: "typically your results will not be good
+      but SOMETIMES you get results like this and it's actually insane."
+      Generating N strategies and showing the best one is selection, not edge.
+      That is the exact failure our walk-forward gate exists to catch.
+      Worth keeping as the cautionary twin of our own SSRN research loop: we do
+      the same first step (read the paper) and then do the part he skips -
+      implement, cost it at 5bps, walk-forward it OOS, and require it to beat
+      the incumbent. Of the last four ideas through that funnel, three died.
+
+  - url: https://www.instagram.com/reel/DeR5ycpITv3/
+    name: "'AI copilot' MNQ trade review (grandmasterbey) - honest journal, n=7"
+    status: skipped
+    cache_key: f0a3f1c3158e
+    tags: [no-strategy, discretionary, small-sample, prop-firm, honest]
+    note: >-
+      FIRST transcribe the numbers from a FRAME, not Whisper. Whisper rendered
+      "+11050" and the caption claims a bot that "winsssss"; frame 8 shows
+      "WIN +$110.50", "risk $112", "Account Balance 24,943.50". With decimals
+      restored the log reconciles to the cent: -13.00, +34.50, -131.00,
+      +115.50, +6.50, +133.00, +110.50 = +256.00, exactly the stated
+      "plus 256 net". So the real result is +$256 on a ~$25k EVAL account over
+      Sep 22 - Oct 8 = +1.03% in 2.5 weeks, 1 micro contract, ~0.45% risk/trade.
+      Credit where due - this is the most honest reel in the queue. Losses are
+      shown with figures, one trade's exit is disclosed as unrecorded, one
+      setup is disclosed as a no-fill ("no chase"), the account is labelled
+      eval/demo on screen, there is a disclaimer, and there is no referral link
+      or "comment X". Sizing discipline is genuinely correct: the stated lesson
+      is "when the stop has to be wide, cut the size so the dollar risk stays
+      the same", and risk held at ~$112 across trades.
+      Still not testable. (1) n=7 closed trades - below the >=100 bar in our own
+      go-live gate. (2) 2 of 9 setups have no result, excluded from his 5W/2L,
+      which biases the win rate up; true completion is 7/9. (3) The rules are
+      discretionary, not mechanizable - "read the structure", "enter on a
+      retest", "stop beyond the swing" have no coded form. (4) The caption says
+      "built a bot that trades for me"; the video shows a copilot reviewing
+      HIS discretionary trades. Different claim. (5) Prop-firm eval: 5-14% pass,
+      ~7% of buyers ever paid.
+      Engine fit: zero, and worse than E2. Discretionary 15-min structure
+      trading on micro futures is not daily long/flat single-symbol, and E2
+      (intraday bars) would not help because the rules are not rules.
+
+  - url: https://www.instagram.com/reel/DeUGFf4yLX8/
+    name: "'449% in 12 months' EMA3>7>50 pullback, 2R bracket - FALSIFIED"
+    status: backtested
+    cache_key: a311e024c74b
+    tags: [mechanical, daily, bracket-order, falsified, funnel]
+    note: >-
+      FIRST FULLY TESTABLE REEL IN TWELVE. The on-screen card states the whole
+      system on DAILY bars, long only: EMA3 > EMA7 > EMA50, ATR(14) flat or
+      falling, a bearish candle, then a buy stop just above that candle's high,
+      stop just below its low, target 2R, cancel if the low goes first.
+      Not expressible as fn(df,params)->0/1 (fill, stop and target are all
+      INTRABAR), so it got a harness instead of a registry entry:
+      research/ema_pullback_check.py, with three pessimistic conventions
+      (ambiguous bar resolves as the stop; same-bar entry+stop counts as
+      filled-then-stopped; gaps fill at the open).
+      VERDICT - no edge, and not merely cost-killed. SPY 2000+ 26.7y:
+      331 trades, win 34.1%, expectancy -0.231R, -1.71%/yr vs buy-and-hold
+      +8.37%/yr. QQQ: 318 trades, 35.5%, -0.148R, -1.34%/yr vs +8.76%.
+      A 2R bracket breaks even at a 33.3% win rate, which is also what a
+      driftless random walk gives - so 34-36% IS the coin flip.
+      Unlike the overnight effect (real gross, killed by 5bps), this stays
+      negative at ZERO cost: -0.073R SPY, -0.029R QQQ.
+      THE FILTERS ARE DECORATION. A control arm keeping the bracket but
+      dropping the EMA stack and ATR condition scores -0.118R on SPY, BETTER
+      than the full rules' -0.231R, on twice the trades. The two things the
+      reel calls the edge do not pay for the trades they skip.
+      Steelmanned both ways and it still fails: on his own claimed horizon
+      (2024-09+) SPY is -4.73%/yr against +19.29% buy-and-hold; on BTC-USD
+      2017+ (the frame-2 axis read 94,677-101,293, so crypto) the filters do
+      finally beat the control, +0.063R - and still return +0.46%/yr while
+      simply holding BTC returned +36.61%/yr.
+      449% in 12 months is not reachable from any arm of this test.
+      Funnel markers: "comment video down below", system is "within the
+      community" (paid), the equity chart in frame 0 carries no axis labels and
+      no dates, and he says he took the system from another trading community.
+
+  - url: https://www.instagram.com/reel/DeV2n53gLgf/
+    name: "'Reverse Engineer Anything' GitHub repo (dev tool, not trading)"
+    status: skipped
+    cache_key: ec8267e1d31a
+    tags: [no-strategy, off-topic, dev-tool, funnel]
+    note: >-
+      Not a trading video - a dev-tool reel about a repo that points a coding
+      agent at an app and explains how it works, pitched for reviving old
+      hardware (a Logitech keypad on Linux, scanners, sound cards). Claims
+      "70,000 stars" and "number one trending this week", unverified, with the
+      usual "comment decode and I'll send you the link" gate.
+      Kept only because it prompted the real question - whether the same
+      approach could reverse-engineer Jane Street / HFT. See Trading/Decisions
+      for why the answer is no at the infrastructure level and why E1
+      (market-neutral long/short) is the honest adjacent thing.
+
   # --- add new sources below as `pending` ---
   # - url: https://www.instagram.com/reel/XXXXXXXX/
   #   name: ""

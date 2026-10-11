@@ -1,0 +1,163 @@
+[
+  {
+    "id": 0,
+    "seek": 0,
+    "start": 0.0,
+    "end": 2.0,
+    "text": " Something about accountability here is",
+    "tokens": [
+      50364,
+      6595,
+      466,
+      19380,
+      510,
+      307,
+      50464
+    ],
+    "temperature": 1.0,
+    "avg_logprob": -3.912747140658104,
+    "compression_ratio": 1.4827586206896552,
+    "no_speech_prob": 0.41369709372520447
+  },
+  {
+    "id": 1,
+    "seek": 0,
+    "start": 5.0,
+    "end": 7.0,
+    "text": " about fear.",
+    "tokens": [
+      50614,
+      466,
+      4240,
+      13,
+      50714
+    ],
+    "temperature": 1.0,
+    "avg_logprob": -3.912747140658104,
+    "compression_ratio": 1.4827586206896552,
+    "no_speech_prob": 0.41369709372520447
+  },
+  {
+    "id": 2,
+    "seek": 0,
+    "start": 9.0,
+    "end": 11.0,
+    "text": " Some of these, some of us feel fear is",
+    "tokens": [
+      50814,
+      2188,
+      295,
+      613,
+      11,
+      512,
+      295,
+      505,
+      841,
+      4240,
+      307,
+      50914
+    ],
+    "temperature": 1.0,
+    "avg_logprob": -3.912747140658104,
+    "compression_ratio": 1.4827586206896552,
+    "no_speech_prob": 0.41369709372520447
+  },
+  {
+    "id": 3,
+    "seek": 0,
+    "start": 11.0,
+    "end": 13.0,
+    "text": " fear of supporters.",
+    "tokens": [
+      50914,
+      4240,
+      295,
+      17683,
+      13,
+      51014
+    ],
+    "temperature": 1.0,
+    "avg_logprob": -3.912747140658104,
+    "compression_ratio": 1.4827586206896552,
+    "no_speech_prob": 0.41369709372520447
+  },
+  {
+    "id": 4,
+    "seek": 0,
+    "start": 13.0,
+    "end": 15.0,
+    "text": " Whether it is about substantial",
+    "tokens": [
+      51014,
+      8503,
+      309,
+      307,
+      466,
+      16726,
+      51114
+    ],
+    "temperature": 1.0,
+    "avg_logprob": -3.912747140658104,
+    "compression_ratio": 1.4827586206896552,
+    "no_speech_prob": 0.41369709372520447
+  },
+  {
+    "id": 5,
+    "seek": 0,
+    "start": 15.0,
+    "end": 24.92,
+    "text": " gefunden",
+    "tokens": [
+      51114,
+      36923,
+      51610
+    ],
+    "temperature": 1.0,
+    "avg_logprob": -3.912747140658104,
+    "compression_ratio": 1.4827586206896552,
+    "no_speech_prob": 0.41369709372520447
+  },
+  {
+    "id": 6,
+    "seek": 0,
+    "start": 24.92,
+    "end": 26.92,
+    "text": " criminals in jungle schools school",
+    "tokens": [
+      51610,
+      23474,
+      294,
+      18228,
+      4656,
+      1395,
+      51710
+    ],
+    "temperature": 1.0,
+    "avg_logprob": -3.912747140658104,
+    "compression_ratio": 1.4827586206896552,
+    "no_speech_prob": 0.41369709372520447
+  },
+  {
+    "id": 7,
+    "seek": 0,
+    "start": 26.92,
+    "end": 28.92,
+    "text": " can be used as a way to honor",
+    "tokens": [
+      51710,
+      393,
+      312,
+      1143,
+      382,
+      257,
+      636,
+      281,
+      5968,
+      51810
+    ],
+    "temperature": 1.0,
+    "avg_logprob": -3.912747140658104,
+    "compression_ratio": 1.4827586206896552,
+    "no_speech_prob": 0.41369709372520447
+  }
+]

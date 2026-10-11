@@ -1,0 +1,38 @@
+1,559 likes, 37 comments - italian_founder on September 26, 2026: "“I don’t have a strategy” isn’t an excuse anymore. Here are 4, with every rule. Save this.
+
+1) Morning range breakout · USDJPY
+• Mark the high and low from 03:00 to 06:00 (broker time, GMT+2/+3)
+• At 06:00: buy stop at the high, sell stop at the low
+• Stop loss: opposite side of the range. No take profit
+• 1 trade per day. When one fills, cancel the other
+• 18:00: close open trades, cancel unfilled orders
+
+2) Turnaround Tuesday · US30
+• Monday 01:05 (broker time): if price is below the 25-day SMA of closes, buy
+• Close Tuesday at 23:50
+• Long only. No stop, no target
+
+3) Daily long bias · US Tech 100
+• Every trading day, buy at 01:05 (broker time)
+• Close the same day at 23:50
+• No stop, no target, no filters
+
+4) Opening range breakout · US Tech 100 (New York time)
+• Mark the high and low from 09:30 to 09:45
+• 09:45 to 15:00: buy on a 5-min close above the high, sell on a 5-min close below the low
+• 1 trade per day, 1% risk
+• Stop: beyond the opposite side + 0.25 × ATR(14, 5-min)
+• Target: 2 × the range height, from the breakout level
+• Close anything still open at 15:55
+
+Before you trust any backtest, check 4 things:
+• Costs: spread, commission (both ways), slippage, swap
+• Overfitting: count every version you tried, even the deleted ones
+• Trades: under 100 is a hypothesis, not a result
+• Data: bars to explore, every tick to validate
+
+Backtest results, not recommendations. Two of these have no stop loss, so size accordingly. Past performance doesn’t guarantee future results.
+
+Which one are you testing first? 👇
+
+#algotrading #backtesting #tradingstrategy". 

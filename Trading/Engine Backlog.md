@@ -19,6 +19,27 @@ blocked on engine capability**. That ratio is the reason this file exists.
 | E3 | **Refresh `architecture-review.md`** | trust in our own docs | S | It is **stale**: still claims "zero transaction costs ❌" and "promotion gates on in-sample sharpe". Both were fixed 2026-07 (see [[Decisions]]). A gap analysis that lists closed gaps is worse than none |
 | E4 | **Record the verdict for `b9a107049e52`** | queue integrity | S | Bull vs Bear Debate was marked `backtested` with an **empty note**. Its conclusion was never written down, so it is unciteable — and the Grok-desk reel (`21ea6aeb17c5`) turned on exactly that precedent |
 | E5 | **Pin `backtest-api/requirements.txt`** | build reproducibility | S | Unpinned deps mean a rebuild can crash-loop the API. It already did: newer SQLAlchemy resolved bare `postgresql://` to psycopg v3, which the image does not ship. Patched the URL; root cause untouched |
+| E6b | **Bracket orders: stop-entry + stop-loss + R-multiple target, resolved intrabar** | any reel that specifies entries the way traders actually say them | M | Hit this live on `DeUGFf4yLX8`: the rules were fully mechanical and on daily bars, but `fn(df,params) -> 0/1` cannot express a fill, a stop and a target *inside* one bar, so it needed a bespoke harness (`research/ema_pullback_check.py`) instead of a registry entry. Daily OHLC is enough if the ambiguous-bar convention is pessimistic and stated. Smaller than E2 - no new data, only path-dependent fills |
+
+## Done
+
+- **E6 — champion selection is window-dependent** *(resolved 2026-10-11)*
+  Confirmed and fixed. `momentum` scored sharpe **0.95** on a 2020 start and
+  **0.23** on 2000+ — a 0.72 spread, the worst of any real strategy, and it
+  failed to beat buy-and-hold on two of three windows.
+  **New rule**, in `analysis.robust_score` / `rank_robust` and wired into
+  `/champion/auto`: score every strategy over windows spanning >=2 bear markets
+  (2000 / 2007 / 2020), rank on the **worst** window, and require it to beat
+  buy-and-hold in **every** window. New endpoint `/champion/evaluate/{symbol}`
+  exposes the ranking. The walk-forward gate also moved from a hardcoded
+  `2018-01-01` (one bear market) to the full-cycle window.
+  **Result: `triple_momentum` took the belt** (worst-window 0.44, spread 0.29,
+  beats B&H in all three) from `momentum` (0.23, spread 0.72).
+  Two traps fixed on the way: `DATA_FLOOR` stops `vix_gold_filter` and
+  `rotation_top_k` being scored before GLD/EEM existed (they silently become
+  buy-and-hold on NaN comparisons and look excellent); and promotion now picks
+  the **longest-history run** of the winning strategy, not the highest-sharpe
+  one, which would have re-introduced the same bias at the run level.
 
 ## Decided against
 

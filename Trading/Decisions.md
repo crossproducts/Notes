@@ -50,5 +50,36 @@ Append-only. Date, decision, why. Future-you will thank present-you.
   (sharpe -1.42) and QQQ -96%. Survives only at ~1bp institutional execution,
   and even then SPY's sharpe (0.27) trails buy&hold (0.45). Best demonstration
   yet of why transaction costs default ON.
+- **2026-10-10** — SSRN/literature sweep for champion-competitive strategies.
+  Added `halloween` + `halloween_trend` builtins (Bouman & Jacobsen 2002;
+  Zhang & Jacobsen 2021). Rationale is cost and correlation, not raw return:
+  ~2 trades/yr makes 5bps a rounding error, and the signal is the calendar, so
+  it correlates **0.42** to our trend/momentum family — which correlates
+  **0.81 internally**, i.e. our book is one bet wearing six hats. Walk-forward
+  19/22 positive OOS windows, stitched +596%.
+  Rejected **volatility-managed portfolios** (Moreira & Muir 2017) on two
+  counts: replications (Cederburg et al.; Barroso & Detzel) find up to 15x
+  turnover and no positive alpha after costs — and our engine is binary
+  (`invested = w if sig>0`), so continuous sizing is an engine gap regardless.
+- **2026-10-10** — Discovered champion selection is **window-dependent** and
+  logged it as E6. All runs start 2020-01-01; over 2000+ the ranking reverses
+  (`momentum` 0.95->0.23, `trend_ma` 0.73->0.45). Our incumbent may be an
+  artifact of a bull-market measurement window. This is a flaw in the HARNESS,
+  not in any strategy, which makes it more important than any single result.
+- **2026-10-11** — **Champion promotion rule changed** (E6). Selection no
+  longer ranks on one window's sharpe. It now scores each strategy over
+  2000/2007/2020, ranks on the **worst** window, and requires beating
+  buy-and-hold in **all** of them. `/champion/evaluate/{symbol}` shows the
+  ranking; the WF gate moved off its hardcoded 2018 start to the full cycle.
+  **`triple_momentum` is the new SPY champion** (worst-window 0.44, spread
+  0.29, 87 trades, maxDD -21.2%), replacing `momentum` (0.23, spread 0.72,
+  20 trades). `trend_ma` was a near-tie at 0.43 — I had predicted it would win
+  and the rule disagreed by 0.01; went with the rule.
+  Caveat kept on the record: on walk-forward alone `momentum` was marginally
+  AHEAD (543.6% vs 541.6%, 18/22 vs 15/22 positive windows), because WF
+  re-optimises the lookback each window. Momentum's weakness is its *frozen*
+  90-day parameter, not the concept.
+  `/leaderboard` is unchanged and still a per-run, single-window view — the
+  champion will sit below 2020-start runs there by design.
 
 Related: [[Home]] · [[Go-Live Checklist]]
