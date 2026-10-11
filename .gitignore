@@ -44,3 +44,40 @@ __pycache__/
 # Playwright persistent context for an authenticated Instagram session
 # (discover.py --ig-profile-dir). Contains live session cookies - never commit.
 .labs/audio-extraction/.ig-profile/
+
+# ---------------------------------------------------------------------------
+# Infrastructure credentials, state and caches.
+#
+# Repo-wide ON PURPOSE. .labs/AWS/floci-eks/ already ships its own .gitignore
+# covering these, and it is holding - nothing credential-shaped has ever been
+# committed. But that protection is one file deep: the next IaC lab that lands
+# without its own .gitignore would commit a live cluster credential on the
+# first `git add -A`. These rules make the safe case the default.
+kubeconfig
+kubeconfig.*
+.kube/
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl.bak
+.terraform.tfstate.lock.info
+.terragrunt-cache/
+
+# Terraform/terragrunt vendor the AWS provider binary into .terraform/ - it is
+# 628 MB per module here, and fully re-fetchable with `terraform init`.
+terraform-provider-*
+*_x5.exe
+
+# Private keys, cert bundles and cloud CLI credentials. If a lab ever needs a
+# throwaway sample key under version control (e.g. .labs/tls-crypto fixtures),
+# add it deliberately with `git add -f` rather than loosening this.
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+.aws/credentials
+.netrc
