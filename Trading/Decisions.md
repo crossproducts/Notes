@@ -83,3 +83,19 @@ Append-only. Date, decision, why. Future-you will thank present-you.
   champion will sit below 2020-start runs there by design.
 
 Related: [[Home]] · [[Go-Live Checklist]]
+
+- **2026-10-11** — Measured our own **selection-noise floor**, prompted by a
+  reel titled *"I backtested 10,000 strategies, here is the most profitable"*.
+  Simulating our actual rule (best-of-N on the **worst** of the three E6
+  windows) with every candidate having **zero true edge**: best-of-20 gives a
+  worst-window sharpe of **mean 0.29, 95th pct 0.48**. The champion
+  (`triple_momentum`) scores **0.44**. It clears the mean floor but **not the
+  95th percentile** — roughly the 85-90th percentile of pure noise.
+  Two things cut in our favour and are not modelled: the builtins are heavily
+  correlated (trend/momentum family 0.81 internally), so the effective number
+  of independent trials is well under 20; and the champion must also beat
+  buy-and-hold in all three windows, a hurdle the null ignores.
+  **Conclusion: the backtest alone cannot settle this.** This is the
+  quantitative argument for the go-live gates that already exist — >=100
+  paper trades and >=8 weeks on one champion are not bureaucracy, they are
+  the only out-of-sample evidence that is not subject to this selection.

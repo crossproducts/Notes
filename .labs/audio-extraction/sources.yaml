@@ -426,6 +426,47 @@ sources:
       for why the answer is no at the infrastructure level and why E1
       (market-neutral long/short) is the honest adjacent thing.
 
+  - url: https://www.instagram.com/reel/Dd8VTqIRdGZ/
+    name: "'10,000 strategies / 5.6M trades' part 1 - manual-backtest credibility setup"
+    status: skipped
+    cache_key: 251c48b40230
+    tags: [no-strategy, teaser, multiple-testing, series]
+    note: >-
+      Part 1 of a series. No strategy - he shows a two-year-old Google Sheets
+      backtest, every row an annotated TradingView screenshot with entry time,
+      pair and result, 10-20 hours of real work, then pivots to "the backtest I
+      did with AI, 10,000+ strategies and 5.6 million trades".
+      Credit where due: the manual sheet is genuinely good practice and more
+      rigour than most of this queue, and he is right that a point of reference
+      matters. See the Part 2 entry (Dd-B-8JzR2L) for why the AI sweep inverts
+      that rigour rather than extending it.
+
+  - url: https://www.instagram.com/reel/Dd-B-8JzR2L/
+    name: "'I backtested 10,000 strategies, here is the most profitable' part 2"
+    status: skipped
+    cache_key: f3b57ec2c115
+    tags: [no-strategy, teaser, multiple-testing, prop-firm, series]
+    note: >-
+      On-screen title is the finding: "I backtested 10,000 strategies, here is
+      the most profitable", labelled Part 2 (Introduction). Still no strategy -
+      the clip is preamble. Claims 100% win rates, a 17R average winner, "best
+      to pass accounts, best to get paid", and that Claude now designs and
+      places his trades.
+      THE TITLE IS THE PROBLEM, STATED PRECISELY. Selecting the max of 10,000
+      trials manufactures the result. Simulated with ZERO true edge, 5y daily:
+      best-of-10,000 sharpe 1.73; 1,585 of the 10,000 beat our champion's 0.44;
+      130 beat sharpe 1.0. The analytic expected max t-stat over 10,000 trials
+      is 3.74, i.e. a 5y sharpe of 1.67 from pure noise.
+      "100% win rate" is a sample-size statement, not an edge statement: at a
+      coin flip, 10,000 strategies yield ~312 perfect records at 5 trades each
+      and ~10 at 10 trades. It says nothing about the 11th trade.
+      Same failure as DdRvRupArAd, industrialised 10,000x. Prop-firm framing
+      throughout ("pass accounts"); our own numbers there are 5-14% pass,
+      ~7% ever paid.
+      WHAT WE ACTUALLY GAINED: it sent us to measure our OWN selection-noise
+      floor. See Decisions 2026-10-11 and backlog E7 - our champion clears the
+      mean floor but not the 95th percentile.
+
   # --- add new sources below as `pending` ---
   # - url: https://www.instagram.com/reel/XXXXXXXX/
   #   name: ""
