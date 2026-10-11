@@ -515,6 +515,35 @@ sources:
       promoting a champion. That is a research-loop tool, not a trading
       rule, so it never needs a backtest.
 
+  - url: https://www.instagram.com/reel/Dd-ClqHtd-1/
+    name: "'$179k/month' VWAP x EMA9 crossover, 3-min options - blocked on E2"
+    status: skipped
+    cache_key: 3417b8e04b2d
+    tags: [intraday, options, crossover, blocked-e2, underspecified, funnel]
+    note: >-
+      Mechanical on its face: VWAP (source OHLC4, anchor session) crossing EMA9
+      (source close) on the 3-MINUTE chart; cross up buy calls, cross down buy
+      puts. Claims $179,000 in one month.
+      BLOCKED ON E2 before anything else - the engine has daily bars only.
+      But it would not be testable even with intraday bars, for three reasons.
+      (1) THE ENTRY RULE IS UNEXECUTABLE AS STATED. Frame 2 reads "our entry
+      will be right BEFORE or right when the VWAP+EMA cross". You cannot enter
+      before a cross without knowing it will occur. The only implementable half
+      is "at the cross".
+      (2) IT TRADES OPTIONS AND NEVER SPECIFIES THE CONTRACT. No strike, no
+      expiry, no stop, no target, no sizing. Those choices dominate the P&L -
+      the same underlying move is a win or a total loss depending on them.
+      (3) COSTS, AGAIN. A session-anchored VWAP against a 9-period EMA crosses
+      repeatedly within a session, and every round trip pays an option spread,
+      which on short-dated contracts is a far larger fraction of premium than
+      the 5 bps that already killed the overnight effect (-99%) and the EMA
+      pullback. High-frequency crossovers on an instrument with wide spreads is
+      the worst possible combination for net return.
+      No account statement appears in the three captured frames - the "monster
+      play" footage is chart annotation, not a brokerage record.
+      Funnel: comment "SETUP" for a free strategy, plus a paid monthly
+      membership with a 7-day trial.
+
   # --- add new sources below as `pending` ---
   # - url: https://www.instagram.com/reel/XXXXXXXX/
   #   name: ""

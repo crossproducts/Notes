@@ -17,10 +17,19 @@ blocked on engine capability**. That ratio is the reason this file exists.
 | E1 | **Market-neutral long/short, multi-asset** | Deep Learning Stat Arb (`13233f413fe3`) | L | Engine is `fn(df,params) -> 0/1`, long-only, single-symbol. Stat arb needs long/short across ~550 names. Post-cost Sharpe ~1 is **not** better than our champion (1.17) — the real prize is **low correlation** to an all-long-beta book |
 | E2 | **Intraday bars + cross-sectional ranking** | Heston intraday periodicity (`701ea111c21e`) | L | Needs 30-min bars over a wide cross-section and same-bin ranking. Alpaca supplies minute bars, so the *data* is reachable; the *engine* is not |
 | E3 | **Refresh `architecture-review.md`** | trust in our own docs | S | It is **stale**: still claims "zero transaction costs ❌" and "promotion gates on in-sample sharpe". Both were fixed 2026-07 (see [[Decisions]]). A gap analysis that lists closed gaps is worse than none |
-| E5 | **Pin `backtest-api/requirements.txt`** | build reproducibility | S | Unpinned deps mean a rebuild can crash-loop the API. It already did: newer SQLAlchemy resolved bare `postgresql://` to psycopg v3, which the image does not ship. Patched the URL; root cause untouched |
 | E6b | **Bracket orders: stop-entry + stop-loss + R-multiple target, resolved intrabar** | any reel that specifies entries the way traders actually say them | M | Hit this live on `DeUGFf4yLX8`: the rules were fully mechanical and on daily bars, but `fn(df,params) -> 0/1` cannot express a fill, a stop and a target *inside* one bar, so it needed a bespoke harness (`research/ema_pullback_check.py`) instead of a registry entry. Daily OHLC is enough if the ambiguous-bar convention is pessimistic and stated. Smaller than E2 - no new data, only path-dependent fills |
+| E8 | **Audit the 11 `backtested` queue entries** | queue integrity | M | `validate_queue.py` found E4 was not a one-off. Three more entries carry `status: backtested` with an **empty note**, and **four** generated backtests **never reference the engine and contain no cost model** — same failure, unexamined: `0d87f719dc0c` Multi-Factor AI Analyst, `21fdab62deae` AI Infra Rotation, `748f15d07e9c` Congressional Copycat, `dde48fadcf1d` Asian Range Breakout. Each needs opening, re-scoring through the engine or re-marking. The validator exits 1 until they are resolved, which is the point |
 
 ## Done
+
+- **E5 — pin `backtest-api/requirements.txt`** *(closed 2026-10-11)*
+  Pinned all 44 packages by freezing the image that was verified working,
+  10 direct and 34 transitive. Unpinned deps here were never a style
+  question: a rebuild once resolved a newer SQLAlchemy that maps bare
+  `postgresql://` onto psycopg v3, which the image does not ship, and the
+  API crash-looped. That was patched at the URL; this is the root cause.
+  Rebuilt and redeployed against the pins — pandas 3.0.6, numpy 2.4.6,
+  SQLAlchemy 2.1.3, FastAPI 0.142.2.
 
 - **E7 — trials-aware scoring (deflated sharpe)** *(shipped 2026-10-11)*
   `analysis.annotate_deflated` charges every ranking for its own size:

@@ -53,10 +53,18 @@ def _safe(job_name: str, fn):
 def job_nightly():
     import main
     def work():
+        import advocate
         lines = []
         for sym in SYMBOLS:
             r = main.nightly(sym)
             lines.append(r["summary"])
+            # The nightly text should carry the case AGAINST, not only the
+            # summary that sold the promotion. A pipeline that only reports
+            # good news trains you to stop reading it.
+            try:
+                lines.append(advocate.summary_line(advocate.case_against(sym)))
+            except Exception as e:
+                lines.append(f"[{sym}] advocate failed: {type(e).__name__}")
         main.notify(main.NotifyRequest(text=" | ".join(lines)[:300]))
         _ping_healthcheck()
     _safe("nightly", work)

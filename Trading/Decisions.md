@@ -115,3 +115,22 @@ Related: [[Home]] · [[Go-Live Checklist]]
   `min_dsr` therefore defaults OFF — turning it on today would leave no
   champion, and that should be a deliberate choice.
 
+- **2026-10-11** — Added the **devil's advocate** (`advocate.py`). Every other
+  module looks for a champion; this one argues the promotion is a mistake, on
+  ten deterministic checks: selection noise, margin over the null, negative
+  windows, buy-and-hold margin, cost fragility at 2x, regime spread, crowding
+  against the incumbent, data floors, sample size, drawdown.
+  **Deliberately not an LLM**, and E4 is the reason: the last multi-agent idea
+  through this pipeline had its six agents silently replaced by hand-set
+  technical conditions, so what got measured was never what was proposed. An
+  objection you cannot reproduce is not evidence. `narrate()` writes the same
+  findings in prose and can add nothing.
+  It currently returns **BLOCK** on `triple_momentum`. Two objections, both
+  the E7 finding. Two things it *cleared*, worth recording: the edge is **not**
+  cost-fragile (0.44 -> 0.41 at 10 bps/side) and correlation to the incumbent
+  `momentum` is 0.841, under the 0.90 crowding bar.
+  Advisory by default — it reports, `auto_promote` decides — because a
+  promotion pipeline that silently stops is worse than one that says why.
+  `require_advocate_clear=True` makes it binding. The nightly SMS now carries
+  the verdict: a pipeline that only reports good news trains you not to read it.
+

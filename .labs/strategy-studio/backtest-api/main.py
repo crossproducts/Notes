@@ -24,6 +24,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from sqlalchemy import create_engine, text
 
+import advocate
 import analysis
 import engine
 from strategies import REGISTRY, SLOW_STRATEGIES
@@ -361,6 +362,38 @@ def promote(run_id: str, note: str = ""):
     return {"symbol": symbol, "champion": run_id, "note": note}
 
 
+def _current_champion_strategy(db, symbol: str):
+    """Name of the strategy currently holding the belt, or None.
+
+    Used by the advocate to measure crowding: a challenger that moves with
+    the incumbent is a relabelling, not a diversification.
+    """
+    try:
+        row = db.execute(text(
+            "SELECT r.strategy FROM champions c JOIN runs r "
+            "ON r.run_id = c.run_id WHERE c.symbol = :s"), {"s": symbol}).first()
+        return row[0] if row else None
+    except Exception:
+        return None
+
+
+@app.get("/champion/case-against/{symbol}")
+def champion_case_against(symbol: str, strategy: str | None = None,
+                          cost_bps: float = 5.0, incumbent: str | None = None,
+                          prose: bool = False):
+    """The devil's advocate: the case AGAINST promoting the leading candidate.
+
+    Everything else here looks for a champion; this argues the promotion is a
+    mistake, on deterministic evidence only. Verdicts: BLOCK / CONTEST /
+    NO OBJECTION. See advocate.py for why it is not an LLM.
+    """
+    case = advocate.case_against(symbol, strategy=strategy, cost_bps=cost_bps,
+                                 incumbent=incumbent)
+    if prose:
+        case["narrative"] = advocate.narrate(case)
+    return case
+
+
 @app.get("/champion/evaluate/{symbol}")
 def champion_evaluate(symbol: str, cost_bps: float = 5.0):
     """Rank every builtin by WORST-window sharpe across regimes (E6).
@@ -378,7 +411,8 @@ def champion_evaluate(symbol: str, cost_bps: float = 5.0):
 @app.post("/champion/auto/{symbol}")
 def auto_promote(symbol: str, metric: str = "sharpe", min_trades: int = 5,
                  validate: bool = True, robust: bool = True,
-                 min_dsr: float | None = None):
+                 min_dsr: float | None = None, cost_bps: float = 5.0,
+                 require_advocate_clear: bool = False):
     """Auto-promote the best run for a symbol IF it beats the current champion
     on the metric. With validate=True (default), a NEW champion must also pass
     a walk-forward gate: positive stitched out-of-sample return. Promoting on
@@ -406,6 +440,17 @@ def auto_promote(symbol: str, metric: str = "sharpe", min_trades: int = 5,
                     f"worst-window sharpe is indistinguishable from the best of "
                     f"this many zero-edge trials. See /champion/evaluate/{symbol}"))
         winner = ranked[0]["strategy"]
+        # The advocate argues against its own side's candidate. Advisory by
+        # default -- it reports, auto_promote decides -- because today it
+        # BLOCKs on every candidate for the E7 reason, and a promotion
+        # pipeline that silently stops is worse than one that tells you why.
+        case = advocate.case_against(symbol, strategy=winner, cost_bps=cost_bps,
+                                     incumbent=_current_champion_strategy(db, symbol),
+                                     ranked=ranked)
+        if require_advocate_clear and case["verdict"] == "BLOCK":
+            raise HTTPException(409, {
+                "error": "advocate BLOCKed the promotion",
+                "case": case})
         # Pick the LONGEST-HISTORY run of the winning strategy, not the
         # highest-sharpe one. Ordering by sharpe here would re-introduce the
         # exact single-window bias at the run level: a 2020-start run of the
