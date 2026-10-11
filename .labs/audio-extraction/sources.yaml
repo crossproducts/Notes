@@ -27,10 +27,31 @@ sources:
     tags: [equities, signals]
 
   - url: https://www.instagram.com/reel/DZ6KTeTP-8o/
-    name: Bull vs Bear Debate Strategy (TowerIC-inspired)
-    status: backtested
+    name: Bull vs Bear Debate Strategy (TowerIC-inspired) - NOT ACTUALLY TESTED
+    status: skipped
     cache_key: b9a107049e52
-    tags: [equities, sentiment]
+    tags: [equities, sentiment, multi-agent, llm, unevaluated]
+    note: >-
+      E4 CLOSED 2026-10-11. This was marked `backtested` with an empty note.
+      Opening the artifacts shows that status was wrong on three counts.
+      (1) THE AGENTS DID NOT SURVIVE. The interpreted config describes six
+      LLM agents - fundamental analyst, sentiment analyst, bull, bear, trader,
+      risk manager - and the generated backtest contains none of them. The
+      bull agent is six hand-set technical conditions summed to a 0-1 score,
+      the bear agent is six more, and the debate is `bull - bear > 0.15`. No
+      LLM, no debate: a 12-condition TA composite with 13 tuned constants.
+      (2) IT BYPASSES THE ENGINE. 350 lines with its own yf.download loop,
+      its own weekly top-5 rebalance over a 25-name universe, and a hardcoded
+      2020 start. It never saw equity_from_signal, the robust windows or the
+      walk-forward gate.
+      (3) ZERO TRANSACTION COSTS. The only 'COST' in the file is the Costco
+      ticker. A weekly top-5 rebalance is ~104 turnovers a year; costs would
+      dominate the result. That is exactly what killed the overnight effect
+      (-99% at 5bps) and the EMA pullback.
+      So `backtested` meant 'a script ran', not 'it passed a gate'. Re-marked
+      skipped. The lesson is about the PIPELINE, not the strategy: an LLM
+      layer cannot be backtested, so the generator silently replaces it with
+      numeric proxies and the thing we measure is not the thing in the video.
 
   - url: https://www.instagram.com/reel/DXwfkKqxvtG/
     name: Asian Range Breakout (S-tier from strategy tier-list)
@@ -466,6 +487,33 @@ sources:
       WHAT WE ACTUALLY GAINED: it sent us to measure our OWN selection-noise
       floor. See Decisions 2026-10-11 and backlog E7 - our champion clears the
       mean floor but not the 95th percentile.
+
+  - url: https://www.instagram.com/reel/Dd0ZDPRjIWA/
+    name: "TradingAgents - multi-agent LLM trading framework (open source)"
+    status: skipped
+    cache_key: 391cb4883ce9
+    tags: [multi-agent, llm, tooling, architecture, no-backtest]
+    note: >-
+      Real project (Tauric Research, arXiv paper). Architecture: fundamental,
+      sentiment and technical analysts feed bullish/bearish researchers who
+      debate, then a trader proposes and risk + portfolio managers approve.
+      Local models via Ollama or OpenAI/Anthropic APIs.
+      The '100,000 GitHub stars' claim is almost certainly inflated - that
+      would put a trading framework among the most-starred repos in
+      existence. Treat as a credibility marker on the REEL, not the repo.
+      VERDICT: do not implement as a trading system; we already ran this
+      architecture and it is the entry above (b9a107049e52). Same six roles.
+      It failed not on idea quality but because an LLM-in-the-loop system
+      cannot be honestly backtested here: every bar needs a model call, and
+      the model's training data contains the outcome, so asking it to judge
+      March 2020 leaks March 2020. Add E7 on top - we now charge a ranking
+      for its own search, and an agent system is an unbounded search.
+      WORTH TAKING: the non-LLM half of the architecture is already ours -
+      strategies.py are the analysts, risk.py the risk manager, portfolio.py
+      the portfolio manager, monitor.py the decay check. The one genuinely
+      additive piece is ADVERSARIAL REVIEW: an agent arguing AGAINST
+      promoting a champion. That is a research-loop tool, not a trading
+      rule, so it never needs a backtest.
 
   # --- add new sources below as `pending` ---
   # - url: https://www.instagram.com/reel/XXXXXXXX/

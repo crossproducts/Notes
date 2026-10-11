@@ -377,7 +377,8 @@ def champion_evaluate(symbol: str, cost_bps: float = 5.0):
 
 @app.post("/champion/auto/{symbol}")
 def auto_promote(symbol: str, metric: str = "sharpe", min_trades: int = 5,
-                 validate: bool = True, robust: bool = True):
+                 validate: bool = True, robust: bool = True,
+                 min_dsr: float | None = None):
     """Auto-promote the best run for a symbol IF it beats the current champion
     on the metric. With validate=True (default), a NEW champion must also pass
     a walk-forward gate: positive stitched out-of-sample return. Promoting on
@@ -391,6 +392,19 @@ def auto_promote(symbol: str, metric: str = "sharpe", min_trades: int = 5,
         ranked = [r for r in ranked if r["beats_buyhold_all_windows"]]
         if not ranked:
             raise HTTPException(404, "no strategy beats buy-and-hold in every window")
+        # E7: charge the ranking for its own size. Reported always, gated only
+        # on request -- at the current registry NOTHING clears 0.95 (the
+        # champion sits at ~0.54), so defaulting min_dsr on would leave the
+        # book with no champion at all. That is a finding to act on
+        # deliberately, not a promotion pipeline to break by surprise.
+        if min_dsr is not None:
+            ranked = [r for r in ranked
+                      if (r.get("deflated_sharpe") or 0.0) >= min_dsr]
+            if not ranked:
+                raise HTTPException(404, (
+                    f"no strategy clears deflated_sharpe >= {min_dsr}: the best "
+                    f"worst-window sharpe is indistinguishable from the best of "
+                    f"this many zero-edge trials. See /champion/evaluate/{symbol}"))
         winner = ranked[0]["strategy"]
         # Pick the LONGEST-HISTORY run of the winning strategy, not the
         # highest-sharpe one. Ordering by sharpe here would re-introduce the

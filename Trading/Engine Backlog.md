@@ -17,12 +17,40 @@ blocked on engine capability**. That ratio is the reason this file exists.
 | E1 | **Market-neutral long/short, multi-asset** | Deep Learning Stat Arb (`13233f413fe3`) | L | Engine is `fn(df,params) -> 0/1`, long-only, single-symbol. Stat arb needs long/short across ~550 names. Post-cost Sharpe ~1 is **not** better than our champion (1.17) — the real prize is **low correlation** to an all-long-beta book |
 | E2 | **Intraday bars + cross-sectional ranking** | Heston intraday periodicity (`701ea111c21e`) | L | Needs 30-min bars over a wide cross-section and same-bin ranking. Alpaca supplies minute bars, so the *data* is reachable; the *engine* is not |
 | E3 | **Refresh `architecture-review.md`** | trust in our own docs | S | It is **stale**: still claims "zero transaction costs ❌" and "promotion gates on in-sample sharpe". Both were fixed 2026-07 (see [[Decisions]]). A gap analysis that lists closed gaps is worse than none |
-| E4 | **Record the verdict for `b9a107049e52`** | queue integrity | S | Bull vs Bear Debate was marked `backtested` with an **empty note**. Its conclusion was never written down, so it is unciteable — and the Grok-desk reel (`21ea6aeb17c5`) turned on exactly that precedent |
 | E5 | **Pin `backtest-api/requirements.txt`** | build reproducibility | S | Unpinned deps mean a rebuild can crash-loop the API. It already did: newer SQLAlchemy resolved bare `postgresql://` to psycopg v3, which the image does not ship. Patched the URL; root cause untouched |
 | E6b | **Bracket orders: stop-entry + stop-loss + R-multiple target, resolved intrabar** | any reel that specifies entries the way traders actually say them | M | Hit this live on `DeUGFf4yLX8`: the rules were fully mechanical and on daily bars, but `fn(df,params) -> 0/1` cannot express a fill, a stop and a target *inside* one bar, so it needed a bespoke harness (`research/ema_pullback_check.py`) instead of a registry entry. Daily OHLC is enough if the ambiguous-bar convention is pessimistic and stated. Smaller than E2 - no new data, only path-dependent fills |
-| E7 | **Trials-aware scoring (deflated sharpe)** | knowing whether a champion is real | M | `rank_robust` picks the best of ~20 builtins and walk-forward re-optimises parameters per window — two multiple-testing surfaces we do not currently charge for. Simulated null: best-of-20 zero-edge strategies score a worst-window sharpe of 0.29 mean / **0.48 at the 95th pct**, against our champion's **0.44**. Implement Bailey & López de Prado's Deflated Sharpe Ratio (or a Harvey-Liu haircut) in `analysis.robust_score` so the score reports how many trials bought it. Correlated builtins mean effective N << 20, so this will likely *help* the champion — but right now we cannot say by how much |
 
 ## Done
+
+- **E7 — trials-aware scoring (deflated sharpe)** *(shipped 2026-10-11)*
+  `analysis.annotate_deflated` charges every ranking for its own size:
+  Bailey & López de Prado's expected-max-sharpe under the null, then a
+  probabilistic sharpe against it, corrected for sample length, skew and
+  kurtosis. No scipy in the image, so the normal CDF/inverse are written out
+  (Acklam, |err| < 1.2e-9); validated against known quantiles and against the
+  brute-force simulation (analytic 0.368 vs simulated 0.36 at N=20).
+  Live on `/champion/evaluate/{symbol}`. **The answer is uncomfortable:**
+  with 16 strategies ranked, the best of that many ZERO-EDGE candidates would
+  score **0.417**, and the champion scores **0.44** — a **deflated sharpe of
+  0.55**, barely better than a coin flip, where 0.95 is the usual bar.
+  Nothing in the registry clears it. The fat tails matter: kurtosis runs 7.7
+  to 56.8 and skew is negative almost everywhere, both cutting confidence.
+  `auto_promote(min_dsr=...)` can gate on it but defaults to OFF — switching
+  it on today leaves the book with no champion at all, which is a decision to
+  take deliberately, not a pipeline to break by surprise.
+
+- **E4 — record the verdict for `b9a107049e52`** *(closed 2026-10-11)*
+  Bull vs Bear Debate was marked `backtested` with an empty note. It should
+  never have carried that status. The six LLM agents in the interpreted
+  config do not appear in the generated backtest at all — the bull agent is
+  six hand-set TA conditions, the bear agent six more, the debate a 0.15
+  margin. The script also bypasses the engine entirely (own data fetch, own
+  weekly top-5 rebalance, hardcoded 2020 start) and models **zero
+  transaction costs** on ~104 turnovers a year.
+  Re-marked `skipped`. The finding is about the pipeline, not the strategy:
+  **an LLM layer cannot be backtested, so the generator quietly substitutes
+  numeric proxies and we end up measuring something else.** Any future
+  agent-framework reel (TradingAgents, `391cb4883ce9`) inherits this verdict.
 
 - **E6 — champion selection is window-dependent** *(resolved 2026-10-11)*
   Confirmed and fixed. `momentum` scored sharpe **0.95** on a 2020 start and

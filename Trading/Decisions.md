@@ -99,3 +99,19 @@ Related: [[Home]] · [[Go-Live Checklist]]
   quantitative argument for the go-live gates that already exist — >=100
   paper trades and >=8 weeks on one champion are not bureaucracy, they are
   the only out-of-sample evidence that is not subject to this selection.
+
+- **2026-10-11** — Shipped **E7**, and it changes what the champion means.
+  Charging the ranking for its own size: 16 strategies, cross-sectional sharpe
+  spread 0.21, so the best of 16 **zero-edge** candidates would score **0.417**.
+  `triple_momentum` scores **0.44**. Deflated sharpe **0.55** — against a 0.95
+  bar. **Nothing in the registry clears selection noise.**
+  Two biases pull opposite ways and are documented in `analysis.py`: we do not
+  charge for walk-forward's parameter grid (confidence too high), and we take
+  V[SR] from a heterogeneous registry that contains real dispersion, not just
+  sampling noise (confidence too low). Treat 0.55 as an order-of-magnitude
+  check, not a p-value.
+  **What this does NOT mean:** that the champion is worthless. It means the
+  backtest cannot tell us, which is what the paper-trading gates are for.
+  `min_dsr` therefore defaults OFF — turning it on today would leave no
+  champion, and that should be a deliberate choice.
+
