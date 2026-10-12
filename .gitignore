@@ -83,6 +83,11 @@ id_ed25519.*
 .netrc
 
 # Explainer-video lab: TTS model weights (~340 MB, re-downloadable from the
-# kokoro-onnx release) and rendered output (regenerable from the deck).
+# kokoro-onnx release) and the per-scene build intermediates.
+# The finished MP4 is deliberately NOT ignored -- being able to open it from
+# the repo is the whole point of rendering it. Each rebuild adds another ~17 MB
+# blob to history permanently, so if this grows past a few decks, move the
+# videos to Git LFS rather than letting the pack balloon.
 .labs/explainer-video/models/
-.labs/explainer-video/out/
+.labs/explainer-video/out/.work/
+.labs/explainer-video/out/preview.png
