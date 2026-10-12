@@ -17,6 +17,9 @@ that loads on-demand when a task matches (see `.claude/skills/`):
 - **`.labs/audio-extraction/`** — reel/video → strategy → backtest pipeline
   (transcribe → interpret → generate → data → backtest → report).
   Skill: `reel-backtest`.
+- **`.labs/explainer-video/`** — turns a Python "deck" into a narrated MP4
+  (Playwright-rendered slides + local Kokoro-82M TTS + ffmpeg). Model weights
+  and rendered output are gitignored; the deck is the source. No skill yet.
 
 ## Repository Structure
 

@@ -81,3 +81,8 @@ id_ed25519
 id_ed25519.*
 .aws/credentials
 .netrc
+
+# Explainer-video lab: TTS model weights (~340 MB, re-downloadable from the
+# kokoro-onnx release) and rendered output (regenerable from the deck).
+.labs/explainer-video/models/
+.labs/explainer-video/out/
