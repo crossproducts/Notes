@@ -112,6 +112,14 @@ sources:
       is exactly the kind of claim the walk-forward gate exists to test.
       Expected cache_key d35ad5bd482c.
 
+  - url: https://www.instagram.com/reel/DefGJBCpZ1Z/
+    name: "Unreviewed — IG reel DefGJBCpZ1Z"
+    status: pending
+    tags: [unreviewed]
+    note: third reel queued unseen from the network-blocked remote session; not
+      transcribed or verified, name is a placeholder. Expected cache_key
+      dea86e0b7f22.
+
   # --- add new sources below as `pending` ---
   # - url: https://www.instagram.com/reel/XXXXXXXX/
   #   name: ""
