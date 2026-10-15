@@ -6,7 +6,9 @@ An idea graduates only by beating the champion out-of-sample.
 ## Queue
 | Idea / URL | Source | Status | Notes |
 |---|---|---|---|
-|  |  | inbox |  |
+| Kalshi event contracts — calibration edge | [[../.labs/kalshi/README]] | lab built, unvalidated | Core + gate done & tested; ingest not built. Edge is small and tail-concentrated; fee hurdle is 19× worse on longshots than favourites. See `docs/edge-thesis.md` for the four falsification conditions. |
+| IG reel DbrE_m1pUUJ | sources.yaml | queued | Blocked — Instagram unreachable from the remote session |
+| IG reel DedW0mvh3dw | sources.yaml | queued | Same block; sent over as "a step above just gambling" |
 
 ## Alt-data backlog (from the studio roadmap)
 - Congress copycat — must model the 30–45 day disclosure lag honestly

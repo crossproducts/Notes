@@ -17,6 +17,10 @@ that loads on-demand when a task matches (see `.claude/skills/`):
 - **`.labs/audio-extraction/`** — reel/video → strategy → backtest pipeline
   (transcribe → interpret → generate → data → backtest → report).
   Skill: `reel-backtest`.
+- **`.labs/kalshi/`** — calibration-first research on Kalshi event contracts.
+  Pure-stdlib analytical core (fee model, EV/Kelly, Brier + clustered
+  bootstrap, four-gate series screen); market ingest not yet built. No skill —
+  run `python -m kalshi_lab.demo` from the lab directory.
 
 ## Repository Structure
 

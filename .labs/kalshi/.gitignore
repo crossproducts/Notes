@@ -1,0 +1,10 @@
+.env
+
+# Regenerable intermediates
+__pycache__/
+*.pyc
+
+# Ingested market data — regenerable from the API, can get large
+fixtures/*.json
+fixtures/*.parquet
+!fixtures/.gitkeep

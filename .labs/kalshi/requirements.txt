@@ -1,0 +1,7 @@
+# The analytical core (fees, edge, calibration, screen) is PURE STDLIB on
+# purpose — it runs anywhere with no install step. Nothing is required to run
+# `python -m kalshi_lab.demo` or the test suite.
+#
+# Needed only from roadmap step 1 (ingest) onward:
+# cryptography   # RSA-PSS request signing for the Kalshi API
+# requests       # HTTP client
