@@ -48,7 +48,26 @@ On success each source gets a `cache_key` and flips to `backtested`.
 
 ```bash
 python pipeline.py "https://www.instagram.com/reel/..."
+python pipeline.py ~/Downloads/reel.mov          # a local file works too
 ```
+
+**Local-file ingest (for sources that cannot be downloaded).** Pass a path
+anywhere a URL is accepted — `pipeline.py`, `run_queue.py` via `sources.yaml`,
+or `extract.run()`. The file is detected automatically, audio is derived with
+ffmpeg, and frames, transcription and every later stage run unchanged. The
+cache key is a hash of the file's **contents**, so re-ingesting the same
+recording under a different filename reuses the cached transcript instead of
+paying for Whisper twice.
+
+This exists because ingest is the only part of the pipeline a platform can
+block. There is no sanctioned API that turns a public Instagram reel URL into
+media you are permitted to store: oEmbed returns a render-only embed blob with
+no media, no caption and (since Nov 2025) no thumbnail, and its terms forbid
+storing or deriving from the response; the Graph API is owner-scoped with no
+URL→media endpoint at all. So capture the file yourself — screen recording,
+the in-app save where the creator has enabled it, or just asking them — and
+hand the pipeline a path. A local file has no post caption; the interpret
+stage already handles that, working from transcript and frames alone.
 
 **Visualize a result.** Open `notebooks/visualize.ipynb`, set `CACHE_KEY` to the
 value from `sources.yaml`, and run all cells.

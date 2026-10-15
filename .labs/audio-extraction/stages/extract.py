@@ -17,6 +17,69 @@ def url_to_cache_key(url: str) -> str:
     return hashlib.md5(clean.encode()).hexdigest()[:12]
 
 
+def file_to_cache_key(path: str) -> str:
+    """Cache key from a local file's CONTENT, not its name.
+
+    Content-hashing means re-uploading the same recording under a different
+    filename reuses the cached transcript and frames instead of paying for
+    Whisper twice, and two different recordings never collide.
+    """
+    h = hashlib.md5()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()[:12]
+
+
+def is_local_media(source: str) -> bool:
+    """True if `source` is a path to an existing file rather than a URL."""
+    if "://" in source:
+        return False
+    try:
+        return Path(source).is_file()
+    except OSError:
+        return False
+
+
+def prepare_local(path: str, cache_key: str) -> tuple[str, str]:
+    """Derive the mp3 from a local video file. Returns (audio_path, video_path).
+
+    The ingest half of the pipeline is the only part Instagram can block: there
+    is no sanctioned API that turns a public reel URL into media you may store,
+    so the practical route is to capture the file yourself -- screen recording,
+    the in-app save where the creator allows it, or asking them for it -- and
+    hand the pipeline a path. Everything downstream is unchanged.
+    """
+    video_path = Path(path)
+    audio_path = CACHE_DIR / f"{cache_key}.mp3"
+
+    if audio_path.exists():
+        print(f"  [cache hit] Audio already extracted: {audio_path.name}")
+        return str(audio_path), str(video_path)
+
+    print(f"  Local media: {video_path.name}")
+    print("  Extracting audio...")
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", str(video_path),
+        "-vn",
+        "-acodec", "libmp3lame",
+        "-q:a", "0",
+        str(audio_path),
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0 or not audio_path.exists():
+        # A partial mp3 must not become a permanent cache hit.
+        audio_path.unlink(missing_ok=True)
+        raise RuntimeError(
+            f"ffmpeg could not extract audio from {video_path.name}: "
+            f"{result.stderr[-300:]}"
+        )
+
+    print(f"  Audio saved: {audio_path.name}")
+    return str(audio_path), str(video_path)
+
+
 def download_video(url: str, cache_key: str) -> tuple[str, str]:
     """Download full video as mp4 and derive mp3 audio from it.
 
@@ -450,17 +513,28 @@ def get_caption(url: str) -> str:
         return ""
 
 
-def run(url: str, whisper_model: str = "base") -> dict:
-    """Run the full extraction stage. Returns dict with transcript and metadata."""
+def run(source: str, whisper_model: str = "base") -> dict:
+    """Run the full extraction stage. Returns dict with transcript and metadata.
+
+    `source` is either a URL or a path to a local video file. The local path is
+    the supported route for sources that cannot be downloaded -- capture the
+    file yourself and hand it over; stages 2-6 do not care which it was.
+    """
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    cache_key = url_to_cache_key(url)
+    local = is_local_media(source)
+    cache_key = file_to_cache_key(source) if local else url_to_cache_key(source)
 
     print("\n[STAGE 1: EXTRACT]")
-    caption = get_caption(url)
+    # A local file carries no post caption; the interpret stage already treats
+    # an empty caption as "transcript and frames only".
+    caption = "" if local else get_caption(source)
     if caption:
         print(f"  Caption: {caption[:80]}...")
 
-    audio_path, video_path = download_video(url, cache_key)
+    if local:
+        audio_path, video_path = prepare_local(source, cache_key)
+    else:
+        audio_path, video_path = download_video(source, cache_key)
     transcript = transcribe(audio_path, cache_key, whisper_model)
 
     # Extract frames (empty list if no video file available).
@@ -472,7 +546,8 @@ def run(url: str, whisper_model: str = "base") -> dict:
 
     return {
         "cache_key": cache_key,
-        "url": url,
+        "url": source,
+        "source_kind": "file" if local else "url",
         "caption": caption,
         "transcript": transcript,
         "audio_path": audio_path,
