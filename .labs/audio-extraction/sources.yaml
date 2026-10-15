@@ -45,8 +45,9 @@ sources:
     status: backtested
     cache_key: "6779302ed081"
     tags: [equities, regime-filter, vix, gold]
-    note: implemented as studio builtin vix_gold_filter; claim 'beats buy-and-hold'
-      NOT reproduced (117% default / 155% walk-forward OOS vs QQQ 242%)
+    note: implemented as studio builtin vix_gold_filter; claim 'beats
+      buy-and-hold' NOT reproduced (117% default / 155% walk-forward OOS vs QQQ
+      242%)
 
   - url: https://www.instagram.com/reel/DaK_kWlOhl4/
     name: TIPS ladder ("unethical but legal" part 57)
@@ -96,9 +97,20 @@ sources:
     note: queued from a remote session whose network policy blocks instagram.com
       (egress proxy 403 on CONNECT, yt-dlp and direct fetch alike), so nothing
       about this reel has been transcribed, interpreted, or verified yet — the
-      name is a placeholder, not a claim about its contents. Run
-      `python run_queue.py` where Instagram is reachable; expected cache_key
+      name is a placeholder, not a claim about its contents. Run `python
+      run_queue.py` where Instagram is reachable; expected cache_key
       d6ab0124904c.
+
+  - url: https://www.instagram.com/reel/DedW0mvh3dw/
+    name: "Unreviewed — IG reel DedW0mvh3dw"
+    status: pending
+    tags: [unreviewed]
+    note: queued from the same network-blocked remote session as DbrE_m1pUUJ —
+      not transcribed, interpreted, or verified, so the name is a placeholder
+      rather than a claim. Sent over with the comment "a step above just
+      gambling"; that is the operator's read of the video, not a finding, and it
+      is exactly the kind of claim the walk-forward gate exists to test.
+      Expected cache_key d35ad5bd482c.
 
   # --- add new sources below as `pending` ---
   # - url: https://www.instagram.com/reel/XXXXXXXX/
