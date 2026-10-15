@@ -102,15 +102,40 @@ sources:
       d6ab0124904c.
 
   - url: https://www.instagram.com/reel/DedW0mvh3dw/
-    name: "Unreviewed — IG reel DedW0mvh3dw"
-    status: pending
-    tags: [unreviewed]
-    note: queued from the same network-blocked remote session as DbrE_m1pUUJ —
-      not transcribed, interpreted, or verified, so the name is a placeholder
-      rather than a claim. Sent over with the comment "a step above just
-      gambling"; that is the operator's read of the video, not a finding, and it
-      is exactly the kind of claim the walk-forward gate exists to test.
-      Expected cache_key d35ad5bd482c.
+    name: Polymarket wallet copy-trading ("Radar" app, lp_predicts)
+    status: skipped
+    tags: [prediction-markets, copy-trading, selection-bias]
+    note: >-
+      Reviewed in-session from an uploaded screen recording (Instagram is
+      blocked here); frames captured with the lab's own extract_frames, which
+      fell back to fixed-interval sampling as designed. Pitch: a third-party
+      app ranks all ~3M Polymarket wallets 1-5 stars by win rate and ROI, you
+      sort to five-star, pick one with >$100k profit in 30 days and an >80%
+      win rate, hit "Track Trade" and copy its next trade.
+
+      Rejected as presented, on two independent grounds. First, win rate is
+      not a skill metric on a binary market - you pick your win rate by
+      picking your price, so buying 80c favourites yields an 80% win rate
+      with zero skill while losing the fee on every fairly-priced contract.
+      Second, selecting the extreme of 3M wallets on 30-day P&L is a textbook
+      multiple-comparisons trap: if every wallet were a coin-flipper, ~17,700
+      would still show >=80% over 20 trades and ~164,000 over 10. The
+      leaderboard is a machine for manufacturing those. Copy latency makes it
+      worse - the whale takes the liquidity and you fill behind them, and a
+      few cents of slippage on a 90c contract exceeds the entire edge budget.
+
+      The underlying question IS testable and worth a study - do top wallets
+      PERSIST? Polymarket trades are public on-chain, so a point-in-time
+      leaderboard rebuilt as of each date, scored on the FOLLOWING 30 days,
+      answers it honestly. That is the whale_13f pattern with copy latency in
+      place of filing lag. Logged in .labs/kalshi as a candidate study rather
+      than queued here; this pipeline backtests price series, not wallets.
+
+      Caveat to check before any of it: US access to Polymarket now runs
+      through a CFTC-regulated product post-QCEX, and reporting suggests
+      direct crypto-wallet trading may no longer be open to US users - which
+      would mean the venue holding those 3M wallets is not the venue a US
+      operator can trade on.
 
   - url: https://www.instagram.com/reel/DefGJBCpZ1Z/
     name: "Unreviewed — IG reel DefGJBCpZ1Z"
