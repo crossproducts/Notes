@@ -145,6 +145,15 @@ sources:
       transcribed or verified, name is a placeholder. Expected cache_key
       dea86e0b7f22.
 
+  - url: https://www.instagram.com/reel/DdEeSmFxeSw/
+    name: "Unreviewed — IG reel DdEeSmFxeSw"
+    status: pending
+    tags: [unreviewed]
+    note: fourth reel queued unseen (Instagram still egress-blocked here);
+      sent over in a "how to make $10k/month" question, so expect a
+      monetisation pitch rather than a strategy. Expected cache_key
+      b91b4cb032d8.
+
   # --- add new sources below as `pending` ---
   # - url: https://www.instagram.com/reel/XXXXXXXX/
   #   name: ""
