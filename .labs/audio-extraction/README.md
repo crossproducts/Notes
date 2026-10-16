@@ -59,7 +59,32 @@ cache key is a hash of the file's **contents**, so re-ingesting the same
 recording under a different filename reuses the cached transcript instead of
 paying for Whisper twice.
 
-This exists because ingest is the only part of the pipeline a platform can
+**Download chain (URLs).** Each step costs more than the last, so they escalate:
+
+1. **yt-dlp with `--impersonate chrome`.** The flag is detected per process from
+   `--list-impersonate-targets` and omitted when unavailable, so a missing extra
+   degrades instead of erroring. It is required rather than nice-to-have:
+   yt-dlp's GraphQL path for Instagram is gated behind `_can_impersonate`, and
+   without curl-cffi the extractor skips it and scrapes HTML, which Instagram
+   redirects to a login page. The resulting *"empty media response — check if
+   this post is accessible without being logged-in"* blames your session when
+   the real cause is usually the missing dependency, which is why the error
+   sends people chasing cookies they do not need.
+2. **gallery-dl.** Talks to the API directly instead of parsing HTML, so it
+   survives breakages that stop yt-dlp, and `--write-metadata` also saves the
+   post caption — strategy reels often put the rules there, which is a free
+   second input to the interpret stage. Keeps the video, so frames survive.
+3. **Headless browser (Playwright).** Last resort; recovers audio only, so no
+   frames.
+
+No cookies anywhere in that chain, deliberately. Per yt-dlp's maintainers an
+account is not flagged when no cookies are passed, and attaching your logged-in
+session is what makes your account the remedy for a terms breach. Note plainly:
+automated downloading violates Instagram's Terms of Use regardless of which of
+the three runs — Meta's Automated Data Collection Terms require express written
+permission, and "publicly visible" is not "permitted".
+
+This chain exists because ingest is the only part of the pipeline a platform can
 block. There is no sanctioned API that turns a public Instagram reel URL into
 media you are permitted to store: oEmbed returns a render-only embed blob with
 no media, no caption and (since Nov 2025) no thumbnail, and its terms forbid

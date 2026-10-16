@@ -80,6 +80,99 @@ def prepare_local(path: str, cache_key: str) -> tuple[str, str]:
     return str(audio_path), str(video_path)
 
 
+_impersonate_cache: list[str] | None = None
+
+
+def _impersonate_args() -> list[str]:
+    """`--impersonate chrome`, or nothing if the dependency is missing.
+
+    yt-dlp's modern Instagram path goes through the GraphQL API, and that whole
+    branch is gated behind `_can_impersonate`: without a browser fingerprint it
+    is skipped and the extractor falls back to scraping HTML, which Instagram
+    redirects to a login page. The resulting "empty media response -- check if
+    this post is accessible without being logged-in" is misleading, because it
+    points at your session when the real cause is usually that curl-cffi is not
+    installed. Hence `yt-dlp[default,curl-cffi]` in requirements.txt.
+
+    Detected once per process from `--list-impersonate-targets`, which is local
+    and needs no network, so an environment without the extra degrades to the
+    old behaviour instead of erroring on an unknown flag.
+    """
+    global _impersonate_cache
+    if _impersonate_cache is None:
+        try:
+            r = subprocess.run(
+                ["yt-dlp", "--list-impersonate-targets"],
+                capture_output=True, text=True, timeout=30,
+            )
+            available = r.returncode == 0 and "curl_cffi" in r.stdout
+        except Exception:
+            available = False
+        _impersonate_cache = ["--impersonate", "chrome"] if available else []
+        if not _impersonate_cache:
+            print("  Note: yt-dlp impersonation unavailable "
+                  "(pip install -U 'yt-dlp[default,curl-cffi]')")
+    return list(_impersonate_cache)
+
+
+def _caption_path(cache_key: str) -> Path:
+    return CACHE_DIR / f"{cache_key}_caption.txt"
+
+
+def download_via_gallery_dl(url: str, cache_key: str, video_path: Path) -> bool:
+    """Second attempt: gallery-dl. Returns True if a video landed on disk.
+
+    gallery-dl talks to Instagram's API directly rather than parsing HTML, so
+    it tends to survive the breakages that take out yt-dlp's scraping path, and
+    its releases track Instagram changes closely. `--write-metadata` is the
+    reason it is worth trying even when yt-dlp works: it saves the post caption
+    as JSON, and strategy reels frequently put the actual rules in the caption
+    -- a free second input to the interpret stage next to the transcript.
+    """
+    dest = CACHE_DIR / f"{cache_key}_gdl"
+    dest.mkdir(parents=True, exist_ok=True)
+
+    print("  Trying gallery-dl...")
+    try:
+        result = subprocess.run(
+            ["gallery-dl", "-D", str(dest), "--write-metadata", url],
+            capture_output=True, text=True, timeout=300,
+        )
+    except FileNotFoundError:
+        print("  gallery-dl not installed (pip install gallery-dl)")
+        return False
+    except Exception as exc:
+        print(f"  gallery-dl raised {exc}")
+        return False
+
+    # Caption first: worth keeping even if no video came back.
+    for meta in sorted(dest.glob("*.json")):
+        try:
+            blob = json.loads(meta.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        caption = (blob.get("description") or blob.get("caption") or "").strip()
+        if caption:
+            _caption_path(cache_key).write_text(caption, encoding="utf-8")
+            print(f"  Caption saved from gallery-dl metadata ({len(caption)} chars)")
+            break
+
+    videos = sorted(
+        p for p in dest.iterdir()
+        if p.suffix.lower() in (".mp4", ".mov", ".webm", ".mkv")
+    )
+    if not videos:
+        tail = result.stderr.strip().splitlines()[-1] if result.stderr.strip() else "no video found"
+        print(f"  gallery-dl produced no video ({tail})")
+        return False
+
+    # Largest file is the reel itself rather than a thumbnail or preview.
+    largest = max(videos, key=lambda p: p.stat().st_size)
+    largest.replace(video_path)
+    print(f"  Video saved via gallery-dl: {video_path.name}")
+    return True
+
+
 def download_video(url: str, cache_key: str) -> tuple[str, str]:
     """Download full video as mp4 and derive mp3 audio from it.
 
@@ -108,6 +201,7 @@ def download_video(url: str, cache_key: str) -> tuple[str, str]:
     print("  Downloading full video...")
     cmd = [
         "yt-dlp",
+        *_impersonate_args(),
         "-f", "mp4/bestvideo*+bestaudio/best",
         "--remux-video", "mp4",
         "--merge-output-format", "mp4",
@@ -124,9 +218,15 @@ def download_video(url: str, cache_key: str) -> tuple[str, str]:
         # yt-dlp may leave a partial file; a truncated mp4 must not become a
         # permanent cache hit
         video_path.unlink(missing_ok=True)
-        print("  Falling back to headless-browser capture (audio-only)...")
-        audio = download_audio_via_browser(url, cache_key, video_path=str(video_path))
-        return audio, str(video_path) if video_path.exists() else ""
+
+        # Escalate in order of cost: gallery-dl hits the API directly and keeps
+        # the video (so frames survive), and only if that fails do we pay for a
+        # headless browser, which recovers audio alone.
+        if not download_via_gallery_dl(url, cache_key, video_path):
+            video_path.unlink(missing_ok=True)
+            print("  Falling back to headless-browser capture (audio-only)...")
+            audio = download_audio_via_browser(url, cache_key, video_path=str(video_path))
+            return audio, str(video_path) if video_path.exists() else ""
 
     print(f"  Video saved: {video_path.name}")
 
@@ -501,16 +601,32 @@ def transcribe(audio_path: str, cache_key: str, model_size: str = "base") -> str
     return transcript
 
 
-def get_caption(url: str) -> str:
-    """Get the post caption via yt-dlp (bonus metadata)."""
+def get_caption(url: str, cache_key: str | None = None) -> str:
+    """Get the post caption. Prefers one gallery-dl already saved.
+
+    Called after the download so a caption captured during it is reused instead
+    of paying for a second round trip to a site that rate-limits anonymous
+    requests. Strategy reels often carry the actual rules in the caption, so
+    this is a real input to the interpret stage, not just decoration.
+    """
+    if cache_key:
+        cached = _caption_path(cache_key)
+        if cached.exists():
+            caption = cached.read_text(encoding="utf-8").strip()
+            if caption:
+                return caption
     try:
         result = subprocess.run(
-            ["yt-dlp", "--skip-download", "--print", "description", url],
-            capture_output=True, text=True, timeout=15,
+            ["yt-dlp", *_impersonate_args(), "--skip-download",
+             "--print", "description", url],
+            capture_output=True, text=True, timeout=30,
         )
-        return result.stdout.strip() if result.returncode == 0 else ""
+        caption = result.stdout.strip() if result.returncode == 0 else ""
     except Exception:
         return ""
+    if caption and cache_key:
+        _caption_path(cache_key).write_text(caption, encoding="utf-8")
+    return caption
 
 
 def run(source: str, whisper_model: str = "base") -> dict:
@@ -525,16 +641,17 @@ def run(source: str, whisper_model: str = "base") -> dict:
     cache_key = file_to_cache_key(source) if local else url_to_cache_key(source)
 
     print("\n[STAGE 1: EXTRACT]")
-    # A local file carries no post caption; the interpret stage already treats
-    # an empty caption as "transcript and frames only".
-    caption = "" if local else get_caption(source)
-    if caption:
-        print(f"  Caption: {caption[:80]}...")
-
     if local:
         audio_path, video_path = prepare_local(source, cache_key)
     else:
         audio_path, video_path = download_video(source, cache_key)
+
+    # Caption comes AFTER the download so a caption gallery-dl saved along the
+    # way is reused. A local file has no post caption at all; the interpret
+    # stage already treats an empty caption as "transcript and frames only".
+    caption = "" if local else get_caption(source, cache_key)
+    if caption:
+        print(f"  Caption: {caption[:80]}...")
     transcript = transcribe(audio_path, cache_key, whisper_model)
 
     # Extract frames (empty list if no video file available).

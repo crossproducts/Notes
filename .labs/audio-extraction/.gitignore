@@ -9,3 +9,4 @@ __pycache__/
 cache/*.mp3
 cache/*.mp4
 cache/*_frames/
+cache/*_gdl/

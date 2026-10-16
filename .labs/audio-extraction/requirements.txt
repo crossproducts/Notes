@@ -1,4 +1,8 @@
-yt-dlp
+# The curl-cffi extra is NOT optional for Instagram: yt-dlp's GraphQL path is
+# gated behind impersonation support, and without it the extractor silently
+# falls back to HTML scraping, which Instagram redirects to a login page.
+yt-dlp[default,curl-cffi]
+gallery-dl      # second-attempt downloader; --write-metadata also yields captions
 openai-whisper
 anthropic       # interpret + generate stages
 python-dotenv   # loads .env (ANTHROPIC_API_KEY, ALPACA_*)
