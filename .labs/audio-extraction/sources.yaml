@@ -154,6 +154,13 @@ sources:
       monetisation pitch rather than a strategy. Expected cache_key
       b91b4cb032d8.
 
+  - url: https://www.instagram.com/reel/DekC_B-PhBQ/
+    name: "Unreviewed — IG reel DekC_B-PhBQ"
+    status: pending
+    tags: [unreviewed]
+    note: fifth reel queued unseen; Instagram still egress-blocked from the
+      remote session. Expected cache_key 6a2b04d1e31c.
+
   # --- add new sources below as `pending` ---
   # - url: https://www.instagram.com/reel/XXXXXXXX/
   #   name: ""
