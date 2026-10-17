@@ -161,6 +161,17 @@ sources:
     note: fifth reel queued unseen; Instagram still egress-blocked from the
       remote session. Expected cache_key 6a2b04d1e31c.
 
+  - url: https://www.instagram.com/reel/DcLWmZGuGvS/
+    name: "Unreviewed — IG reel DcLWmZGuGvS"
+    status: pending
+    tags: [unreviewed]
+    note: full download chain actually attempted from the cloud session and all
+      three tiers failed at the egress proxy, not at Instagram - yt-dlp
+      --impersonate got "CONNECT tunnel failed, response 403", gallery-dl got
+      "ProxyError 403 Forbidden", and the browser tier could not start
+      (container ships chromium build 1194, pip playwright wants 1248).
+      Expected cache_key ef4e3caef5b3.
+
   # --- add new sources below as `pending` ---
   # - url: https://www.instagram.com/reel/XXXXXXXX/
   #   name: ""
